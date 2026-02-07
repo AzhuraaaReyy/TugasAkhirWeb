@@ -1,0 +1,20 @@
+import { ChevronRight } from "lucide-react";
+
+function NextArrow({ arrowRef }) {
+  return (
+    <button
+      ref={arrowRef}
+      className="absolute right-6 top-1/2 -translate-y-1/2 z-20 
+      bg-white/20 backdrop-blur-md 
+      p-3 rounded-full 
+      text-white 
+      hover:bg-emerald-500 
+      hover:scale-110
+      transition duration-300 shadow-lg"
+    >
+      <ChevronRight size={28} />
+    </button>
+  );
+}
+
+export default NextArrow;
