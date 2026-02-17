@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react";
 
-function NextArrow({ arrowRef }) {
+const NextArrow = ({ arrowRef }) => {
   return (
     <button
       ref={arrowRef}
@@ -15,6 +15,6 @@ function NextArrow({ arrowRef }) {
       <ChevronRight size={28} />
     </button>
   );
-}
+};
 
 export default NextArrow;

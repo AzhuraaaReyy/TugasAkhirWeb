@@ -1,6 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 
-function PrevArrow({ arrowRef }) {
+const PrevArrow = ({ arrowRef }) => {
   return (
     <button
       ref={arrowRef}
@@ -15,6 +15,6 @@ function PrevArrow({ arrowRef }) {
       <ChevronLeft size={28} />
     </button>
   );
-}
+};
 
 export default PrevArrow;
