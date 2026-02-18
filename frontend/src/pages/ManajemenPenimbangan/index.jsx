@@ -3,37 +3,43 @@ import MainLayouts from "../../layouts/MainLayouts";
 import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 
-const ManajemenBalita = () => {
+const ManajemenPenimbangan = () => {
   const [data] = useState([
     {
       id: 1,
       nama: "Aisyah",
-      orangtua: "Melati",
-      tanggal: "2024-01-12",
-      tempatlahir: "Semarang",
-      posyandu: "Posyandu 1",
-      jk: "Perempuan",
-      alamat: "Soka RT02/04 Kecamatan Ungaran Barat",
-    },
-    {
-      id: 2,
-      nama: "Rafi",
-      orangtua: "Mawar",
+      umur: "11",
+      tinggi: "11",
+      berat: "10",
       tanggal: "2004-01-12",
-      tempatlahir: "Ungaran",
-      posyandu: "Posyandu 2",
-      jk: "Laki-Laki",
-      alamat: "Soka RT02/04 Kecamatan Ungaran Barat",
+      zbbu: "-1.00",
+      jk: "Perempuan",
+      ztbu: "-2.00",
+      zbbtb: "-3.00 ",
     },
     {
-      id: 3,
-      nama: "Zahra",
-      orangtua: "Matahari",
-      tanggal: "2020-01-12",
-      tempatlahir: "Lerep",
-      posyandu: "Posyandu 3",
+      id: 1,
+      nama: "Rafi",
+      umur: "11",
+      tinggi: "11",
+      berat: "10",
+      tanggal: "2004-01-12",
+      zbbu: "-1.00",
+      jk: "Laki-Laki",
+      ztbu: "-2.00",
+      zbbtb: "-3.00 ",
+    },
+    {
+      id: 1,
+      nama: "Putri",
+      umur: "11",
+      tinggi: "11",
+      berat: "10",
+      tanggal: "2004-01-12",
+      zbbu: "-1.00",
       jk: "Perempuan",
-      alamat: "Soka RT02/04 Kecamatan Ungaran Barat",
+      ztbu: "-2.00",
+      zbbtb: "-3.00 ",
     },
   ]);
 
@@ -44,10 +50,10 @@ const ManajemenBalita = () => {
           {/* HEADER */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-800">
-              Manajemen Data Balita
+              Manajemen Penimbangan Balita
             </h1>
             <p className="text-gray-500 text-sm">
-              Kelola pencatatan dan perkembangan balita.
+              Kelola pengukuran dan penimbangan balita.
             </p>
           </div>
 
@@ -84,7 +90,7 @@ const ManajemenBalita = () => {
 
             <div className="ml-auto">
               <Link
-                to="/createmanajemenbalita"
+                to="/createpenimbangan"
                 className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
               >
                 Tambah Data
@@ -99,11 +105,14 @@ const ManajemenBalita = () => {
                 <tr>
                   <th className="px-4 py-3">No</th>
                   <th className="px-4 py-3">Nama Balita</th>
-                  <th className="px-4 py-3">Orang Tua</th>
-                  <th className="px-4 py-3">JK</th>
-                  <th className="px-4 py-3">TTL</th>
-                  <th className="px-4 py-3">Alamat</th>
-                  <th className="px-4 py-3">Posyandu</th>
+                  <th className="px-4 py-3">Umur Balita</th>
+                  <th className="px-4 py-3">Jenis Kelamin</th>
+                  <th className="px-4 py-3">Tanggal Penimbangan</th>
+                  <th className="px-4 py-3">Berat Badan(kg)</th>
+                  <th className="px-4 py-3">Tinggi Badan(cm)</th>
+                  <th className="px-4 py-3">ZS BB/U</th>
+                  <th className="px-4 py-3">ZS TB/U</th>
+                  <th className="px-4 py-3">ZS BB/TB</th>
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -118,9 +127,9 @@ const ManajemenBalita = () => {
                     <td className="px-4 py-3 font-semibold text-gray-800">
                       {item.nama}
                     </td>
-
-                    <td className="px-4 py-3 text-gray-600">{item.orangtua}</td>
-
+                    <td className="px-4 py-3 font-semibold text-gray-800">
+                      {item.umur} tahun
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -132,26 +141,25 @@ const ManajemenBalita = () => {
                         {item.jk}
                       </span>
                     </td>
-
-                    <td className="px-4 py-3 text-gray-600">
-                      {item.tempatlahir}, {item.tanggal}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600">{item.tanggal}</td>
+                    <td className="px-4 py-3 text-gray-600">{item.berat}kg</td>
+                    <td className="px-4 py-3 text-gray-600">{item.tinggi}cm</td>
 
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.alamat}
+                      {item.zbbu}
                     </td>
-
-                    <td className="px-4 py-3">
-                      <span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded-md text-xs">
-                        {item.posyandu}
-                      </span>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.ztbu}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.zbbtb}
                     </td>
 
                     <td className="px-4 py-3 text-center">
                       <div className="flex justify-center gap-3">
                         {/* Detail */}
                         <Link
-                          to="/detailmanajemenbalita"
+                          to="/detailpenimbangan"
                           className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition"
                         >
                           <FaEye size={14} />
@@ -159,7 +167,7 @@ const ManajemenBalita = () => {
 
                         {/* Edit */}
                         <Link
-                          to="/updatemanajemenbalita"
+                          to="/updatepenimbangan"
                           className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg transition"
                         >
                           <FaEdit size={14} />
@@ -201,4 +209,4 @@ const ManajemenBalita = () => {
   );
 };
 
-export default ManajemenBalita;
+export default ManajemenPenimbangan;

@@ -2,17 +2,19 @@ import MainLayouts from "../../layouts/MainLayouts";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-const CreateFormBalita = () => {
+const UpdatePenimbangan = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     nama: "",
-    orangtua: "",
+    umur: "",
     jk: "",
     tanggal: "",
-    tempatlahir: "",
-    alamat: "",
-    posyandu: "",
+    berat: "",
+    tinggi: "",
+    ztbu: "",
+    zbbu: "",
+    zbbtb: "",
   });
 
   const handleChange = (e) => {
@@ -25,20 +27,20 @@ const CreateFormBalita = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(form);
-    navigate("/manajemenbalita");
+    navigate("/manajemenpenimbangan");
   };
 
   return (
-    <MainLayouts type="createmanajemenbalita">
+    <MainLayouts type="createpenimbangan">
       <div className="min-h-screen bg-slate-100 p-6">
         <div className="max-w-full mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* HEADER */}
           <div className="border-b border-gray-200 pb-4 mb-6">
             <h1 className="text-xl font-semibold text-gray-800">
-              Tambah Data Balita
+              Tambah Data Penimbangan
             </h1>
             <p className="text-sm text-gray-500">
-              Isi data identitas balita dengan lengkap.
+              Isi data penimbangan balita dengan lengkap.
             </p>
           </div>
 
@@ -64,7 +66,7 @@ const CreateFormBalita = () => {
               {/* Nama Orang Tua */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nama Orang Tua
+                  Umur
                 </label>
                 <input
                   type="text"
@@ -96,7 +98,7 @@ const CreateFormBalita = () => {
               {/* Tanggal Lahir */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tanggal Lahir
+                  Tanggal Penimbangan
                 </label>
                 <input
                   type="date"
@@ -110,57 +112,87 @@ const CreateFormBalita = () => {
               {/* Tempat Lahir */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tempat Lahir
+                  Berat Badan (kg)
                 </label>
                 <input
-                  type="text"
-                  name="tempatlahir"
-                  value={form.tempatlahir}
+                  type="number"
+                  name="berat_badan"
+                  value={form.berat_badan}
                   onChange={handleChange}
-                  placeholder="Contoh: Semarang"
+                  step="0.01"
+                  min="0"
+                  placeholder="Contoh: 12.5"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
-              {/* Posyandu */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Posyandu
+                  Tinggi Badan (cm)
                 </label>
-                <select
-                  name="posyandu"
-                  value={form.posyandu}
+                <input
+                  type="number"
+                  name="tinggi_badan"
+                  value={form.tinggi_badan}
                   onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="Contoh: 85.3"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">Pilih Posyandu</option>
-                  <option value="Posyandu 1">Posyandu 1</option>
-                  <option value="Posyandu 2">Posyandu 2</option>
-                  <option value="Posyandu 3">Posyandu 3</option>
-                </select>
+                />
               </div>
-            </div>
 
-            {/* ALAMAT FULL WIDTH */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Alamat
-              </label>
-              <textarea
-                name="alamat"
-                value={form.alamat}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Contoh: Soka RT02/04 Kecamatan Ungaran Barat"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Z-Score BB/U
+                </label>
+                <input
+                  type="number"
+                  name="zbbu"
+                  value={form.zbbu}
+                  onChange={handleChange}
+                  step="0.01"
+                  placeholder="Contoh: -2.35"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Z-Score TB/U
+                </label>
+                <input
+                  type="number"
+                  name="ztbu"
+                  value={form.ztbu}
+                  onChange={handleChange}
+                  step="0.01"
+                  placeholder="Contoh: -1.80"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Z-Score BB/TB
+                </label>
+                <input
+                  type="number"
+                  name="zbbtb"
+                  value={form.zbbtb}
+                  onChange={handleChange}
+                  step="0.01"
+                  placeholder="Contoh: -0.95"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
             </div>
 
             {/* BUTTON SECTION */}
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => navigate("/manajemenbalita")}
+                onClick={() => navigate("/manajemenpenimbangan")}
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
               >
                 Kembali
@@ -189,4 +221,4 @@ const CreateFormBalita = () => {
   );
 };
 
-export default CreateFormBalita;
+export default UpdatePenimbangan;

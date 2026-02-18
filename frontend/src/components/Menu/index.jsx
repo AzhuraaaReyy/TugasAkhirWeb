@@ -1,4 +1,4 @@
-import { Icon } from "../../assets/icons";
+import { Icon } from "../../assets/icons/Index";
 
 export const kaderMenu = [
   {
@@ -15,7 +15,7 @@ export const kaderMenu = [
   },
   {
     id: "inputdatapenimbangan",
-    link: "/inputdatapenimbangan",
+    link: "/manajemenpenimbangan",
     icon: <Icon.InputPenimbangan />,
     label: "Data Penimbangan",
   },
