@@ -1,7 +1,7 @@
-import stunting from "../../../assets/images/pexels-photo-1001914.jpeg";
+import stunting from "../../../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
 
-import stunt from "../../../assets/images/stun.png";
-import st from "../../../assets/images/img_banner_.png";
+import stunt from "../../../assets/images/unnamed.jpg";
+import st from "../../../assets/images/6342b1cd-16a7-4330-b8b8-95e5f94db39e.png";
 
 const Berita = () => {
   const beritaList = [

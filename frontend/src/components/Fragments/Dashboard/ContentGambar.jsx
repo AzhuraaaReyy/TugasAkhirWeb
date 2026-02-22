@@ -23,7 +23,7 @@ const Content = () => {
         <ContentCard
           image="https://images.unsplash.com/photo-1599423300746-b62533397364"
           title="Beautiful Castle"
-          description="Luxury place near main city attractions."
+          description="The place is close to Barceloneta Beach and bus stop just 2 min by walk and near to Naviglio where you can enjoy the main night life in Barcelona."
           location="Milan, Italy"
           price="459"
         />

@@ -1,20 +1,17 @@
-import MainLayouts from "../../layouts/MainLayouts";
+import MainLayouts from "../../../layouts/MainLayouts";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-
-const CreatePenimbangan = () => {
+const UpdateFormBalita = () => {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     nama: "",
-    umur: "",
+    orangtua: "",
     jk: "",
     tanggal: "",
-    berat: "",
-    tinggi: "",
-    ztbu: "",
-    zbbu: "",
-    zbbtb: "",
+    tempatlahir: "",
+    alamat: "",
+    posyandu: "",
   });
 
   const handleChange = (e) => {
@@ -27,20 +24,19 @@ const CreatePenimbangan = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(form);
-    navigate("/manajemenpenimbangan");
+    navigate("/manajemenbalita");
   };
-
   return (
-    <MainLayouts type="createpenimbangan">
+    <MainLayouts type="detailmanajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
         <div className="max-w-full mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* HEADER */}
           <div className="border-b border-gray-200 pb-4 mb-6">
             <h1 className="text-xl font-semibold text-gray-800">
-              Tambah Data Penimbangan
+              Update Data Balita
             </h1>
             <p className="text-sm text-gray-500">
-              Isi data penimbangan balita dengan lengkap.
+              Mengupdate data identitas balita dengan lengkap.
             </p>
           </div>
 
@@ -66,7 +62,7 @@ const CreatePenimbangan = () => {
               {/* Nama Orang Tua */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Umur
+                  Nama Orang Tua
                 </label>
                 <input
                   type="text"
@@ -98,7 +94,7 @@ const CreatePenimbangan = () => {
               {/* Tanggal Lahir */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tanggal Penimbangan
+                  Tanggal Lahir
                 </label>
                 <input
                   type="date"
@@ -112,87 +108,57 @@ const CreatePenimbangan = () => {
               {/* Tempat Lahir */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Berat Badan (kg)
+                  Tempat Lahir
                 </label>
                 <input
-                  type="number"
-                  name="berat_badan"
-                  value={form.berat_badan}
+                  type="text"
+                  name="tempatlahir"
+                  value={form.tempatlahir}
                   onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="Contoh: 12.5"
+                  placeholder="Contoh: Semarang"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
+              {/* Posyandu */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tinggi Badan (cm)
+                  Posyandu
                 </label>
-                <input
-                  type="number"
-                  name="tinggi_badan"
-                  value={form.tinggi_badan}
+                <select
+                  name="posyandu"
+                  value={form.posyandu}
                   onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="Contoh: 85.3"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
+                >
+                  <option value="">Pilih Posyandu</option>
+                  <option value="Posyandu 1">Posyandu 1</option>
+                  <option value="Posyandu 2">Posyandu 2</option>
+                  <option value="Posyandu 3">Posyandu 3</option>
+                </select>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score BB/U
-                </label>
-                <input
-                  type="number"
-                  name="zbbu"
-                  value={form.zbbu}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -2.35"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score TB/U
-                </label>
-                <input
-                  type="number"
-                  name="ztbu"
-                  value={form.ztbu}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -1.80"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score BB/TB
-                </label>
-                <input
-                  type="number"
-                  name="zbbtb"
-                  value={form.zbbtb}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -0.95"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
+            {/* ALAMAT FULL WIDTH */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Alamat
+              </label>
+              <textarea
+                name="alamat"
+                value={form.alamat}
+                onChange={handleChange}
+                rows="3"
+                placeholder="Contoh: Soka RT02/04 Kecamatan Ungaran Barat"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
             </div>
 
             {/* BUTTON SECTION */}
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => navigate("/manajemenpenimbangan")}
+                onClick={() => navigate("/manajemenbalita")}
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
               >
                 Kembali
@@ -220,5 +186,4 @@ const CreatePenimbangan = () => {
     </MainLayouts>
   );
 };
-
-export default CreatePenimbangan;
+export default UpdateFormBalita;

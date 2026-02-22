@@ -1,5 +1,5 @@
 import { useState } from "react";
-import MainLayouts from "../layouts/MainLayouts";
+import MainLayouts from "../../layouts/MainLayouts";
 
 export default function DeteksiDini() {
   const balitaList = [

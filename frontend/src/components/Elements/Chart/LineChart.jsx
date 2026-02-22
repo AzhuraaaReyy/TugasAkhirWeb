@@ -1,4 +1,5 @@
 import { LineChart } from "@mui/x-charts/LineChart";
+
 const Linechart = () => {
   const data = [
     { month: 1, sales2016: 20000, sales2017: 10000 },
@@ -28,57 +29,76 @@ const Linechart = () => {
   ];
 
   return (
-    <LineChart
-      height={250}
-      dataset={data}
-      xAxis={[
-        {
-          scaleType: "point",
-          dataKey: "month",
-          tickFormatter: (v) => `${v}`,
-        },
-      ]}
-      series={[
-        {
-          dataKey: "sales2016",
-          label: "2016",
-          color: "#fbbf24", // kuning-orange
-          curve: "monotoneX",
-
-          showMark: true,
-          markSize: 4,
-        },
-        {
-          dataKey: "sales2017",
-          label: "2017",
-          color: "#14b8a6", // teal / hijau kebiruan
-          curve: "monotoneX",
-
-          showMark: true,
-          markSize: 4,
-        },
-      ]}
-      grid={{ horizontal: true }}
-      slotProps={{
-        legend: {
-          direction: "row",
-          position: { vertical: "top", horizontal: "right" },
-        },
-      }}
-      sx={{
-        "& .MuiChartsAxis-left .MuiChartsAxis-tickLabel": {
-          fill: "#9F9F9F",
-          fontSize: 11,
-        },
-        "& .MuiChartsAxis-bottom .MuiChartsAxis-tickLabel": {
-          fill: "#9F9F9F",
-          fontSize: 11,
-        },
-        "& .MuiChartsLine-series": {
-          strokeWidth: 2, // ketebalan garis
-        },
-      }}
-    />
+    <div className="bg-white rounded-2xl p-4">
+      <LineChart
+        height={280}
+        dataset={data}
+        xAxis={[
+          {
+            scaleType: "point",
+            dataKey: "month",
+            tickLabelStyle: {
+              fill: "#94a3b8",
+              fontSize: 11,
+            },
+          },
+        ]}
+        yAxis={[
+          {
+            tickLabelStyle: {
+              fill: "#94a3b8",
+              fontSize: 11,
+            },
+          },
+        ]}
+        series={[
+          {
+            dataKey: "sales2016",
+            label: "2016",
+            color: "#6366f1", // indigo modern
+            curve: "natural",
+            showMark: false,
+            area: true,
+          },
+          {
+            dataKey: "sales2017",
+            label: "2017",
+            color: "#22d3ee", // cyan modern
+            curve: "natural",
+            showMark: false,
+            area: true,
+          },
+        ]}
+        grid={{ horizontal: true, vertical: false }}
+        margin={{ top: 20, bottom: 20, left: 10, right: 10 }}
+        slotProps={{
+          legend: {
+            direction: "row",
+            position: { vertical: "top", horizontal: "right" },
+            labelStyle: {
+              fill: "#475569",
+              fontSize: 12,
+              fontWeight: 500,
+            },
+          },
+        }}
+        sx={{
+          "& .MuiChartsAxis-line": {
+            stroke: "#e5e7eb",
+          },
+          "& .MuiChartsGrid-line": {
+            stroke: "#f1f5f9",
+          },
+          "& .MuiAreaElement-root": {
+            opacity: 0.15,
+          },
+          "& .MuiLineElement-root": {
+            strokeWidth: 3,
+          },
+        }}
+      />
+    </div>
   );
 };
+
 export default Linechart;

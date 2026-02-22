@@ -1,4 +1,4 @@
-import { Icon } from "../../assets/icons/Index";
+import { Icon } from "../../assets/icons";
 
 export const kaderMenu = [
   {
@@ -32,10 +32,10 @@ export const kaderMenu = [
     label: "Riwayat & Grafik",
   },
   {
-    id: "status",
-    link: "/status",
+    id: "statistik",
+    link: "/statistik",
     icon: <Icon.ManajemenStatusRisiko />,
-    label: "Manajemen Status",
+    label: "Statistik",
   },
   {
     id: "laporan",

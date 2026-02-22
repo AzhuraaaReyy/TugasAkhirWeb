@@ -1,5 +1,5 @@
 import { useState } from "react";
-import MainLayouts from "../../layouts/MainLayouts";
+import MainLayouts from "../../../layouts/MainLayouts";
 import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 
