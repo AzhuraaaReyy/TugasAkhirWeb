@@ -20,8 +20,9 @@ function Navbar() {
     { name: "Fitur", link: "fitur" },
     { name: "Edukasi", link: "edukasi" },
     { name: "Berita", link: "berita" },
-    { name: "Testimoni", link: "testimoni" },
+
     { name: "Posyandu", link: "map" },
+    { name: "Testimoni", link: "testimoni" },
   ];
 
   return (

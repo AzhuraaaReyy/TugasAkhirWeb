@@ -18,7 +18,7 @@ const Edukasi = () => {
       {/* SECTION STUNTING */}
       <section
         id="edukasi"
-        className="relative py-28 bg-gray-50 overflow-hidden z-10"
+        className="relative py-28 bg-gray-50 overflow-hidden z-10 "
       >
         {/* Background Decoration */}
         <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
@@ -63,6 +63,11 @@ const Edukasi = () => {
               : "opacity-0 translate-y-10"
           }`}
         >
+          <div className="text-center">
+            <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold text-center">
+              Edukasi
+            </span>
+          </div>
           <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
             {headerVisible && (
               <Typewriter speed={20}>Edukasi Stunting Pada Anak</Typewriter>
@@ -71,21 +76,21 @@ const Edukasi = () => {
 
           <p className="mt-4 max-w-2xl mx-auto text-gray-600 text-center">
             {headerVisible && (
-              <Typewriter speed={10}>
+              <Typewriter speed={20}>
                 Sistem membantu kader posyandu dan orang tua dalam melakukan
-                pencatatan, pemantauan  pertumbuhan balita, serta deteksi dini
+                pencatatan, pemantauan pertumbuhan balita, serta deteksi dini
                 risiko stunting secara digital dan sistematis."
               </Typewriter>
             )}
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 space-y-28 relative z-10">
+        <div className="max-w-6xl mx-auto px-6  relative z-10">
           {/* ================= SECTION 1 ================= */}
 
           <div
             ref={refSec1}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 ${
+            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700  ${
               sec1Visible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-12"
@@ -103,8 +108,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kiri1"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-0 top-20 w-[65%] h-[360px] rotate-[-6deg] z-10 "
+        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
+        : "top-30 left-0 top-20 w-[270px] h-[270px] rotate-[-6deg] z-10 "
     }`}
               >
                 <img src={stunting1} className="w-full h-full object-cover" />
@@ -116,8 +121,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "tengah1"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-1/2 -translate-x-1/2 w-[70%] h-[420px] bg-white z-20"
+        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
+        : "top-23 left-1/2 -translate-x-1/2 w-[270px] h-[320px] z-10 bg-white z-20"
     }`}
               >
                 <img src={stunting2} className="w-full h-full object-cover" />
@@ -129,8 +134,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kanan1"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "right-0 top-20 w-[55%] h-[360px] rotate-[6deg] z-10"
+        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
+        : "right-0 top-30 w-[270px] h-[270px] z-10 rotate-[6deg] z-10"
     }`}
               >
                 <img src={stunting3} className="w-full h-full object-cover" />
@@ -156,7 +161,7 @@ const Edukasi = () => {
               <p className="mt-6 text-gray-600 leading-relaxed text-justify">
                 {sec1Visible && (
                   <Typewriter
-                    speed={10}
+                    speed={20}
                     highlightWords={["Stunting"]}
                     delay={1600}
                   >
@@ -164,7 +169,7 @@ const Edukasi = () => {
                     kekurangan gizi kronis dalam waktu yang lama, terutama pada
                     1.000 hari pertama kehidupan (sejak masa kehamilan hingga
                     usia 2 tahun). Kondisi ini ditandai dengan tinggi badan anak
-                    yang lebih rendah dibandingkan standar usianya  berdasarkan
+                    yang lebih rendah dibandingkan standar usianya berdasarkan
                     kurva pertumbuhan yang ditetapkan oleh World Health
                     Organization (WHO).Anak yang mengalami stunting berisiko
                     memiliki daya tahan tubuh yang lebih rendah dan lebih rentan
@@ -182,14 +187,14 @@ const Edukasi = () => {
           {/* ================= SECTION 2 ================= */}
           <div
             ref={refSec2}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 ${
+            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 mb-15 ${
               sec2Visible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-12"
             }`}
           >
             {/* TEXT */}
-            <div className="order-2 md:order-1">
+            <div className="order-2 md:order-1 -mt-10">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
                 {sec2Visible && (
                   <Typewriter
@@ -207,7 +212,7 @@ const Edukasi = () => {
                 {sec2Visible && (
                   <Typewriter
                     key="sec2"
-                    speed={10}
+                    speed={20}
                     highlightWords={["Dampak"]}
                     highlightClass="text-emerald-600 font-bold"
                   >
@@ -228,44 +233,44 @@ const Edukasi = () => {
 
             {/* IMAGE */}
             <div
-              className="relative w-full h-[520px] flex items-center justify-center order-2 md:order-2"
+              className="relative w-full h-[650px] order-2 md:order-2"
               onMouseLeave={() => setActive(null)}
             >
-              {/* FOTO KIRI */}
+              {/* FOTO 1 - KIRI ATAS */}
               <div
                 onMouseEnter={() => setActive("kiri2")}
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-    ${
-      active === "kiri2"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-0 top-20 w-[65%] h-[360px] rotate-[-6deg] z-10 "
-    }`}
+      ${
+        active === "kiri2"
+          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
+          : "left-5 top-30 w-[270px] h-[270px] z-10"
+      }`}
               >
                 <img src={stunting1} className="w-full h-full object-cover" />
               </div>
 
-              {/* FOTO TENGAH */}
+              {/* FOTO 2 - TENGAH TURUN */}
               <div
                 onMouseEnter={() => setActive("tengah2")}
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-    ${
-      active === "tengah2"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-1/2 -translate-x-1/2 w-[70%] h-[420px] bg-white z-20"
-    }`}
+      ${
+        active === "tengah2"
+          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
+          : "left-[140px] top-[240px] w-[270px] h-[270px] z-20"
+      }`}
               >
                 <img src={stunting2} className="w-full h-full object-cover" />
               </div>
 
-              {/* FOTO KANAN */}
+              {/* FOTO 3 - KANAN BAWAH */}
               <div
                 onMouseEnter={() => setActive("kanan2")}
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-    ${
-      active === "kanan2"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "right-0 top-20 w-[55%] h-[360px] rotate-[6deg] z-10"
-    }`}
+      ${
+        active === "kanan2"
+          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
+          : "left-[280px] top-[330px] w-[250px] h-[250px] z-30"
+      }`}
               >
                 <img src={stunting3} className="w-full h-full object-cover" />
               </div>
@@ -273,7 +278,7 @@ const Edukasi = () => {
           </div>
           <div
             ref={refSec3}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 ${
+            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 mb-20 ${
               sec3Visible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-12"
@@ -290,8 +295,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kiri3"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-0 top-20 w-[65%] h-[360px] rotate-[-6deg] z-10 "
+        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
+        : "bottom-5 left-15 -translate-x-1/2 w-[250px] h-[250px] z-10 -rotate-5"
     }`}
               >
                 <img src={stunting1} className="w-full h-full object-cover" />
@@ -303,8 +308,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "tengah3"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-1/2 -translate-x-1/2 w-[70%] h-[420px] bg-white z-20"
+        ? "left-60 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] h-[500px] z-40"
+        : "top-10 left-50 -translate-x-1/2 w-[350px] h-[270px] z-0"
     }`}
               >
                 <img src={stunting2} className="w-full h-full object-cover" />
@@ -316,8 +321,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kanan3"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "right-0 top-20 w-[55%] h-[360px] rotate-[6deg] z-10"
+        ? "left-60 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] h-[500px] z-40"
+        : "bottom-5 right-45 translate-x-1/2 w-[250px] h-[250px] z-10 rotate-5"
     }`}
               >
                 <img src={stunting3} className="w-full h-full object-cover" />
@@ -343,7 +348,7 @@ const Edukasi = () => {
                 {sec3Visible && (
                   <Typewriter
                     key="sec3"
-                    speed={10}
+                    speed={20}
                     highlightWords={["Stunting"]}
                     highlightClass="text-emerald-600 font-bold"
                   >
@@ -375,7 +380,7 @@ const Edukasi = () => {
             }`}
           >
             {/* TEXT */}
-            <div className="order-2 md:order-1">
+            <div className="order-2 md:order-1 mt-20">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
                 {sec4Visible && (
                   <Typewriter
@@ -393,7 +398,7 @@ const Edukasi = () => {
                 {sec4Visible && (
                   <Typewriter
                     key="sec4"
-                    speed={10}
+                    speed={20}
                     highlightWords={["Cara"]}
                     highlightClass="text-emerald-600 font-bold"
                   >
@@ -424,8 +429,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kiri4"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-0 top-20 w-[65%] h-[360px] rotate-[-6deg] z-10 "
+        ? "left-1/2 top-80 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
+        : "left-5 top-42 w-[270px] h-[270px] z-10"
     }`}
               >
                 <img src={stunting1} className="w-full h-full object-cover" />
@@ -437,8 +442,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "tengah4"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "left-1/2 -translate-x-1/2 w-[70%] h-[420px] bg-white z-20"
+        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
+        : "left-[140px] top-[300px] w-[270px] h-[270px] z-20"
     }`}
               >
                 <img src={stunting2} className="w-full h-full object-cover" />
@@ -450,8 +455,8 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kanan4"
-        ? "inset-0 z-40 scale-106 rotate-0"
-        : "right-0 top-20 w-[55%] h-[360px] rotate-[6deg] z-10"
+        ? "left-1/2 top-80 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
+        : "left-[280px] top-25 w-[270px] h-[270px] z-30"
     }`}
               >
                 <img src={stunting3} className="w-full h-full object-cover" />

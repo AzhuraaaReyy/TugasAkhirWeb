@@ -10,7 +10,7 @@ const FiturSistem = () => {
       {/* SECTION FITUR */}
       <section
         id="fitur"
-        className="relative py-24 px-6 bg-gray-50 overflow-hidden"
+        className="relative py-24 px-6 bg-gradient-to-b from-gray-50 to-emerald-100 overflow-hidden"
       >
         <div className="max-w-7xl mx-auto text-center relative z-10">
           {/* BACKGROUND BLUR DECORATION */}
