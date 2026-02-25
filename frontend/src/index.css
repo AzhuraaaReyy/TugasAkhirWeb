@@ -36,9 +36,6 @@
   background: #10b981 !important;
 }
 
-
-
-
 @keyframes floatWave {
   0%,
   100% {
@@ -122,8 +119,6 @@
   animation: scaleUp 0.3s ease;
 }
 
-
-
 @keyframes typing {
   from {
     width: 0;
@@ -157,3 +152,19 @@
   animation-delay: 2.7s;
 }
 
+@keyframes bounce-clean {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce-clean {
+  animation: bounce-clean 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

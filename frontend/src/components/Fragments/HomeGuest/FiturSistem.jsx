@@ -10,7 +10,7 @@ const FiturSistem = () => {
       {/* SECTION FITUR */}
       <section
         id="fitur"
-        className="relative py-24 px-6 bg-gradient-to-b from-gray-50 to-emerald-100 overflow-hidden"
+        className="relative py-28 px-6 bg-gradient-to-b from-gray-50 to-emerald-100 overflow-hidden"
       >
         <div className="max-w-7xl mx-auto text-center relative z-10">
           {/* BACKGROUND BLUR DECORATION */}
@@ -28,7 +28,7 @@ const FiturSistem = () => {
           >
             <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
               {headerVisible && (
-                <Typewriter speed={20}>Fitur Utama Sistem</Typewriter>
+                <Typewriter speed={20}>Fitur</Typewriter>
               )}
             </span>
 
@@ -52,7 +52,7 @@ const FiturSistem = () => {
           </div>
           {/* Card Fitur */}
 
-          <div className="mt-14 grid md:grid-cols-3 gap-8">
+          <div className="mt-20 mb-10 grid md:grid-cols-3 gap-8">
             {/* FITUR 1 */}
             <FadeUp delay={400}>
               <div

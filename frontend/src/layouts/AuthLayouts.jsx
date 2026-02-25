@@ -6,14 +6,15 @@ import {
   FaInstagram,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import stunting from "../assets/images/image_2k_2560x1440.png";
+import stunting1 from "../assets/images/stunting-1170x627.webp";
 const AuthLayouts = (props) => {
   const { children, type } = props;
   return (
     <div
       className="min-h-screen flex items-center justify-center  relative bg-cover bg-center"
       style={{
-        backgroundImage:
-          "url(https://images.unsplash.com/photo-1633356122544-f134324a6cee)",
+        backgroundImage: `url(${stunting1})`,
       }}
     >
       <div className="relative w-full max-w-5xl min-h-[650px] mx-auto bg-[#f3f3f3] rounded-[40px] shadow-2xl flex p-3">
@@ -25,10 +26,7 @@ const AuthLayouts = (props) => {
               clipPath: "polygon(0 0, 100% 0, 85% 100%, 0% 100%)",
             }}
           >
-            <img
-              src="https://images.unsplash.com/photo-1633356122544-f134324a6cee"
-              className="w-full h-full object-cover"
-            />
+            <img src={stunting} className="w-full h-full object-cover" />
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
           </div>
@@ -43,7 +41,7 @@ const AuthLayouts = (props) => {
         >
           {/* HEADER */}
           <div className="flex justify-between ">
-            <h1 className="font-bold text-xl tracking-wider">UISOCIAL</h1>
+            <h1 className="font-bold text-xl tracking-wider">STUNTING CARE</h1>
           </div>
 
           {/* TITLE */}

@@ -72,7 +72,7 @@ const Berita = () => {
   return (
     <section
       id="berita"
-      className="relative py-25 bg-gradient-to-b from-gray-50 via-green-100 to-green-100 overflow-hidden"
+      className="relative py-25  bg-emerald-50 overflow-hidden"
     >
       {/* 🌊 FLOATING WAVE */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
@@ -117,20 +117,20 @@ const Berita = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 3, ease: "easeOut" }}
           >
             <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
               Berita & Informasi
             </span>
           </motion.div>
-          <FadeSlide direction="left"delay={200}>
+          <FadeSlide direction="left" delay={400}>
             <div>
               <h2 className="mt-5 text-4xl font-extrabold text-gray-800">
                 Berita Seputar Stunting
               </h2>
             </div>
           </FadeSlide>
-          <FadeSlide direction="right" delay={200}>
+          <FadeSlide direction="right" delay={400}>
             <div>
               <p className="mt-5 max-w-2xl mx-auto text-gray-600">
                 Dapatkan informasi terbaru mengenai pencegahan, edukasi gizi,
@@ -141,74 +141,76 @@ const Berita = () => {
         </div>
 
         {/* SWIPER */}
-        <div className="relative mb-20">
-          <PrevArrow arrowRef={prevRef} />
-          <NextArrow arrowRef={nextRef} />
-          <Swiper
-            modules={[Navigation, Autoplay, Pagination]}
-            spaceBetween={30}
-            slidesPerView={3}
-            loop={true}
-            autoplay={{ delay: 4000 }}
-            ref={swiperRef}
-            pagination={{
-              clickable: true,
-              renderBullet: (index, className) => {
-                return `<span class="${className} pill-bullet"></span>`;
-              },
-            }}
-            breakpoints={{
-              320: { slidesPerView: 1 },
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
-            }}
-          >
-            {beritaList.map((item, i) => (
-              <SwiperSlide key={i}>
-                <div className="relative group overflow-hidden rounded-2xl cursor-pointer ">
-                  {/* IMAGE */}
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-[420px] object-cover transition duration-700 group-hover:scale-110 "
-                  />
+        <FadeUp delay={400}>
+          <div className="relative mb-20">
+            <PrevArrow arrowRef={prevRef} />
+            <NextArrow arrowRef={nextRef} />
+            <Swiper
+              modules={[Navigation, Autoplay, Pagination]}
+              spaceBetween={30}
+              slidesPerView={3}
+              loop={true}
+              autoplay={{ delay: 4000 }}
+              ref={swiperRef}
+              pagination={{
+                clickable: true,
+                renderBullet: (index, className) => {
+                  return `<span class="${className} pill-bullet"></span>`;
+                },
+              }}
+              breakpoints={{
+                320: { slidesPerView: 1 },
+                640: { slidesPerView: 2 },
+                1024: { slidesPerView: 3 },
+              }}
+            >
+              {beritaList.map((item, i) => (
+                <SwiperSlide key={i}>
+                  <div className="relative group overflow-hidden rounded-2xl cursor-pointer ">
+                    {/* IMAGE */}
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-[420px] object-cover transition duration-700 group-hover:scale-110 "
+                    />
 
-                  {/* DARK OVERLAY */}
-                  <div className="absolute inset-0 bg-black/30"></div>
+                    {/* DARK OVERLAY */}
+                    <div className="absolute inset-0 bg-black/30"></div>
 
-                  {/* HOVER OVERLAY */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
+                    {/* HOVER OVERLAY */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
 
-                  {/* CONTENT */}
-                  <div className="absolute bottom-0 left-0 w-full p-8 text-white z-10">
-                    <div className="group-hover:opacity-0 transition duration-300">
-                      <p className="text-emerald-400 text-sm font-semibold mb-2">
-                        {item.date}
-                      </p>
-                      <h3 className="text-2xl font-bold">{item.title}</h3>
-                      <hr className="w-20 border-emerald-500 border-2 mt-3" />
-                    </div>
+                    {/* CONTENT */}
+                    <div className="absolute bottom-0 left-0 w-full p-8 text-white z-10">
+                      <div className="group-hover:opacity-0 transition duration-300">
+                        <p className="text-emerald-400 text-sm font-semibold mb-2">
+                          {item.date}
+                        </p>
+                        <h3 className="text-2xl font-extrabold">{item.title}</h3>
+                        <hr className="w-20 border-emerald-500 border-2 mt-3" />
+                      </div>
 
-                    <div className="absolute bottom-8 left-8 right-8 opacity-0 translate-y-10 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-700 ease-out">
-                      <p className="text-emerald-400 text-sm font-semibold mb-2">
-                        {item.date}
-                      </p>
-                      <h3 className="text-2xl font-bold">{item.title}</h3>
-                      <hr className="w-20 border-emerald-500 border-2 mt-3" />
-                      <p className="mt-4 text-gray-200 text-sm leading-relaxed">
-                        {item.desc}
-                      </p>
+                      <div className="absolute bottom-8 left-8 right-8 opacity-0 translate-y-10 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-700 ease-out">
+                        <p className="text-emerald-400 text-sm font-semibold mb-2">
+                          {item.date}
+                        </p>
+                        <h3 className="text-2xl font-bold">{item.title}</h3>
+                        <hr className="w-20 border-emerald-500 border-2 mt-3" />
+                        <p className="mt-4 text-gray-200 text-sm leading-relaxed">
+                          {item.desc}
+                        </p>
 
-                      <button className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400">
-                        Baca Selengkapnya →
-                      </button>
+                        <button className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400">
+                          Baca Selengkapnya →
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </FadeUp>
       </div>
     </section>
   );

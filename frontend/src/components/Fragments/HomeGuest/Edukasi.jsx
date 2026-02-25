@@ -18,7 +18,7 @@ const Edukasi = () => {
       {/* SECTION STUNTING */}
       <section
         id="edukasi"
-        className="relative py-28 bg-gray-50 overflow-hidden z-10 "
+        className="relative py-28 bg-emerald-50 overflow-hidden z-10 "
       >
         {/* Background Decoration */}
         <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>

@@ -57,8 +57,9 @@ const Hero = () => {
       <Swiper
         ref={swiperRef}
         modules={[Navigation, Autoplay, Pagination]}
-        autoplay={{ delay: 7500 }}
+        autoplay={{ delay: 10000 }}
         loop={true}
+        speed={1500}
         onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
         className="h-screen"
         pagination={{

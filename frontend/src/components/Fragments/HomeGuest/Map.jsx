@@ -119,7 +119,36 @@ const Map = () => {
   }, []);
 
   return (
-    <section className="py-24 px-6 bg-gray-50" id="map">
+    <section className="py-30 px-6 bg-emerald-50 relative overflow-hidden"  id="map">
+      {/* 🌊 FLOATING WAVE */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
+        {/* Layer 1 */}
+        <svg
+          className="block w-full h-[160px] wave-float"
+          viewBox="0 0 1440 320"
+          preserveAspectRatio="none"
+        >
+          <path
+            fill="#9bf4ca"
+            fillOpacity="0.5"
+            d="M0,224L80,176C160,128,320,128,480,170.7C640,213,800,299,960,293.3C1120,288,1280,192,1360,144L1440,96L1440,320L0,320Z"
+          />
+        </svg>
+
+        {/* Layer 2 */}
+        <svg
+          className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+          viewBox="0 0 1440 320"
+          preserveAspectRatio="none"
+        >
+          <path
+            fill="#00ff80"
+            fillOpacity="0.3"
+            d="M0,192L120,208C240,224,480,256,720,229.3C960,203,1200,117,1320,74.7L1440,32L1440,320L0,320Z"
+          />
+        </svg>
+      </div>
+
       <div className="max-w-7xl mx-auto">
         {/* TITLE */}
 
@@ -245,31 +274,34 @@ const Map = () => {
 
               {selectedLocation ? (
                 <div className="space-y-4 text-sm text-gray-700">
-                  <div className="w-full h-48 rounded-2xl overflow-hidden">
-                    <img
-                      src={selectedLocation.image}
-                      alt={selectedLocation.name}
-                      className="w-full h-full object-cover hover:scale-105 transition duration-500"
-                    />
-                  </div>
+                  <FadeUp delay={200}>
+                    <div className="w-full h-48 rounded-2xl overflow-hidden">
+                      <img
+                        src={selectedLocation.image}
+                        alt={selectedLocation.name}
+                        className="w-full h-full object-cover hover:scale-105 transition duration-500"
+                      />
+                    </div>
 
-                  <div className="space-y-2 justify-center text-justify">
-                    <p>
-                      🩺 <strong>Nama Posyandu:</strong> {selectedLocation.name}
-                    </p>
-                    <p>
-                      🏙 <strong>Kota:</strong> {selectedLocation.kota}
-                    </p>
-                    <p>
-                      📍<strong>Alamat:</strong> {selectedLocation.alamat}
-                    </p>
-                    <p>
-                      🕒 <strong>Jadwal:</strong> {selectedLocation.jadwal}
-                    </p>
-                    <p>
-                      📞 <strong>Telepon:</strong> {selectedLocation.telepon}
-                    </p>
-                  </div>
+                    <div className="space-y-2 justify-center text-justify">
+                      <p>
+                        🩺 <strong>Nama Posyandu:</strong>{" "}
+                        {selectedLocation.name}
+                      </p>
+                      <p>
+                        🏙 <strong>Kota:</strong> {selectedLocation.kota}
+                      </p>
+                      <p>
+                        📍<strong>Alamat:</strong> {selectedLocation.alamat}
+                      </p>
+                      <p>
+                        🕒 <strong>Jadwal:</strong> {selectedLocation.jadwal}
+                      </p>
+                      <p>
+                        📞 <strong>Telepon:</strong> {selectedLocation.telepon}
+                      </p>
+                    </div>
+                  </FadeUp>
                 </div>
               ) : (
                 <p className="text-gray-500 text-sm">
