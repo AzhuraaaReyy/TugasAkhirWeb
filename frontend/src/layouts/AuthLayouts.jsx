@@ -60,7 +60,7 @@ const AuthLayouts = (props) => {
                 <span className="text-sm text-gray-500">Belum Punya Akun?</span>
                 <Link
                   to="/register"
-                  className="text-[#ff4a3d] font-semibold hover:underline"
+                  className="text-emerald-400 font-semibold hover:underline"
                 >
                   Daftar Sekarang
                 </Link>
@@ -70,7 +70,7 @@ const AuthLayouts = (props) => {
                 <span className="text-sm text-gray-700">Sudah Punya Akun?</span>
                 <Link
                   to="/login"
-                  className="text-[#ff4a3d] font-semibold hover:underline"
+                  className="text-emerald-400 font-semibold hover:underline"
                 >
                   Login Sekarang
                 </Link>
