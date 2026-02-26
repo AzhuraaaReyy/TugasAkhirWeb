@@ -4,24 +4,24 @@ const CardTotal = () => {
   return (
     <>
       <Card
-        variant="min-w-[250px]"
+        variant="min-w-[250px] "
         desc={
-          <div className="bg-white rounded-2xl px-6 py-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex-1 relative">
+          <div className="bg-blue-300 rounded-2xl px-6 py-6 shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex-1 relative">
             {/* Icon kanan atas */}
             <div className="absolute top-0 right-0 bg-gray-800 text-white p-3 rounded-lg shadow-md">
               <Icon.Dashboard />
             </div>
 
             {/* Title kecil */}
-            <p className="text-gray-400 text-sm mb-1">Total</p>
+            <p className="text-black text-sm mb-1 font-bold">Total</p>
 
             {/* Nominal besar */}
-            <h2 className="text-2xl font-bold text-gray-800">$12,450</h2>
+            <h2 className="text-2xl font-bold text-gray-800">12</h2>
 
             {/* Change */}
             <p className="text-sm mt-3">
-              <span className="text-green-500 font-semibold">+3%</span>{" "}
-              <span className="text-gray-400">than last month</span>
+              <span className="text-white font-semibold">+3%</span>{" "}
+              <span className="text-black">than last month</span>
             </p>
           </div>
         }
