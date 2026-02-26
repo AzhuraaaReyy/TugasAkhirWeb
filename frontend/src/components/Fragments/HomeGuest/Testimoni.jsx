@@ -107,7 +107,7 @@ const Testimoni = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1 }}
+          transition={{ duration: 3 }}
         >
           <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
             Testimoni Pengguna
@@ -188,7 +188,7 @@ hover:bg-gray-100
 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]
 "
                   >
-                    <FadeUp delay={800}>
+                    <FadeUp delay={400}>
                       
                       {/* Foto */}
                       <img

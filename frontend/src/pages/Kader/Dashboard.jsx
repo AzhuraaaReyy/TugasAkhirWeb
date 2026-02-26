@@ -33,26 +33,8 @@ const Dashboard = () => {
         </div>
 
         {/* ================= CHART SECTION ================= */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
-          {/* Chart 1 */}
-          <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition p-6">
-            <h2 className="text-lg font-semibold text-gray-700 mb-1">
-              Website Views
-            </h2>
-            <p className="text-sm text-gray-400 mb-6">
-              Last Campaign Performance
-            </p>
-
-            <Barchart />
-
-            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-              <Icon.Waktu className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-400">
-                Campaign sent 2 days ago
-              </span>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 xl:grid-cols-1 gap-6 mb-10">
+         
           {/* Chart 2 */}
           <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition p-6">
             <h2 className="text-lg font-semibold text-gray-700 mb-1">

@@ -31,7 +31,7 @@ const Linechart = () => {
   return (
     <div className="bg-white rounded-2xl p-4">
       <LineChart
-        height={280}
+        height={350}
         dataset={data}
         xAxis={[
           {

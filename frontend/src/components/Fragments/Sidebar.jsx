@@ -12,7 +12,7 @@ const Sidebar = ({ open }) => {
     <aside
       className={`fixed left-0 top-0 h-screen z-40 transition-all duration-300
       ${open ? "w-64" : "w-20"}
-      bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900
+      bg-gradient-to-b from-emerald-900 via-emerald-800 to-white-900
       text-white shadow-2xl flex flex-col`}
     >
       {/* ===== Logo Section ===== */}
@@ -20,7 +20,7 @@ const Sidebar = ({ open }) => {
         <h1
           className={`font-bold tracking-wide transition-all ${open ? "text-xl" : "text-lg"}`}
         >
-          {open ? "PosyanduCare" : "PC"}
+          {open ? "StuntingCare" : "PC"}
         </h1>
       </div>
 

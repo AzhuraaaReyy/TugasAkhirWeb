@@ -1,94 +1,84 @@
-import { FcGoogle } from "react-icons/fc";
-import {
-  FaFacebookF,
-  FaTwitter,
-  FaLinkedinIn,
-  FaInstagram,
-} from "react-icons/fa";
-import { Link } from "react-router-dom";
-import stunting from "../assets/images/image_2k_2560x1440.png";
-import stunting1 from "../assets/images/stunting-1170x627.webp";
-const AuthLayouts = (props) => {
+import stunting from "../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
+import FadeSlide from "../components/Animations/FadeSlide";
+import FadeUp from "../components/Animations/FadeUp";
+const AuthLayout = (props) => {
   const { children, type } = props;
+
   return (
-    <div
-      className="min-h-screen flex items-center justify-center  relative bg-cover bg-center"
-      style={{
-        backgroundImage: `url(${stunting1})`,
-      }}
-    >
-      <div className="relative w-full max-w-5xl min-h-[650px] mx-auto bg-[#f3f3f3] rounded-[40px] shadow-2xl flex p-3">
-        {/* LEFT SIDE */}
-        <div className="hidden md:block w-1/2 relative overflow-hidden rounded-l-[35px]">
-          <div
-            className="absolute inset-0"
-            style={{
-              clipPath: "polygon(0 0, 100% 0, 85% 100%, 0% 100%)",
-            }}
-          >
-            <img src={stunting} className="w-full h-full object-cover" />
+    <div className="flex min-h-screen ">
+      {/* Bagian kanan (Gambar / Informasi) */}
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+      <div className="w-1/2 flex justify-center items-center bg-gray-100">
+        <img
+          src={stunting}
+          alt="Illustration"
+          className="w-full h-full object-cover rounded-lg shadow-lg"
+        />
+        {/* Teks di atas gambar */}
+        <div className="absolute text-black text-2xl font-bold  p-4 rounded-lg"></div>
+      </div>
+      {/* Bagian kiri (Form Login) */}
+
+      <div className="w-1/2 flex justify-center items-center bg-white relative overflow-hidden">
+        <div className="w-full max-w-sm">
+          {/* BACKGROUND BLUR DECORATION */}
+          <div className="absolute -top-40 bottom-0 -left-50 w-[400px] h-[400px] bg-emerald-300 rounded-full blur-3xl opacity-30 animate-pulse z-0"></div>
+
+          <div className="absolute top-100 -right-60 w-[400px] h-[400px] bg-blue-300 rounded-full blur-3xl opacity-30 animate-pulse z-0"></div>
+
+          {/* Logo */}
+          <FadeUp delay={200}>
+            <div className="flex justify-center font-poppins tracking-wide text-black text-4xl mt-10">
+              {type == "login" ? (
+                <span className="font-bold text-emerald-400 ">Login</span>
+              ) : (
+                <>
+                  <span className="font-bold text-emerald-400">Register</span>
+                </>
+              )}
+            </div>
+          </FadeUp>
+          {/* Form */}
+          <FadeSlide direction="left" delay={200}>
+            <div className="mt-10">{children}</div>
+          </FadeSlide>
+          {/* sign in with google end */}
+          {/* sign in with Facebook start */}
+          <div className="mb-3">
+            <a
+              href="https://www.facebook.com/?locale2=id_ID&_rdr"
+              target="_blank"
+              rel="noopener noreferrer"
+            ></a>
           </div>
-        </div>
+          {/* sign in with Facebook end */}
 
-        {/* RIGHT SIDE */}
-        <div
-          className="w-full md:w-1/2 px-14 py-12 flex flex-col justify-center bg-[#f3f3f3]"
-          style={{
-            clipPath: "polygon(12% 0, 100% 0, 100% 100%, 0% 100%)",
-          }}
-        >
-          {/* HEADER */}
-          <div className="flex justify-between ">
-            <h1 className="font-bold text-xl tracking-wider">STUNTING CARE</h1>
-          </div>
-
-          {/* TITLE */}
-
-          <p className="text-gray-500 mb-8">
-            {type === "login" ? "Selamat Datang" : "Daftar Stunting"}
-          </p>
-
-          {/* FORM FIELDS */}
-          <div>{children}</div>
-
-          {/* FOOTER */}
-          <div className="flex flex-row justify-center items-center gap-1 mt-3">
-            {type === "login" ? (
-              <>
-                <span className="text-sm text-gray-500">Belum Punya Akun?</span>
-                <Link
-                  to="/register"
-                  className="text-emerald-400 font-semibold hover:underline"
-                >
-                  Daftar Sekarang
-                </Link>
-              </>
-            ) : (
-              <>
-                <span className="text-sm text-gray-700">Sudah Punya Akun?</span>
-                <Link
-                  to="/login"
-                  className="text-emerald-400 font-semibold hover:underline"
-                >
-                  Login Sekarang
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* SOCIAL */}
-          <div className="flex justify-center gap-5 mt-4 text-gray-500 text-lg">
-            <FaFacebookF />
-            <FaTwitter />
-            <FaLinkedinIn />
-            <FaInstagram />
-          </div>
+          <FadeSlide direction="right" delay={200}>
+            {/* Link Register */}
+            <div className="flex justify-center mt-5">
+              {type == "login" ? (
+                <a href="/register" className="text-black text-sm ">
+                  <span className="">Don’t have an acount? </span>
+                  <span className="font-bold underline text-emerald-400 hover:text-emerald-600">
+                    Register
+                  </span>
+                </a>
+              ) : (
+                <>
+                  <span className="">Already have an acount? </span>
+                  <a href="/login" className="text-black text-sm ">
+                    <span className="font-bold text-emerald-400 underline hover:text-emerald-600">
+                      Login
+                    </span>
+                  </a>
+                </>
+              )}
+            </div>
+          </FadeSlide>
         </div>
       </div>
     </div>
   );
 };
 
-export default AuthLayouts;
+export default AuthLayout;
