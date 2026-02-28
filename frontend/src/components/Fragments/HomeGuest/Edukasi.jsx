@@ -4,6 +4,7 @@ import stunting3 from "../../../assets/images/image_2k_2560x1440_v3.png";
 import { useState } from "react";
 import Typewriter from "../../Animations/Typewriter";
 import { useInView } from "../../../hooks/UseInView";
+import FadeSlide from "../../Animations/FadeSlide";
 const Edukasi = () => {
   const [active, setActive] = useState(null);
 
@@ -23,6 +24,18 @@ const Edukasi = () => {
         {/* Background Decoration */}
         <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
         <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
+
+        <div className="absolute top-210 right-290 w-[400px] h-[400px] bg-emerald-200 rounded-full blur-3xl opacity-40 -z-10"></div>
+        <div className="absolute top-160 right-40 w-[400px] h-[400px] bg-blue-200 rounded-full blur-3xl opacity-40 -z-10"></div>
+        <div className="absolute top-300 right-200 w-[300px] h-[300px] bg-blue-200 rounded-full blur-3xl opacity-40 -z-10"></div>
+
+        <div className="absolute top-380 left-140 w-[300px] h-[300px] bg-emerald-200 rounded-full blur-3xl opacity-40 -z-10"></div>
+        <div className="absolute top-460 right-40 w-[400px] h-[400px] bg-blue-200 rounded-full blur-3xl opacity-40 -z-10"></div>
+        <div className="absolute top-640 -right-30 w-[400px] h-[400px] bg-blue-400 rounded-full blur-3xl opacity-40 -z-10"></div>
+
+        <div className="absolute top-550 left-40 w-[300px] h-[300px] bg-emerald-200 rounded-full blur-3xl opacity-40 -z-10"></div>
+        <div className="absolute top-640 left-140 w-[200px] h-[200px] bg-blue-300 rounded-full blur-3xl opacity-40 -z-10"></div>
+
         <div className="absolute top-5 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-60"></div>
         <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
         <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
@@ -64,9 +77,11 @@ const Edukasi = () => {
           }`}
         >
           <div className="text-center">
-            <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold text-center">
-              Edukasi
-            </span>
+            <FadeSlide direction="left" delay={200}>
+              <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold text-center">
+                Edukasi
+              </span>
+            </FadeSlide>
           </div>
           <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
             {headerVisible && (
@@ -442,7 +457,7 @@ const Edukasi = () => {
                 className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "tengah4"
-        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
+        ? "left-1/2 top-[300px] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
         : "left-[140px] top-[300px] w-[270px] h-[270px] z-20"
     }`}
               >

@@ -104,15 +104,11 @@ const Testimoni = () => {
       <div className="absolute bottom-110 right-150 w-[300px] h-[300px] bg-blue-300 rounded-full blur-3xl opacity-30"></div>
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 3 }}
-        >
+       <FadeSlide direction="left" delay={200}>
           <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
             Testimoni Pengguna
           </span>
-        </motion.div>
+     </FadeSlide>
 
         <FadeUp delay={300}>
           <h2 className="mt-4 text-4xl font-bold text-gray-800">

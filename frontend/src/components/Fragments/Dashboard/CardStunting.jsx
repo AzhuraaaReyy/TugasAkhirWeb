@@ -9,7 +9,7 @@ const CardStunting = () => {
           <div className="bg-orange-400 rounded-2xl px-6 py-5 shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-lg transition-all duration-300 flex-1 relative">
             {/* Icon kanan atas */}
             <div className="absolute top-0 right-0 bg-gray-800 text-white p-3 rounded-lg shadow-md">
-              <Icon.Dashboard />
+                  <Icon.People />
             </div>
 
             {/* Title kecil */}

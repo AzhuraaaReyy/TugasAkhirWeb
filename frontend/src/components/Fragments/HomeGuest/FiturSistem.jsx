@@ -26,12 +26,11 @@ const FiturSistem = () => {
                 : "opacity-0 translate-y-10"
             }`}
           >
-            <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
-              {headerVisible && (
-                <Typewriter speed={20}>Fitur</Typewriter>
-              )}
-            </span>
-
+            <FadeSlide direction="left" delay={200}>
+              <span className="inline-block px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
+                Fitur
+              </span>
+            </FadeSlide>
             <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800">
               {headerVisible && (
                 <Typewriter speed={10}>

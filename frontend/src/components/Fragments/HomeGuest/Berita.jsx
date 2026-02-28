@@ -10,7 +10,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+
 import FadeUp from "../../Animations/FadeUp";
 import FadeSlide from "../../Animations/FadeSlide";
 const Berita = () => {
@@ -114,15 +114,11 @@ const Berita = () => {
         {/* HEADER */}
 
         <div className="text-center mb-16 z-40 ">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 3, ease: "easeOut" }}
-          >
+          <FadeSlide direction="left" delay={200}>
             <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
               Berita & Informasi
             </span>
-          </motion.div>
+          </FadeSlide>
           <FadeSlide direction="left" delay={400}>
             <div>
               <h2 className="mt-5 text-4xl font-extrabold text-gray-800">
@@ -186,7 +182,9 @@ const Berita = () => {
                         <p className="text-emerald-400 text-sm font-semibold mb-2">
                           {item.date}
                         </p>
-                        <h3 className="text-2xl font-extrabold">{item.title}</h3>
+                        <h3 className="text-2xl font-extrabold">
+                          {item.title}
+                        </h3>
                         <hr className="w-20 border-emerald-500 border-2 mt-3" />
                       </div>
 

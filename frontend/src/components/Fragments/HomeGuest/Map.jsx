@@ -12,7 +12,7 @@ import mawarImg from "../../../assets/images/6342b1cd-16a7-4330-b8b8-95e5f94db39
 import anggrekImg from "../../../assets/images/ae9726d1-a139-4f6b-99f8-8230a88c7e65.png";
 import dahliaImg from "../../../assets/images/Foto-by-UM-Surabaya.jpg";
 import FadeUp from "../../Animations/FadeUp";
-import { motion } from "framer-motion";
+
 import FadeSlide from "../../Animations/FadeSlide";
 /* FIX ICON */
 delete L.Icon.Default.prototype._getIconUrl;
@@ -119,7 +119,15 @@ const Map = () => {
   }, []);
 
   return (
-    <section className="py-30 px-6 bg-emerald-50 relative overflow-hidden"  id="map">
+    <section
+      className="py-30 px-6 bg-emerald-50 relative overflow-hidden"
+      id="map"
+      >
+      <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
+      <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
+      <div className="absolute -top-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
+      <div className="absolute -bottom-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
+      <div className="absolute -top-20 right-130 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
       {/* 🌊 FLOATING WAVE */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
         {/* Layer 1 */}
@@ -154,15 +162,11 @@ const Map = () => {
 
         <div className="text-center mb-12">
           <div className="mb-5">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
+            <FadeSlide direction="left" delay={200}>
               <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
                 Lokasi Posyandu
               </span>
-            </motion.div>
+            </FadeSlide>
           </div>
           <FadeUp delay={200}>
             <h2 className="text-4xl font-bold text-gray-800">
