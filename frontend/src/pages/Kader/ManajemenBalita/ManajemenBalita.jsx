@@ -53,7 +53,7 @@ const ManajemenBalita = () => {
 
           {/* TABS */}
           <div className="flex gap-3 mb-6">
-            <button className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium shadow">
+            <button className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium shadow">
               Semua Data
             </button>
             <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm hover:bg-gray-200">
@@ -78,14 +78,14 @@ const ManajemenBalita = () => {
               <option>Anggrek 2</option>
             </select>
 
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
               Search
             </button>
 
             <div className="ml-auto">
               <Link
                 to="/createmanajemenbalita"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
               >
                 Tambah Data
               </Link>
@@ -111,21 +111,23 @@ const ManajemenBalita = () => {
               <tbody className="divide-y divide-gray-100">
                 {data.map((item, index) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-700">
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {index + 1}
                     </td>
 
-                    <td className="px-4 py-3 font-semibold text-gray-800">
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.nama}
                     </td>
 
-                    <td className="px-4 py-3 text-gray-600">{item.orangtua}</td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.orangtua}
+                    </td>
 
                     <td className="px-4 py-3">
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-1 rounded-full text-xs font-medium truncate ${
                           item.jk === "Perempuan"
-                            ? "bg-pink-100 text-pink-600"
+                            ? "bg-emerald-100 text-emerald-600"
                             : "bg-blue-100 text-blue-600"
                         }`}
                       >
@@ -133,7 +135,7 @@ const ManajemenBalita = () => {
                       </span>
                     </td>
 
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.tempatlahir}, {item.tanggal}
                     </td>
 
@@ -141,10 +143,8 @@ const ManajemenBalita = () => {
                       {item.alamat}
                     </td>
 
-                    <td className="px-4 py-3">
-                      <span className="bg-emerald-100 text-emerald-600 px-2 py-1 rounded-md text-xs">
-                        {item.posyandu}
-                      </span>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.posyandu}
                     </td>
 
                     <td className="px-4 py-3 text-center">
@@ -182,7 +182,7 @@ const ManajemenBalita = () => {
             <button className="px-3 py-1 border rounded-md text-gray-500 hover:bg-gray-100">
               &lt;
             </button>
-            <button className="px-3 py-1 bg-blue-600 text-white rounded-md">
+            <button className="px-3 py-1 bg-emerald-600 text-white rounded-md">
               1
             </button>
             <button className="px-3 py-1 border rounded-md hover:bg-gray-100">

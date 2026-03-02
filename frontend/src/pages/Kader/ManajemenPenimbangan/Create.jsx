@@ -8,13 +8,10 @@ const CreatePenimbangan = () => {
   const [form, setForm] = useState({
     nama: "",
     umur: "",
-    jk: "",
+
     tanggal: "",
     berat: "",
     tinggi: "",
-    ztbu: "",
-    zbbu: "",
-    zbbtb: "",
   });
 
   const handleChange = (e) => {
@@ -79,21 +76,6 @@ const CreatePenimbangan = () => {
               </div>
 
               {/* Jenis Kelamin */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jenis Kelamin
-                </label>
-                <select
-                  name="jk"
-                  value={form.jk}
-                  onChange={handleChange}
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">Pilih Jenis Kelamin</option>
-                  <option value="Perempuan">Perempuan</option>
-                  <option value="Laki-Laki">Laki-Laki</option>
-                </select>
-              </div>
 
               {/* Tanggal Lahir */}
               <div>
@@ -138,51 +120,6 @@ const CreatePenimbangan = () => {
                   step="0.01"
                   min="0"
                   placeholder="Contoh: 85.3"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score BB/U
-                </label>
-                <input
-                  type="number"
-                  name="zbbu"
-                  value={form.zbbu}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -2.35"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score TB/U
-                </label>
-                <input
-                  type="number"
-                  name="ztbu"
-                  value={form.ztbu}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -1.80"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score BB/TB
-                </label>
-                <input
-                  type="number"
-                  name="zbbtb"
-                  value={form.zbbtb}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -0.95"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>

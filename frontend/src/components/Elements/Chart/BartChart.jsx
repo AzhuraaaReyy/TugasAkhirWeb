@@ -48,9 +48,7 @@ const Barchart = () => {
 
   return (
     <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-lg rounded-3xl shadow-xl p-6">
-      <h2 className="text-gray-800 text-xl font-semibold mb-6">
-         Status Gizi Tahun Lalu vs Tahun Ini
-      </h2>
+     
 
       <BarChart
         height={400}

@@ -32,12 +32,6 @@ export const kaderMenu = [
     label: "Riwayat & Grafik",
   },
   {
-    id: "statistik",
-    link: "/statistik",
-    icon: <Icon.ManajemenStatusRisiko />,
-    label: "Statistik",
-  },
-  {
     id: "laporan",
     link: "/laporan",
     icon: <Icon.Laporan />,

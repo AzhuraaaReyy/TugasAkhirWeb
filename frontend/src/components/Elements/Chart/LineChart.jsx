@@ -1,29 +1,29 @@
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useState, useMemo } from "react";
 
+const rawData = [
+  { month: "Jan", posyandu: "Melati", stunting: 5, tidakStunting: 45 },
+  { month: "Jan", posyandu: "Anggrek", stunting: 10, tidakStunting: 60 },
+
+  { month: "Feb", posyandu: "Melati", stunting: 4, tidakStunting: 48 },
+  { month: "Feb", posyandu: "Anggrek", stunting: 9, tidakStunting: 62 },
+
+  { month: "Mar", posyandu: "Melati", stunting: 3, tidakStunting: 50 },
+  { month: "Mar", posyandu: "Anggrek", stunting: 8, tidakStunting: 65 },
+
+  { month: "Apr", posyandu: "Melati", stunting: 3, tidakStunting: 52 },
+  { month: "Apr", posyandu: "Anggrek", stunting: 7, tidakStunting: 68 },
+
+  { month: "Mei", posyandu: "Melati", stunting: 2, tidakStunting: 55 },
+  { month: "Mei", posyandu: "Anggrek", stunting: 6, tidakStunting: 70 },
+
+  { month: "Jun", posyandu: "Melati", stunting: 2, tidakStunting: 58 },
+  { month: "Jun", posyandu: "Anggrek", stunting: 5, tidakStunting: 72 },
+];
 const Linechart = () => {
   const [selectedPosyandu, setSelectedPosyandu] = useState("Semua");
 
   // 🔹 Data Mentah (Simulasi Database)
-  const rawData = [
-    { month: "Jan", posyandu: "Melati", stunting: 5, tidakStunting: 45 },
-    { month: "Jan", posyandu: "Anggrek", stunting: 10, tidakStunting: 60 },
-
-    { month: "Feb", posyandu: "Melati", stunting: 4, tidakStunting: 48 },
-    { month: "Feb", posyandu: "Anggrek", stunting: 9, tidakStunting: 62 },
-
-    { month: "Mar", posyandu: "Melati", stunting: 3, tidakStunting: 50 },
-    { month: "Mar", posyandu: "Anggrek", stunting: 8, tidakStunting: 65 },
-
-    { month: "Apr", posyandu: "Melati", stunting: 3, tidakStunting: 52 },
-    { month: "Apr", posyandu: "Anggrek", stunting: 7, tidakStunting: 68 },
-
-    { month: "Mei", posyandu: "Melati", stunting: 2, tidakStunting: 55 },
-    { month: "Mei", posyandu: "Anggrek", stunting: 6, tidakStunting: 70 },
-
-    { month: "Jun", posyandu: "Melati", stunting: 2, tidakStunting: 58 },
-    { month: "Jun", posyandu: "Anggrek", stunting: 5, tidakStunting: 72 },
-  ];
 
   // 🔹 Data Setelah Difilter
   const filteredData = useMemo(() => {
@@ -54,9 +54,7 @@ const Linechart = () => {
       <div className="rounded-3xl p-6 bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-lg">
         {/* 🔹 Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-gray-800 text-xl font-semibold tracking-wide">
-            STATUS GIZI TAHUN INI
-          </h2>
+          <h2 className="text-gray-800 text-xl font-semibold tracking-wide"></h2>
 
           {/* 🔹 Dropdown Filter */}
           <select
@@ -101,6 +99,7 @@ const Linechart = () => {
               showMark: false,
               area: true,
               color: "#2006cd",
+              className: "font-bold"
             },
             {
               dataKey: "tidakStunting",

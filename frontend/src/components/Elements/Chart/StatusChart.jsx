@@ -7,7 +7,7 @@ import {
   Legend,
 } from "recharts";
 
-const Status = () => {
+const StatusChart = () => {
   const data = [
     { name: "Normal", value: 60 },
     { name: "Berisiko", value: 25 },
@@ -21,15 +21,11 @@ const Status = () => {
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 w-full">
+    <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-xl p-6 w-full">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-800">
-          📊 Grafik Status Gizi
-        </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Komposisi status gizi balita di wilayah posyandu.
-        </p>
+       
+       
       </div>
 
       {/* Chart */}
@@ -58,11 +54,7 @@ const Status = () => {
               }}
             />
 
-            <Legend
-              verticalAlign="bottom"
-              height={36}
-              iconType="circle"
-            />
+            <Legend verticalAlign="bottom" height={36} iconType="circle" />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -71,15 +63,10 @@ const Status = () => {
       <div className="grid grid-cols-3 gap-4 mt-6 text-center">
         {data.map((item, index) => (
           <div key={index}>
-            <p
-              className="text-sm font-medium"
-              style={{ color: COLORS[index] }}
-            >
+            <p className="text-sm font-medium" style={{ color: COLORS[index] }}>
               {item.name}
             </p>
-            <h3 className="text-lg font-bold text-gray-800">
-              {item.value}%
-            </h3>
+            <h3 className="text-lg font-bold text-gray-800">{item.value}%</h3>
           </div>
         ))}
       </div>
@@ -87,4 +74,4 @@ const Status = () => {
   );
 };
 
-export default Status;
+export default StatusChart;

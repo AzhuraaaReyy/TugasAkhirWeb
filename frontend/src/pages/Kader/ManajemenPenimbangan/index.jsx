@@ -12,10 +12,6 @@ const ManajemenPenimbangan = () => {
       tinggi: "11",
       berat: "10",
       tanggal: "2004-01-12",
-      zbbu: "-1.00",
-      jk: "Perempuan",
-      ztbu: "-2.00",
-      zbbtb: "-3.00 ",
     },
     {
       id: 1,
@@ -24,10 +20,6 @@ const ManajemenPenimbangan = () => {
       tinggi: "11",
       berat: "10",
       tanggal: "2004-01-12",
-      zbbu: "-1.00",
-      jk: "Laki-Laki",
-      ztbu: "-2.00",
-      zbbtb: "-3.00 ",
     },
     {
       id: 1,
@@ -36,10 +28,6 @@ const ManajemenPenimbangan = () => {
       tinggi: "11",
       berat: "10",
       tanggal: "2004-01-12",
-      zbbu: "-1.00",
-      jk: "Perempuan",
-      ztbu: "-2.00",
-      zbbtb: "-3.00 ",
     },
   ]);
 
@@ -59,7 +47,7 @@ const ManajemenPenimbangan = () => {
 
           {/* TABS */}
           <div className="flex gap-3 mb-6">
-            <button className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium shadow">
+            <button className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium shadow">
               Semua Data
             </button>
             <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm hover:bg-gray-200">
@@ -84,14 +72,14 @@ const ManajemenPenimbangan = () => {
               <option>Anggrek 2</option>
             </select>
 
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
               Search
             </button>
 
             <div className="ml-auto">
               <Link
                 to="/createpenimbangan"
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
               >
                 Tambah Data
               </Link>
@@ -106,13 +94,9 @@ const ManajemenPenimbangan = () => {
                   <th className="px-4 py-3">No</th>
                   <th className="px-4 py-3">Nama Balita</th>
                   <th className="px-4 py-3">Umur Balita</th>
-                  <th className="px-4 py-3">Jenis Kelamin</th>
                   <th className="px-4 py-3">Tanggal Penimbangan</th>
                   <th className="px-4 py-3">Berat Badan(kg)</th>
                   <th className="px-4 py-3">Tinggi Badan(cm)</th>
-                  <th className="px-4 py-3">ZS BB/U</th>
-                  <th className="px-4 py-3">ZS TB/U</th>
-                  <th className="px-4 py-3">ZS BB/TB</th>
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -120,39 +104,24 @@ const ManajemenPenimbangan = () => {
               <tbody className="divide-y divide-gray-100">
                 {data.map((item, index) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-700">
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {index + 1}
                     </td>
 
-                    <td className="px-4 py-3 font-semibold text-gray-800">
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.nama}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-gray-800">
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.umur} tahun
                     </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          item.jk === "Perempuan"
-                            ? "bg-pink-100 text-pink-600"
-                            : "bg-blue-100 text-blue-600"
-                        }`}
-                      >
-                        {item.jk}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{item.tanggal}</td>
-                    <td className="px-4 py-3 text-gray-600">{item.berat}kg</td>
-                    <td className="px-4 py-3 text-gray-600">{item.tinggi}cm</td>
-
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.zbbu}
+                      {item.tanggal}
                     </td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.ztbu}
+                      {item.berat}kg
                     </td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.zbbtb}
+                      {item.tinggi}cm
                     </td>
 
                     <td className="px-4 py-3 text-center">
@@ -190,7 +159,7 @@ const ManajemenPenimbangan = () => {
             <button className="px-3 py-1 border rounded-md text-gray-500 hover:bg-gray-100">
               &lt;
             </button>
-            <button className="px-3 py-1 bg-blue-600 text-white rounded-md">
+            <button className="px-3 py-1 bg-emerald-600 text-white rounded-md">
               1
             </button>
             <button className="px-3 py-1 border rounded-md hover:bg-gray-100">
