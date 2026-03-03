@@ -10,7 +10,7 @@ const Card = (props) => {
     <div className={`flex flex-col h-full ${variant}`}>
       <div className={` rounded-xl shadow ${colors[color]}`}>
         {title && (
-          <div className="text-lg font-semibold text-gray-700 pb-2">
+          <div className="text-lg font-semibold text-gray-700 pb-6 ml-2">
             {title}
           </div>
         )}

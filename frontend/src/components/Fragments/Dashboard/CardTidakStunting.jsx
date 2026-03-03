@@ -18,11 +18,7 @@ const CardTidakStunting = () => {
             {/* Nominal besar */}
             <h2 className="text-2xl font-bold text-gray-800">12</h2>
 
-            {/* Change */}
-            <p className="text-sm mt-3">
-              <span className="text-white font-semibold">+3%</span>{" "}
-              <span className="text-black">than last month</span>
-            </p>
+           
           </div>
         }
       />

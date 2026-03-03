@@ -10,7 +10,11 @@ import {
   Legend,
 } from "recharts";
 import MainLayouts from "../../layouts/MainLayouts";
-import Card from "../../components/Elements/Card/Index";
+
+import CardTotalPenimbangan from "../../components/Fragments/Riwayat&Grafik/CardPenimbangan";
+import CardBerat from "../../components/Fragments/Riwayat&Grafik/CardBerat";
+import CardTinggi from "../../components/Fragments/Riwayat&Grafik/CardTinggi";
+import CardStatus from "../../components/Fragments/Riwayat&Grafik/CardStatus";
 
 const RiwayatdanGrafik = () => {
   // =========================
@@ -96,6 +100,33 @@ const RiwayatdanGrafik = () => {
     return null;
   }, [dataWithUsia]);
 
+  const [filterTanggal, setFilterTanggal] = useState("");
+
+  const filteredData = dataWithUsia.filter((item) => {
+    if (!filterTanggal) return true;
+    return item.tanggal === filterTanggal;
+  });
+
+  const getStatusGizi = (berat, tinggi, usia) => {
+    // SIMULASI SEDERHANA (bukan standar WHO asli)
+
+    const bmi = berat / ((tinggi / 100) * (tinggi / 100));
+
+    if (bmi < 14) return { status: "Severely Stunting", color: "text-red-700" };
+    if (bmi < 15) return { status: "Stunting", color: "text-orange-600" };
+    if (bmi >= 15 && bmi <= 18)
+      return { status: "Normal", color: "text-green-600" };
+    if (bmi > 18 && bmi <= 20)
+      return { status: "Overweight", color: "text-yellow-600" };
+    if (bmi > 20) return { status: "Obesitas", color: "text-red-600" };
+
+    return { status: "Tidak Diketahui", color: "text-gray-500" };
+  };
+
+  const statusGizi = terakhir
+    ? getStatusGizi(terakhir.berat, terakhir.tinggi, terakhir.usia)
+    : null;
+
   return (
     <MainLayouts type="riwayatdangrafik">
       <div className="min-h-screen bg-gray-100 p-8 space-y-8">
@@ -138,11 +169,21 @@ const RiwayatdanGrafik = () => {
 
             {/* ================= SUMMARY ================= */}
             {terakhir && (
-              <div className="grid md:grid-cols-4 gap-6">
-                <Card title="Total Penimbangan" desc={totalRiwayat} />
-                <Card title="Berat Terakhir" desc={`${terakhir.berat} kg`} />
-                <Card title="Tinggi Terakhir" desc={`${terakhir.tinggi} cm`} />
-                <Card title="Usia Terakhir" desc={`${terakhir.usia} bulan`} />
+              <div className="grid md:grid-cols-4 gap-6 ">
+                <CardTotalPenimbangan total={totalRiwayat} />
+                <CardBerat berat={`${terakhir.berat} kg`} />
+                <CardTinggi tinggi={`${terakhir.tinggi} cm`} />
+                <CardStatus
+                  umur={
+                    statusGizi ? (
+                      <span className={`font-semibold ${statusGizi.color}`}>
+                        {statusGizi.status}
+                      </span>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
               </div>
             )}
 
@@ -200,29 +241,74 @@ const RiwayatdanGrafik = () => {
 
             {/* ================= TABEL ================= */}
             <div className="bg-white rounded-3xl shadow-lg p-6">
-              <h2 className="font-semibold mb-4">Riwayat Penimbangan</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+              <h2 className="font-semibold mb-4 text-gray-700">
+                Riwayat Penimbangan
+              </h2>
+              {/* FILTER */}
+              <div className="mb-4 flex flex-col md:flex-row gap-3 md:items-center">
+                <input
+                  type="date"
+                  value={filterTanggal}
+                  onChange={(e) => setFilterTanggal(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+                {filterTanggal && (
+                  <button
+                    onClick={() => setFilterTanggal("")}
+                    className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition"
+                  >
+                    Reset Filter
+                  </button>
+                )}
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
                     <tr>
-                      <th className="px-4 py-3 text-left">Tanggal</th>
-                      <th className="px-4 py-3 text-left">Usia</th>
-                      <th className="px-4 py-3 text-left">Berat</th>
-                      <th className="px-4 py-3 text-left">Tinggi</th>
+                      <th className="px-4 py-3">No</th>
+                      <th className="px-4 py-3">Tanggal</th>
+                      <th className="px-4 py-3">Usia</th>
+                      <th className="px-4 py-3">Berat Badan (kg)</th>
+                      <th className="px-4 py-3">Tinggi Badan (cm)</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {dataWithUsia.map((item, index) => (
-                      <tr
-                        key={index}
-                        className="border-b hover:bg-gray-50 transition"
-                      >
-                        <td className="px-4 py-3">{item.tanggal}</td>
-                        <td className="px-4 py-3">{item.usia} bulan</td>
-                        <td className="px-4 py-3">{item.berat} kg</td>
-                        <td className="px-4 py-3">{item.tinggi} cm</td>
+
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredData.length > 0 ? (
+                      filteredData.map((item, index) => (
+                        <tr key={index} className="hover:bg-gray-50 transition">
+                          <td className="px-4 py-3 text-gray-500">
+                            {index + 1}
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500">
+                            {item.tanggal}
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500">
+                            {item.usia} bulan
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500">
+                            {item.berat} kg
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500">
+                            {item.tinggi} cm
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Data tidak ditemukan
+                        </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

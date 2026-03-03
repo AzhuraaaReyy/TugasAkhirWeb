@@ -21,7 +21,7 @@ const StatusChart = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl shadow-xl p-6 w-full">
+    <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-500  p-6 w-full">
       {/* Header */}
       <div className="mb-6">
        
@@ -29,7 +29,7 @@ const StatusChart = () => {
       </div>
 
       {/* Chart */}
-      <div className="w-full h-80">
+      <div className="w-full h-90">
         <ResponsiveContainer>
           <PieChart>
             <Pie

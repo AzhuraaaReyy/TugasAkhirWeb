@@ -38,11 +38,11 @@ const Dashboard = () => {
           {/* ================= CHART SECTION ================= */}
           <div className="grid grid-cols-1 xl:grid-cols-1 gap-6 mb-10">
             {/* Chart 2 */}
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition p-6">
-              <h2 className="text-lg font-semibold text-gray-700 mb-1">
+            <div className="bg-white rounded-2xl shadow-xl hover:shadow-md transition p-6 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">
                 Monitoring Pertumbuhan Balita
               </h2>
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-gray-500 text-sm  mb-6">
                 📊 Status Gizi Tahun Ini
               </p>
 
@@ -58,11 +58,11 @@ const Dashboard = () => {
           </div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
             {/* Chart Monitoring */}
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition p-6">
-              <h2 className="text-lg font-semibold text-gray-700 mb-1">
+            <div className="bg-white rounded-2xl shadow-xl hover:shadow-md transition p-6 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">
                 Monitoring Pertumbuhan Balita
               </h2>
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-gray-500 text-sm  mb-6">
                 📊 Status Gizi Tahun Lalu vs Tahun Ini
               </p>
 
@@ -75,11 +75,11 @@ const Dashboard = () => {
                 </span>
               </div>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition p-6">
-              <h2 className="text-lg font-semibold text-gray-700 mb-1">
+            <div className="bg-white rounded-2xl shadow-xl hover:shadow-md transition p-6 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">
                 Monitoring Pertumbuhan Balita
               </h2>
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-gray-500 text-sm  mb-6">
                 📊 Grafik Status Gizi Dalam %
               </p>
 
@@ -94,12 +94,12 @@ const Dashboard = () => {
             </div>
           </div>
           {/* ================= CONTENT IMAGE ================= */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-10">
+          <div className="bg-white rounded-2xl p-6 mb-10 shadow-xl border border-gray-100 shadow-sm hover:shadow-md transition">
             <Content />
           </div>
 
           {/* ================= MAP SECTION ================= */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-xl mb-10 hover:shadow-md transition ">
             <ContentMap />
           </div>
         </div>

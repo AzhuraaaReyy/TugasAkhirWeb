@@ -41,7 +41,7 @@ const notifications = [
 
 const Content = () => {
   return (
-    <div className="p-6">
+    <div className="p-5">
       {/* Title */}
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         ⚠️ Notifikasi Penting

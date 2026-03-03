@@ -249,185 +249,193 @@ export default function DeteksiDini() {
     });
   };
 
+  
+
   return (
     <MainLayouts type="deteksidini">
       <div className="min-h-screen bg-gray-100 p-8 space-y-8 font-sans">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Sistem Deteksi Dini Stunting
-        </h1>
+        <div className="bg-white rounded-2xl shadow-md p-6">
+          <h1 className="text-2xl font-semibold tracking-tight mb-5">
+            Sistem Deteksi Dini Stunting
+          </h1>
 
-        {/* ================= INPUT ================= */}
-        <div className="bg-white rounded-3xl shadow-lg p-8">
-          <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="text-sm text-gray-600">Pilih Balita</label>
-              <select
-                name="balita_id"
-                onChange={handleChange}
-                className="w-full mt-1 border rounded-xl px-4 py-2"
-                required
-              >
-                <option value="">-- Pilih --</option>
-                {balitaList.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-600">
-                Tanggal Penimbangan
-              </label>
-              <input
-                type="date"
-                name="tanggal"
-                onChange={handleChange}
-                className="w-full mt-1 border rounded-xl px-4 py-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-600">Berat Badan (kg)</label>
-              <input
-                type="number"
-                step="0.01"
-                name="berat"
-                onChange={handleChange}
-                className="w-full mt-1 border rounded-xl px-4 py-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-600">Tinggi Badan (cm)</label>
-              <input
-                type="number"
-                step="0.01"
-                name="tinggi"
-                onChange={handleChange}
-                className="w-full mt-1 border rounded-xl px-4 py-2"
-                required
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <button className="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition">
-                Deteksi Sekarang
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* ================= HASIL ================= */}
-        {hasil && (
-          <div className="bg-white rounded-3xl shadow-lg p-8 space-y-6">
-            <h2 className="text-xl font-semibold">
-              Hasil Analisis Pertumbuhan
-            </h2>
-
-            <div className="grid md:grid-cols-5 gap-4 text-center">
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.nama}</p>
-                <p className="text-sm text-gray-500">Nama</p>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.usia} bulan</p>
-                <p className="text-sm text-gray-500">Usia</p>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.tanggal_deteksi}</p>
-                <p className="text-sm text-gray-500">Tanggal Deteksi</p>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.tinggi} cm</p>
-                <p className="text-sm text-gray-500">Tinggi</p>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.berat} kg</p>
-                <p className="text-sm text-gray-500">Berat</p>
-              </div>
-            </div>
-
-            {/* Z-SCORE DETAIL */}
-            <div className="grid md:grid-cols-3 gap-4 text-center">
-              <div className="bg-blue-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.zscoreTBU}</p>
-                <p className="text-sm text-gray-500">Z-Score TB/U</p>
-                <p
-                  className={`font-bold mt-2 px-3 py-1 rounded-full inline-block ${warnaTBU(
-                    hasil.zscoreTBU,
-                  )}`}
+          {/* ================= INPUT ================= */}
+          <div className="bg-emerald-50 rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
+            <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm text-gray-600">Pilih Balita</label>
+                <select
+                  name="balita_id"
+                  onChange={handleChange}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
                 >
-                  {hasil.statusTBU.status}
-                </p>
-                <p className="text-sm font-semibold text-gray-500">
-                  {hasil.statusTBU.keterangan}
-                </p>
+                  <option value="">-- Pilih --</option>
+                  {balitaList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.nama}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="bg-purple-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.zscoreBBU}</p>
-                <p className="text-sm text-gray-500">Z-Score BB/U</p>
-                <p
-                  className={`font-bold mt-2 px-3 py-1 rounded-full inline-block ${warnaBBU(
-                    hasil.zscoreBBU,
-                  )}`}
-                >
-                  {hasil.statusBBU.status}
-                </p>
-                <p className="text-sm font-semibold text-gray-500">
-                  {hasil.statusBBU.keterangan}
-                </p>
+              <div>
+                <label className="text-sm text-gray-600">
+                  Tanggal Penimbangan
+                </label>
+                <input
+                  type="date"
+                  name="tanggal"
+                  onChange={handleChange}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
               </div>
 
-              <div className="bg-orange-50 p-4 rounded-xl">
-                <p className="font-semibold">{hasil.zscoreTBBB}</p>
-                <p className="text-sm text-gray-500">Z-Score TB/BB</p>
-                <p
-                  className={`font-bold mt-2 px-3 py-1 rounded-full inline-block ${warnaTBBB(
-                    hasil.zscoreTBBB,
-                  )}`}
-                >
-                  {hasil.statusTBBB.status}
-                </p>
-                <p className="text-sm font-semibold text-gray-500">
-                  {hasil.statusTBBB.keterangan}
-                </p>
+              <div>
+                <label className="text-sm text-gray-600">
+                  Berat Badan (kg)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="berat"
+                  onChange={handleChange}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
               </div>
-            </div>
 
-            {/* STATUS */}
-            <div
-              className={`p-6 rounded-2xl text-center text-xl font-bold ${warnaStatus(
-                hasil.status,
-              )}`}
-            >
-              {hasil.status}
-            </div>
+              <div>
+                <label className="text-sm text-gray-600">
+                  Tinggi Badan (cm)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="tinggi"
+                  onChange={handleChange}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
+              </div>
 
-            {/* REKOMENDASI */}
-            <div>
-              <h3 className="font-semibold mb-2">Rekomendasi Tindakan</h3>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
-                {hasil.rekomendasi.map((r, i) => (
-                  <li key={i}>{r}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="text-xs text-gray-400 italic">
-              *Hasil ini merupakan skrining awal dan tidak menggantikan
-              diagnosis medis.
-            </div>
+              <div className="md:col-span-2">
+                <button className="w-full bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 transition">
+                  Deteksi Sekarang
+                </button>
+              </div>
+            </form>
           </div>
-        )}
+
+          {/* ================= HASIL ================= */}
+          {hasil && (
+            <div className="bg-emerald-50 rounded-3xl shadow-lg p-8 space-y-6 border border-gray-300 border-2 mb-5">
+              <h2 className="text-xl font-semibold">
+                Hasil Analisis Pertumbuhan
+              </h2>
+
+              <div className="grid md:grid-cols-5 gap-4 text-center">
+                <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 border-2 shadow-lg">
+                  <p className="font-bold">{hasil.nama}</p>
+                  <p className="text-sm text-gray-600 ">Nama</p>
+                </div>
+
+                <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 border-2 shadow-lg">
+                  <p className="font-bold">{hasil.usia} bulan</p>
+                  <p className="text-sm text-gray-600">Usia</p>
+                </div>
+
+                <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 border-2 shadow-lg">
+                  <p className="font-bold">{hasil.tanggal_deteksi}</p>
+                  <p className="text-sm text-gray-600">Tanggal Deteksi</p>
+                </div>
+
+                <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 border-2 shadow-lg">
+                  <p className="font-bold">{hasil.tinggi} cm</p>
+                  <p className="text-sm text-gray-600">Tinggi</p>
+                </div>
+
+                <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 border-2 shadow-lg">
+                  <p className="font-bold">{hasil.berat} kg</p>
+                  <p className="text-sm text-gray-600">Berat</p>
+                </div>
+              </div>
+
+              {/* Z-SCORE DETAIL */}
+              <div className="grid md:grid-cols-3 gap-4 text-center">
+                <div className="bg-blue-100 p-4 rounded-xl">
+                  <p className="font-semibold">{hasil.zscoreTBU}</p>
+                  <p className="text-sm text-gray-500">Z-Score TB/U</p>
+                  <p
+                    className={`font-bold mt-2 px-3 py-1 rounded-full inline-block ${warnaTBU(
+                      hasil.zscoreTBU,
+                    )}`}
+                  >
+                    {hasil.statusTBU.status}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-500">
+                    {hasil.statusTBU.keterangan}
+                  </p>
+                </div>
+
+                <div className="bg-purple-100 p-4 rounded-xl">
+                  <p className="font-semibold">{hasil.zscoreBBU}</p>
+                  <p className="text-sm text-gray-500">Z-Score BB/U</p>
+                  <p
+                    className={`font-bold mt-2 px-3 py-1 rounded-full inline-block ${warnaBBU(
+                      hasil.zscoreBBU,
+                    )}`}
+                  >
+                    {hasil.statusBBU.status}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-500">
+                    {hasil.statusBBU.keterangan}
+                  </p>
+                </div>
+
+                <div className="bg-orange-100 p-4 rounded-xl">
+                  <p className="font-semibold">{hasil.zscoreTBBB}</p>
+                  <p className="text-sm text-gray-500">Z-Score TB/BB</p>
+                  <p
+                    className={`font-bold mt-2 px-3 py-1 rounded-full inline-block ${warnaTBBB(
+                      hasil.zscoreTBBB,
+                    )}`}
+                  >
+                    {hasil.statusTBBB.status}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-500">
+                    {hasil.statusTBBB.keterangan}
+                  </p>
+                </div>
+              </div>
+
+              {/* STATUS */}
+              <div
+                className={`p-6 rounded-2xl text-center text-xl font-bold ${warnaStatus(
+                  hasil.status,
+                )}`}
+              >
+                {hasil.status}
+              </div>
+
+              {/* REKOMENDASI */}
+              <div>
+                <h3 className="font-semibold mb-2">Rekomendasi Tindakan</h3>
+                <ul className="list-disc list-inside text-gray-600 space-y-1">
+                  {hasil.rekomendasi.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="text-xs text-gray-400 italic">
+                *Hasil ini merupakan skrining awal dan tidak menggantikan
+                diagnosis medis.
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </MainLayouts>
   );
