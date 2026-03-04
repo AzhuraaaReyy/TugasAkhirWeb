@@ -19,7 +19,7 @@ import DetailPenimbangan from "./pages/Kader/ManajemenPenimbangan/Detail";
 import UpdatePenimbangan from "./pages/Kader/ManajemenPenimbangan/Update";
 import DeteksiStunting from "./pages/Kader/Deteksi";
 import Riwayat from "./pages/Kader/RiwayatGrafik";
-import Statistik from "./pages/Kader/Statistik";
+
 import DashboardOrangTua from "./pages/OrangTua/Dashboard";
 import Laporan from "./pages/Kader/Laporan";
 import Notifikasi from "./pages/Kader/Notifikasi";
@@ -85,10 +85,7 @@ const App = () => {
       path: "/riwayat",
       element: <Riwayat />,
     },
-    {
-      path: "/statistik",
-      element: <Statistik />,
-    },
+   
     {
       path: "/laporan",
       element: <Laporan />,

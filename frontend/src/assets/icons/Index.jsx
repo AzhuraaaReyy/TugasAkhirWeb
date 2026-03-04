@@ -177,6 +177,66 @@ const Peopleicon = () => (
     </g>
   </IconWrapper>
 );
+const timbanganicon = () => (
+  <IconWrapper>
+    <g
+      stroke="#00bd16"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-scale-icon lucide-scale"
+    >
+      <path d="M12 3v18" />
+      <path d="m19 8 3 8a5 5 0 0 1-6 0zV7" />
+      <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1" />
+      <path d="m5 8 3 8a5 5 0 0 1-6 0zV7" />
+      <path d="M7 21h10" />
+    </g>
+  </IconWrapper>
+);
+const weighticon = () => (
+  <IconWrapper>
+    <g
+      stroke="#00bd16"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-weight-icon lucide-weight"
+    >
+      <circle cx="12" cy="5" r="3" />
+      <path d="M6.5 8a2 2 0 0 0-1.905 1.46L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.925-2.54L19.4 9.5A2 2 0 0 0 17.48 8Z" />
+    </g>
+  </IconWrapper>
+);
+const tallicon = () => (
+  <IconWrapper>
+    <g
+      stroke="#00bd16"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-tally3-icon lucide-tally-3"
+    >
+      <path d="M4 4v16" />
+      <path d="M9 4v16" />
+      <path d="M14 4v16" />
+    </g>
+  </IconWrapper>
+);
+const statusicon = () => (
+  <IconWrapper>
+    <g
+      stroke="#00bd16"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-trending-up-icon lucide-trending-up"
+    >
+      <path d="M16 7h6v6" />
+      <path d="m22 7-8.5 8.5-5-5L2 17" />
+    </g>
+  </IconWrapper>
+);
 
 export const Icon = {
   Dashboard: DashboardIcon,
@@ -190,6 +250,10 @@ export const Icon = {
   Notification: NotificationIcon,
   Waktu: WaktuIcon,
   People: Peopleicon,
+  Timbangan: timbanganicon,
+  Weight: weighticon,
+  Tall: tallicon,
+  Status: statusicon,
 };
 IconWrapper.propTypes = {
   children: PropTypes.node.isRequired, // Validasi children sebagai node

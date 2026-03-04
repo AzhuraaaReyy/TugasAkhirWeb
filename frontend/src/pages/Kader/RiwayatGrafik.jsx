@@ -107,7 +107,7 @@ const RiwayatdanGrafik = () => {
     return item.tanggal === filterTanggal;
   });
 
-  const getStatusGizi = (berat, tinggi, usia) => {
+  const getStatusGizi = (berat, tinggi) => {
     // SIMULASI SEDERHANA (bukan standar WHO asli)
 
     const bmi = berat / ((tinggi / 100) * (tinggi / 100));
@@ -176,7 +176,7 @@ const RiwayatdanGrafik = () => {
                 <CardStatus
                   umur={
                     statusGizi ? (
-                      <span className={`font-semibold ${statusGizi.color}`}>
+                      <span className={`font-extrabold ${statusGizi.color}`}>
                         {statusGizi.status}
                       </span>
                     ) : (
@@ -240,12 +240,20 @@ const RiwayatdanGrafik = () => {
             </div>
 
             {/* ================= TABEL ================= */}
+
             <div className="bg-white rounded-3xl shadow-lg p-6">
-              <h2 className="font-semibold mb-4 text-gray-700">
+              <h2 className="font-extrabold mb-4 text-gray-700 text-xl">
                 Riwayat Penimbangan
               </h2>
-              {/* FILTER */}
-              <div className="mb-4 flex flex-col md:flex-row gap-3 md:items-center">
+              <p className="text-gray-500 text-sm mb-5">Menampilkan data hasil penimbangan berat badan balita secara berkala untuk memantau pertumbuhan dan status gizinya.</p>
+              {/* FILTER SECTION */}
+              <div className="bg-gray-50 rounded-xl p-4 flex flex-wrap items-center gap-4 mb-6">
+                <input
+                  type="text"
+                  placeholder="Cari nama balita..."
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                />
+
                 <input
                   type="date"
                   value={filterTanggal}
@@ -261,7 +269,13 @@ const RiwayatdanGrafik = () => {
                     Reset Filter
                   </button>
                 )}
+
+                <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
+                  Search
+                </button>
               </div>
+              {/* FILTER */}
+             
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
@@ -274,7 +288,7 @@ const RiwayatdanGrafik = () => {
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-200">
                     {filteredData.length > 0 ? (
                       filteredData.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50 transition">
