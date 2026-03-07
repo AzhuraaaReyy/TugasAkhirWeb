@@ -10,7 +10,7 @@ import {
   Legend,
 } from "recharts";
 import MainLayouts from "../../layouts/MainLayouts";
-
+import Select from "react-select";
 import CardTotalPenimbangan from "../../components/Fragments/Riwayat&Grafik/CardPenimbangan";
 import CardBerat from "../../components/Fragments/Riwayat&Grafik/CardBerat";
 import CardTinggi from "../../components/Fragments/Riwayat&Grafik/CardTinggi";
@@ -28,12 +28,48 @@ const RiwayatdanGrafik = () => {
       jk: "Perempuan",
       orang_tua: "Ibu Siti",
       riwayat: [
-        { tanggal: "2024-01-10", berat: 7.5, tinggi: 68 },
-        { tanggal: "2024-02-10", berat: 7.8, tinggi: 69 },
-        { tanggal: "2024-03-10", berat: 8.0, tinggi: 70 },
-        { tanggal: "2024-04-10", berat: 8.1, tinggi: 71 },
-        { tanggal: "2024-05-10", berat: 8.2, tinggi: 72 },
-        { tanggal: "2024-06-10", berat: 8.1, tinggi: 72 },
+        {
+          tanggal: "2024-01-10",
+          berat: 7.5,
+          tinggi: 68,
+          status: "Normal",
+          petugas: "Budiyono",
+        },
+        {
+          tanggal: "2024-02-10",
+          berat: 7.8,
+          tinggi: 69,
+          status: "Stunting",
+          petugas: "Siti",
+        },
+        {
+          tanggal: "2024-03-10",
+          berat: 8.0,
+          tinggi: 70,
+          status: "Risiko",
+          petugas: "Budiyono",
+        },
+        {
+          tanggal: "2024-04-10",
+          berat: 8.1,
+          tinggi: 71,
+          status: "Normal",
+          petugas: "Siti",
+        },
+        {
+          tanggal: "2024-05-10",
+          berat: 8.2,
+          tinggi: 72,
+          status: "Normal",
+          petugas: "Ainun",
+        },
+        {
+          tanggal: "2024-06-10",
+          berat: 8.1,
+          tinggi: 72,
+          status: "Risiko",
+          petugas: "Budiyono",
+        },
       ],
     },
     {
@@ -43,11 +79,37 @@ const RiwayatdanGrafik = () => {
       jk: "Laki-Laki",
       orang_tua: "Bapak Andi",
       riwayat: [
-        { tanggal: "2024-01-15", berat: 9.5, tinggi: 75 },
-        { tanggal: "2024-02-15", berat: 9.7, tinggi: 76 },
-        { tanggal: "2024-03-15", berat: 9.6, tinggi: 76 },
-        { tanggal: "2024-04-15", berat: 9.8, tinggi: 77 },
+        {
+          tanggal: "2024-01-15",
+          berat: 9.5,
+          tinggi: 75,
+          status: "Normal",
+          petugas: "Budiyono",
+        },
+        {
+          tanggal: "2024-02-15",
+          berat: 9.7,
+          tinggi: 76,
+          status: "Normal",
+          petugas: "Budiyono",
+        },
+        {
+          tanggal: "2024-03-15",
+          berat: 9.6,
+          tinggi: 76,
+          status: "Normal",
+          petugas: "Budiyono",
+        },
+        {
+          tanggal: "2024-04-15",
+          berat: 9.8,
+          tinggi: 77,
+          status: "Normal",
+          petugas: "Budiyono",
+        },
       ],
+      status: "Stunting",
+      petugas: "Bagusyono",
     },
   ];
 
@@ -127,24 +189,60 @@ const RiwayatdanGrafik = () => {
     ? getStatusGizi(terakhir.berat, terakhir.tinggi, terakhir.usia)
     : null;
 
+  const statusStyle = {
+    Normal: "bg-green-100 text-green-700",
+    Risiko: "bg-orange-100 text-orange-600",
+    Stunting: "bg-red-100 text-red-700",
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const dataPerPage = 10;
+
+  // ================= PAGINATION =================
+
+  const totalPages = Math.ceil(filteredData.length / dataPerPage);
+
+  const indexOfLastData = currentPage * dataPerPage;
+  const indexOfFirstData = indexOfLastData - dataPerPage;
+
+  const currentData = filteredData.slice(indexOfFirstData, indexOfLastData);
+
+  const balitaOptions = balitaList.map((b) => ({
+    value: b.id,
+    label: b.nama,
+  }));
   return (
     <MainLayouts type="riwayatdangrafik">
       <div className="min-h-screen bg-gray-100 p-8 space-y-8">
         {/* ================= PILIH BALITA ================= */}
-        <div className="bg-white rounded-3xl shadow-lg p-6">
+        <div>
           <label className="text-sm text-gray-600">Pilih Balita</label>
-          <select
-            value={selectedId}
-            onChange={(e) => setSelectedId(e.target.value)}
-            className="w-full mt-2 border rounded-xl px-4 py-3"
-          >
-            <option value="">-- Pilih Balita --</option>
-            {balitaList.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.nama}
-              </option>
-            ))}
-          </select>
+          <Select
+            options={balitaOptions}
+            placeholder="Cari Balita..."
+            className="mt-1 text-gray-500"
+            noOptionsMessage={() => "Balita tidak ditemukan"}
+            onChange={(selected) => setSelectedId(selected.value)}
+            filterOption={(option, inputValue) => {
+              const search = inputValue.toLowerCase();
+              const nama = option.data.label?.toLowerCase() || "";
+              return nama.includes(search);
+            }}
+            unstyled
+            classNames={{
+              control: () => "w-full mt-1 border rounded-xl px-2 py-1 bg-white",
+              menu: () => "border mt-1 rounded-xl shadow-md bg-white",
+              menuList: () => "max-h-40 overflow-y-auto",
+              option: ({ isFocused, isSelected }) =>
+                `px-4 py-2 cursor-pointer ${
+                  isSelected
+                    ? "bg-emerald-500 text-white"
+                    : isFocused
+                      ? "bg-emerald-100"
+                      : ""
+                }`,
+            }}
+          />
         </div>
 
         {/* ================= TAMPILKAN DATA JIKA DIPILIH ================= */}
@@ -245,19 +343,19 @@ const RiwayatdanGrafik = () => {
               <h2 className="font-extrabold mb-4 text-gray-700 text-xl">
                 Riwayat Penimbangan
               </h2>
-              <p className="text-gray-500 text-sm mb-5">Menampilkan data hasil penimbangan berat badan balita secara berkala untuk memantau pertumbuhan dan status gizinya.</p>
+              <p className="text-gray-500 text-sm mb-5">
+                Menampilkan data hasil penimbangan berat badan balita secara
+                berkala untuk memantau pertumbuhan dan status gizinya.
+              </p>
               {/* FILTER SECTION */}
               <div className="bg-gray-50 rounded-xl p-4 flex flex-wrap items-center gap-4 mb-6">
                 <input
-                  type="text"
-                  placeholder="Cari nama balita..."
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
-                />
-
-                <input
                   type="date"
                   value={filterTanggal}
-                  onChange={(e) => setFilterTanggal(e.target.value)}
+                  onChange={(e) => {
+                    setFilterTanggal(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
@@ -269,31 +367,29 @@ const RiwayatdanGrafik = () => {
                     Reset Filter
                   </button>
                 )}
-
-                <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
-                  Search
-                </button>
               </div>
               {/* FILTER */}
-             
+
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                     <tr>
                       <th className="px-4 py-3">No</th>
-                      <th className="px-4 py-3">Tanggal</th>
+                      <th className="px-4 py-3">Tanggal Penimbangan</th>
                       <th className="px-4 py-3">Usia</th>
                       <th className="px-4 py-3">Berat Badan (kg)</th>
                       <th className="px-4 py-3">Tinggi Badan (cm)</th>
+                      <th className="px-4 py-3">Status Gizi</th>
+                      <th className="px-4 py-3">Dicatat Oleh</th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-200 text-center">
                     {filteredData.length > 0 ? (
-                      filteredData.map((item, index) => (
+                      currentData.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50 transition">
                           <td className="px-4 py-3 text-gray-500">
-                            {index + 1}
+                            {indexOfFirstData + index + 1}
                           </td>
 
                           <td className="px-4 py-3 text-gray-500">
@@ -311,12 +407,24 @@ const RiwayatdanGrafik = () => {
                           <td className="px-4 py-3 text-gray-500">
                             {item.tinggi} cm
                           </td>
+                          <td className="px-4 py-3 text-gray-500">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                statusStyle[item.status]
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">
+                            {item.petugas}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
                         <td
-                          colSpan="5"
+                          colSpan="7"
                           className="text-center py-6 text-gray-400"
                         >
                           Data tidak ditemukan
@@ -325,6 +433,49 @@ const RiwayatdanGrafik = () => {
                     )}
                   </tbody>
                 </table>
+                <div className="flex justify-between items-center mt-6 p-6">
+                  <p className="text-sm text-gray-500">
+                    Menampilkan {indexOfFirstData + 1} -{" "}
+                    {Math.min(indexOfLastData, filteredData.length)} dari{" "}
+                    {filteredData.length} data
+                  </p>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded-md border text-sm disabled:opacity-40"
+                    >
+                      Prev
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`px-3 py-1 rounded-md text-sm border ${
+                          currentPage === i + 1
+                            ? "bg-blue-500 text-white"
+                            : "bg-white"
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 rounded-md border text-sm disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </>

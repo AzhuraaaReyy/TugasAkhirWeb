@@ -123,6 +123,20 @@ const CreatePenimbangan = () => {
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Petugas yang mencatat
+                </label>
+                <input
+                  type="text"
+                  name="orangtua"
+                  value={form.orangtua}
+                  onChange={handleChange}
+                  placeholder="Contoh: Kader Melati"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
             </div>
 
             {/* BUTTON SECTION */}
@@ -130,7 +144,7 @@ const CreatePenimbangan = () => {
               <button
                 type="button"
                 onClick={() => navigate("/manajemenpenimbangan")}
-                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
               >
                 Kembali
               </button>
@@ -145,9 +159,9 @@ const CreatePenimbangan = () => {
 
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-700 transition"
+                  className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-medium shadow-sm hover:bg-emerald-700 transition"
                 >
-                  Simpan Data
+                  Tambah Data
                 </button>
               </div>
             </div>

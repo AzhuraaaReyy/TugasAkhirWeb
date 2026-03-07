@@ -17,7 +17,7 @@ export const kaderMenu = [
     id: "inputdatapenimbangan",
     link: "/manajemenpenimbangan",
     icon: <Icon.InputPenimbangan />,
-    label: "Data Penimbangan",
+    label: "Manajemen Penimbangan",
   },
   {
     id: "deteksidini",

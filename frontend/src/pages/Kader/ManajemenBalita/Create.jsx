@@ -178,7 +178,7 @@ const CreateFormBalita = () => {
                   type="submit"
                   className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-medium shadow-sm hover:bg-emerald-700 transition"
                 >
-                  Simpan Data
+                  Tambah Data
                 </button>
               </div>
             </div>

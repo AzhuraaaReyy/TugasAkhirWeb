@@ -43,9 +43,12 @@ const Content = () => {
   return (
     <div className="p-5">
       {/* Title */}
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-2 ">
         ⚠️ Notifikasi Penting
       </h2>
+      <p className="text-sm text-gray-500 mb-6">
+        Informasi terbaru terkait kondisi balita yang memerlukan perhatian.
+      </p>
 
       {/* Notification Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

@@ -78,23 +78,6 @@ const UpdatePenimbangan = () => {
                 />
               </div>
 
-              {/* Jenis Kelamin */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jenis Kelamin
-                </label>
-                <select
-                  name="jk"
-                  value={form.jk}
-                  onChange={handleChange}
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">Pilih Jenis Kelamin</option>
-                  <option value="Perempuan">Perempuan</option>
-                  <option value="Laki-Laki">Laki-Laki</option>
-                </select>
-              </div>
-
               {/* Tanggal Lahir */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -141,48 +124,16 @@ const UpdatePenimbangan = () => {
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score BB/U
+                  Petugas yang mencatat
                 </label>
                 <input
-                  type="number"
-                  name="zbbu"
-                  value={form.zbbu}
+                  type="text"
+                  name="orangtua"
+                  value={form.orangtua}
                   onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -2.35"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score TB/U
-                </label>
-                <input
-                  type="number"
-                  name="ztbu"
-                  value={form.ztbu}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -1.80"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Z-Score BB/TB
-                </label>
-                <input
-                  type="number"
-                  name="zbbtb"
-                  value={form.zbbtb}
-                  onChange={handleChange}
-                  step="0.01"
-                  placeholder="Contoh: -0.95"
+                  placeholder="Contoh: Kader Melati"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
@@ -193,24 +144,17 @@ const UpdatePenimbangan = () => {
               <button
                 type="button"
                 onClick={() => navigate("/manajemenpenimbangan")}
-                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
               >
                 Kembali
               </button>
 
               <div className="flex gap-3">
                 <button
-                  type="reset"
-                  className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
-                >
-                  Reset
-                </button>
-
-                <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-700 transition"
+                  className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-medium shadow-sm hover:bg-emerald-700 transition"
                 >
-                  Simpan Data
+                  Edit Data
                 </button>
               </div>
             </div>

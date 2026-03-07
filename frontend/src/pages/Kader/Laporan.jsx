@@ -205,9 +205,11 @@ export default function Laporan() {
 
             {/* REKAP DUSUN */}
             <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
-              <h2 className="font-extrabold text-lg mb-5">
-                Laporan Data Balita
-              </h2>
+              <h2 className="font-extrabold text-lg ">Laporan Data Balita</h2>
+              <p className="text-gray-500 text-sm mb-5">
+                Data identitas balita yang terdaftar pada sistem Posyandu
+              </p>
+
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
@@ -222,29 +224,43 @@ export default function Laporan() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 text-center">
-                    {currentData.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {index + 1}
-                        </td>
+                    {filteredData.length > 0 ? (
+                      currentData.map((item, index) => (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {index + 1}
+                          </td>
 
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.nama}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.orangtua}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.jk}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.TTL}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.alamat}
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.nama}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.orangtua}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.jk}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.TTL}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.alamat}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Data tidak ditemukan
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -282,9 +298,10 @@ export default function Laporan() {
               </div>
             </div>
             <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
-              <h2 className="font-extrabold text-lg mb-5">
+              <h2 className="font-extrabold text-lg">
                 Laporan Data Penimbangan
               </h2>
+              <p className="text-gray-500 text-sm mb-5">Data monitoring berat dan tinggi badan balita.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
@@ -300,32 +317,46 @@ export default function Laporan() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 text-center">
-                    {filteredData.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {index + 1}
-                        </td>
+                    {filteredData.length > 0 ? (
+                      currentData.map((item, index) => (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {index + 1}
+                          </td>
 
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.nama}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.umur} Bulan
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.tanggal}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.Posyandu}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.berat}kg
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.tinggi}cm
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.nama}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.umur} Bulan
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tanggal}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.Posyandu}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.berat}kg
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tinggi}cm
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Data tidak ditemukan
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -363,9 +394,10 @@ export default function Laporan() {
               </div>
             </div>
             <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
-              <h2 className="font-extrabold text-lg mb-5">
+              <h2 className="font-extrabold text-lg">
                 Laporan Data Deteksi
               </h2>
+              <p className="text-gray-500 text-sm mb-5">Hasil klasifikasi status gizi balita berdasarkan indikator antropometri.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-200 text-center">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
@@ -382,40 +414,54 @@ export default function Laporan() {
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-gray-200 text-center">
-                    {filteredData.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {index + 1}
-                        </td>
+                  <tbody className="divide-y divide-gray-200 ">
+                    {filteredData.length > 0 ? (
+                      currentData.map((item, index) => (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {index + 1}
+                          </td>
 
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.nama}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.tanggal}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.berat}kg
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.tinggi}cm
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.tbu}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.bbu}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.tbbu}
-                        </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.nama}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tanggal}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.berat}kg
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tinggi}cm
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tbu}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.bbu}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tbbu}
+                          </td>
 
-                        <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                          {item.status}
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.status}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="9"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Data tidak ditemukan
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>

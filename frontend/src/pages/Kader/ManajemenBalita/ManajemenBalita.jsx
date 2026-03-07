@@ -95,7 +95,7 @@ const ManajemenBalita = () => {
           {/* TABLE */}
           <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
+              <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                 <tr>
                   <th className="px-4 py-3">No</th>
                   <th className="px-4 py-3">Nama Balita</th>
@@ -108,7 +108,7 @@ const ManajemenBalita = () => {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 text-center">
                 {data.map((item, index) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">

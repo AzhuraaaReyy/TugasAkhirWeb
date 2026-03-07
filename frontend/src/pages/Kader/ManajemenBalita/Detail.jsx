@@ -159,26 +159,10 @@ const DetailFormBalita = () => {
               <button
                 type="button"
                 onClick={() => navigate("/manajemenbalita")}
-                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
               >
                 Kembali
               </button>
-
-              <div className="flex gap-3">
-                <button
-                  type="reset"
-                  className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
-                >
-                  Reset
-                </button>
-
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-lg bg-indigo-600 text-white font-medium shadow-sm hover:bg-indigo-700 transition"
-                >
-                  Simpan Data
-                </button>
-              </div>
             </div>
           </form>
         </div>

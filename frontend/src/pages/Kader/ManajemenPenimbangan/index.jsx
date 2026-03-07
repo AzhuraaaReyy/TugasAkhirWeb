@@ -12,6 +12,7 @@ const ManajemenPenimbangan = () => {
       tinggi: "11",
       berat: "10",
       tanggal: "2004-01-12",
+      petugas: "Budiyono",
     },
     {
       id: 1,
@@ -20,6 +21,7 @@ const ManajemenPenimbangan = () => {
       tinggi: "11",
       berat: "10",
       tanggal: "2004-01-12",
+      petugas: "Budisukasiti",
     },
     {
       id: 1,
@@ -28,6 +30,7 @@ const ManajemenPenimbangan = () => {
       tinggi: "11",
       berat: "10",
       tanggal: "2004-01-12",
+      petugas: "Budisukakamu",
     },
   ]);
 
@@ -72,7 +75,7 @@ const ManajemenPenimbangan = () => {
               <option>Anggrek 2</option>
             </select>
 
-            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
               Search
             </button>
 
@@ -89,7 +92,7 @@ const ManajemenPenimbangan = () => {
           {/* TABLE */}
           <div className="overflow-x-auto rounded-xl border border-gray-200">
             <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
+              <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                 <tr>
                   <th className="px-4 py-3">No</th>
                   <th className="px-4 py-3">Nama Balita</th>
@@ -97,11 +100,12 @@ const ManajemenPenimbangan = () => {
                   <th className="px-4 py-3">Tanggal Penimbangan</th>
                   <th className="px-4 py-3">Berat Badan(kg)</th>
                   <th className="px-4 py-3">Tinggi Badan(cm)</th>
+                  <th className="px-4 py-3">Dicatat Oleh</th>
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 text-center">
                 {data.map((item, index) => (
                   <tr key={item.id} className="hover:bg-gray-50 transition">
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
@@ -122,6 +126,9 @@ const ManajemenPenimbangan = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.tinggi}cm
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.petugas}
                     </td>
 
                     <td className="px-4 py-3 text-center">

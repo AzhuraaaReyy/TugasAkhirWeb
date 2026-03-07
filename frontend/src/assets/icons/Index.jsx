@@ -15,7 +15,7 @@ const IconWrapper = ({ children }) => (
 const DashboardIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -30,7 +30,7 @@ const DashboardIcon = () => (
 const ManajemenIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -45,7 +45,7 @@ const ManajemenIcon = () => (
 const InputPenimbanganIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -61,7 +61,7 @@ const InputPenimbanganIcon = () => (
 const DeteksiDiniIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -76,7 +76,7 @@ const DeteksiDiniIcon = () => (
 const RiwayatIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -91,7 +91,7 @@ const RiwayatIcon = () => (
 const GrafikIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -105,7 +105,7 @@ const GrafikIcon = () => (
 const ManajemenStatusRisikoIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -119,7 +119,7 @@ const ManajemenStatusRisikoIcon = () => (
 const LaporanIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -135,7 +135,7 @@ const LaporanIcon = () => (
 const NotificationIcon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="#ffffff"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

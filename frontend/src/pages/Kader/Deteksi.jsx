@@ -1,5 +1,6 @@
 import { useState } from "react";
 import MainLayouts from "../../layouts/MainLayouts";
+import Select from "react-select";
 
 export default function DeteksiDini() {
   // ===============================
@@ -249,34 +250,69 @@ export default function DeteksiDini() {
     });
   };
 
-  
+  const balitaOptions = balitaList.map((b) => ({
+    value: b.id,
+    label: b.nama,
+  }));
 
   return (
     <MainLayouts type="deteksidini">
       <div className="min-h-screen bg-gray-100 p-8 space-y-8 font-sans">
         <div className="bg-white rounded-2xl shadow-md p-6">
-          <h1 className="text-2xl font-semibold tracking-tight mb-5">
+          <h1 className="text-2xl font-bold tracking-tight  text-gray-800">
             Sistem Deteksi Dini Stunting
           </h1>
+          <p className="text-sm text-gray-500 mt-1 mb-5">
+            Lakukan skrining awal untuk mendeteksi risiko stunting berdasarkan
+            data pertumbuhan balita.
+          </p>
 
           {/* ================= INPUT ================= */}
           <div className="bg-emerald-50 rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
             <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="text-sm text-gray-600">Pilih Balita</label>
-                <select
-                  name="balita_id"
-                  onChange={handleChange}
-                  className="w-full mt-1 border rounded-xl px-4 py-2"
-                  required
-                >
-                  <option value="">-- Pilih --</option>
-                  {balitaList.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.nama}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  options={balitaOptions}
+                  placeholder="Cari Balita..."
+                  className="mt-1 text-gray-500"
+                  noOptionsMessage={() => "Balita tidak ditemukan"}
+                  onChange={(selected) =>
+                    setForm({
+                      ...form,
+                      balita_id: selected.value,
+                    })
+                  }
+                  formatOptionLabel={(data) => (
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-800">
+                        {data.label}
+                      </span>
+                    </div>
+                  )}
+                  filterOption={(option, inputValue) => {
+                    const search = inputValue.toLowerCase();
+
+                    const nama = option.data.label?.toLowerCase() || "";
+
+                    return nama.includes(search);
+                  }}
+                  unstyled
+                  classNames={{
+                    control: () =>
+                      "w-full mt-1 border rounded-xl px-2 py-1 bg-emerald-50",
+                    menu: () => "border mt-1 rounded-xl shadow-md bg-white",
+                    menuList: () => "max-h-40 overflow-y-auto",
+                    option: ({ isFocused, isSelected }) =>
+                      `px-4 py-2 cursor-pointer ${
+                        isSelected
+                          ? "bg-emerald-500 text-white"
+                          : isFocused
+                            ? "bg-emerald-100"
+                            : ""
+                      }`,
+                  }}
+                />
               </div>
 
               <div>
@@ -287,7 +323,7 @@ export default function DeteksiDini() {
                   type="date"
                   name="tanggal"
                   onChange={handleChange}
-                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  className="w-full mt-1 border rounded-xl px-4 py-2 text-sm text-gray-600"
                   required
                 />
               </div>
@@ -417,6 +453,14 @@ export default function DeteksiDini() {
                 )}`}
               >
                 {hasil.status}
+                {/* CATATAN */}
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  *Status stunting ditentukan berdasarkan indikator{" "}
+                  <span className="font-medium text-black">
+                    Tinggi Badan menurut Umur (TB/U)
+                  </span>
+                  sesuai standar pertumbuhan WHO.
+                </p>
               </div>
 
               {/* REKOMENDASI */}
