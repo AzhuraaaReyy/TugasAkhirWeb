@@ -1,146 +1,264 @@
-import React from "react";
 import MainLayouts from "../../layouts/MainLayouts";
 import {
-  User,
-  Calendar,
-  Weight,
-  Ruler,
-  Activity,
-  BookOpen,
-  BarChart3,
-  FileText,
-} from "lucide-react";
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
-const DashboardOrangTua = () => {
-  const parentName = "Ibu Siti";
-  const today = new Date().toLocaleDateString("id-ID");
-
-  const child = {
-    name: "Ahmad Rizky",
-    gender: "Laki-laki",
-    birthDate: "2022-05-10",
-    age: "3 Tahun 9 Bulan",
+export default function DashboardOrtu() {
+  const anak = {
+    nama: "Aisyah",
+    umur: "18 Bulan",
+    status: "Normal",
+    progress: 85,
   };
 
-  const growth = {
-    status: "Berisiko",
-    weight: "11.2 kg",
-    height: "84 cm",
-    lastCheck: "15 Februari 2026",
-    recommendation:
-      "Disarankan untuk meningkatkan asupan gizi dan berkonsultasi dengan kader posyandu.",
-  };
+  const dataPertumbuhan = [
+    {
+      bulan: "Jan",
+      tinggi: 65,
+      tinggiWHO: 67,
+      statusTinggi: "Normal",
+      berat: 7.2,
+      beratWHO: 7.4,
+      statusBerat: "Normal",
+    },
+    {
+      bulan: "Feb",
+      tinggi: 66,
+      tinggiWHO: 68,
+      statusTinggi: "Normal",
+      berat: 7.5,
+      beratWHO: 7.7,
+      statusBerat: "Normal",
+    },
+    {
+      bulan: "Mar",
+      tinggi: 67,
+      tinggiWHO: 69,
+      statusTinggi: "Normal",
+      berat: 7.8,
+      beratWHO: 8.0,
+      statusBerat: "Normal",
+    },
+    {
+      bulan: "Apr",
+      tinggi: 68,
+      tinggiWHO: 70,
+      statusTinggi: "Berisiko Stunting",
+      berat: 8.0,
+      beratWHO: 8.3,
+      statusBerat: "Normal",
+    },
+  ];
 
-  const statusStyle =
-    growth.status === "Normal"
-      ? "bg-green-100 text-green-700"
-      : growth.status === "Berisiko"
-      ? "bg-yellow-100 text-yellow-700"
-      : "bg-red-100 text-red-700";
+  const tips = [
+    "Berikan makanan tinggi protein seperti telur dan ikan",
+    "Pastikan anak makan sayur dan buah setiap hari",
+    "Pantau pertumbuhan anak setiap bulan di Posyandu",
+  ];
 
   return (
-    <MainLayouts type="dashboardorangtua">
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 p-6">
-        
-        {/* Header Modern */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 flex justify-between items-center">
+    <MainLayouts type="dashboard">
+      <div className="min-h-screen bg-gray-100 p-8 space-y-8">
+        {/* HEADER */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Dashboard Monitoring Anak
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Pantau pertumbuhan dan kesehatan anak Anda
+          </p>
+        </div>
+
+        {/* PROFILE ANAK */}
+        <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-6">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-3xl">
+            👶
+          </div>
+
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Halo, {parentName} 👋
-            </h1>
-            <p className="text-gray-500 text-sm flex items-center gap-2 mt-1">
-              <Calendar size={16} /> {today}
-            </p>
+            <h2 className="text-xl font-semibold">{anak.nama}</h2>
+            <p className="text-gray-500 text-sm">{anak.umur}</p>
           </div>
 
-          <button className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl shadow">
-            Logout
-          </button>
-        </div>
-
-        {/* Profil Anak */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 hover:shadow-lg transition">
-          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <User size={20} /> Profil Anak
-          </h2>
-
-          <div className="grid md:grid-cols-2 gap-4 text-gray-700">
-            <p><span className="font-medium">Nama:</span> {child.name}</p>
-            <p><span className="font-medium">Jenis Kelamin:</span> {child.gender}</p>
-            <p><span className="font-medium">Tanggal Lahir:</span> {child.birthDate}</p>
-            <p><span className="font-medium">Usia:</span> {child.age}</p>
-          </div>
-        </div>
-
-        {/* Status Pertumbuhan Modern */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6 hover:shadow-lg transition">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Activity size={20} /> Status Pertumbuhan
-            </h2>
-            <span className={`px-4 py-1 text-sm rounded-full font-medium ${statusStyle}`}>
-              {growth.status}
+          <div className="ml-auto">
+            <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold">
+              Status {anak.status}
             </span>
           </div>
-
-          <p className="text-gray-600 mb-2">
-            Berdasarkan pengukuran terakhir, kondisi pertumbuhan anak termasuk
-            kategori <span className="font-semibold">{growth.status}</span>.
-          </p>
-          <p className="text-sm text-gray-500">{growth.recommendation}</p>
         </div>
 
-        {/* Ringkasan Pengukuran */}
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center hover:shadow-lg transition">
-            <Weight className="mx-auto mb-2 text-blue-500" />
+        {/* STATUS PERTUMBUHAN */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            Grafik Pertumbuhan Anak
+          </h2>
+
+          {/* CHART GRID */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* CHART TINGGI BADAN */}
+            <div className="bg-white p-6 rounded-2xl shadow mb-5">
+              <h2 className="font-semibold mb-4">
+                Grafik Tinggi Badan (Deteksi Stunting)
+              </h2>
+
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={dataPertumbuhan}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="bulan" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+
+                  <Line
+                    type="monotone"
+                    dataKey="tinggi"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    name="Tinggi Anak"
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="tinggiWHO"
+                    stroke="#3b82f6"
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                    name="Standar WHO"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+
+              {/* STATUS STUNTING */}
+              <div className="mt-4 border-t pt-4">
+                <p className="text-sm font-semibold mb-2">
+                  Status Tinggi Badan
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {dataPertumbuhan.map((item, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700"
+                    >
+                      {item.bulan} : {item.statusTinggi}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* CHART BERAT BADAN */}
+            <div className="bg-white p-6 rounded-2xl shadow mb-5">
+              <h2 className="font-semibold mb-4">
+                Grafik Berat Badan (Deteksi Wasting)
+              </h2>
+
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={dataPertumbuhan}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="bulan" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+
+                  <Line
+                    type="monotone"
+                    dataKey="berat"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    name="Berat Anak"
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="beratWHO"
+                    stroke="#6366f1"
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                    name="Standar WHO"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+
+              {/* STATUS WASTING */}
+              <div className="mt-4 border-t pt-4">
+                <p className="text-sm font-semibold mb-2">Status Berat Badan</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {dataPertumbuhan.map((item, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 text-xs rounded-full bg-orange-100 text-orange-700"
+                    >
+                      {item.bulan} : {item.statusBerat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+         
+        </div>
+
+        {/* CARD INFO */}
+        <div className="grid md:grid-cols-3 gap-6 ">
+          <div className="bg-white rounded-2xl shadow p-6">
             <p className="text-gray-500 text-sm">Berat Badan</p>
-            <p className="text-xl font-bold text-gray-800">{growth.weight}</p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">10.5 kg</h2>
+            <p className="text-green-500 text-sm mt-1">Naik 0.2 kg</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center hover:shadow-lg transition">
-            <Ruler className="mx-auto mb-2 text-green-500" />
+          <div className="bg-white rounded-2xl shadow p-6">
             <p className="text-gray-500 text-sm">Tinggi Badan</p>
-            <p className="text-xl font-bold text-gray-800">{growth.height}</p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">82 cm</h2>
+            <p className="text-green-500 text-sm mt-1">Naik 2 cm</p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-md p-6 text-center hover:shadow-lg transition">
-            <Calendar className="mx-auto mb-2 text-purple-500" />
-            <p className="text-gray-500 text-sm">Tanggal Penimbangan</p>
-            <p className="text-xl font-bold text-gray-800">{growth.lastCheck}</p>
-          </div>
-        </div>
-
-        {/* Quick Actions Lebih Modern */}
-        <div>
-          <h2 className="text-lg font-semibold mb-4">Menu Cepat</h2>
-
-          <div className="grid md:grid-cols-4 gap-4">
-            <button className="bg-white shadow-md rounded-2xl p-5 hover:shadow-lg transition text-center">
-              <FileText className="mx-auto mb-2 text-blue-500" />
-              <p className="font-medium">Riwayat</p>
-            </button>
-
-            <button className="bg-white shadow-md rounded-2xl p-5 hover:shadow-lg transition text-center">
-              <BarChart3 className="mx-auto mb-2 text-indigo-500" />
-              <p className="font-medium">Grafik</p>
-            </button>
-
-            <button className="bg-white shadow-md rounded-2xl p-5 hover:shadow-lg transition text-center">
-              <Activity className="mx-auto mb-2 text-purple-500" />
-              <p className="font-medium">Detail Hasil</p>
-            </button>
-
-            <button className="bg-white shadow-md rounded-2xl p-5 hover:shadow-lg transition text-center">
-              <BookOpen className="mx-auto mb-2 text-green-500" />
-              <p className="font-medium">Edukasi Gizi</p>
-            </button>
+          <div className="bg-white rounded-2xl shadow p-6">
+            <p className="text-gray-500 text-sm">Penimbangan Terakhir</p>
+            <h2 className="text-2xl font-bold text-gray-800 mt-1">
+              10 Juli 2026
+            </h2>
           </div>
         </div>
 
+        {/* REMINDER POSYANDU */}
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+          <h2 className="font-semibold text-yellow-700 mb-2">
+            Reminder Posyandu
+          </h2>
+
+          <p className="text-sm text-yellow-700">
+            Jadwal Posyandu berikutnya pada tanggal
+            <span className="font-semibold"> 15 Juli 2026</span>. Jangan lupa
+            melakukan penimbangan anak.
+          </p>
+        </div>
+
+        {/* TIPS GIZI */}
+        <div className="bg-white rounded-2xl shadow p-6">
+          <h2 className="font-semibold text-gray-700 mb-4">Tips Gizi Anak</h2>
+
+          <ul className="space-y-3">
+            {tips.map((tip, i) => (
+              <li
+                key={i}
+                className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm"
+              >
+                🥗 {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </MainLayouts>
   );
-};
-
-export default DashboardOrangTua;
+}
