@@ -11,6 +11,7 @@ import Berita from "../components/Fragments/HomeGuest/Berita";
 import Testimoni from "../components/Fragments/HomeGuest/Testimoni";
 import Navbar from "../components/Fragments/Navbar";
 import Footer from "../components/Fragments/Footer";
+import FAQ from "../components/Fragments/HomeGuest/Faq";
 
 const Homepage = () => {
   return (
@@ -22,6 +23,7 @@ const Homepage = () => {
       <Berita />
       <Map />
       <Testimoni />
+      <FAQ />
       <Footer />
     </>
   );

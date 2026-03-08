@@ -23,6 +23,7 @@ function Navbar() {
 
     { name: "Posyandu", link: "map" },
     { name: "Testimoni", link: "testimoni" },
+    { name: "FAQ", link: "faq" },
   ];
 
   return (

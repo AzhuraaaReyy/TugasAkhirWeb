@@ -47,9 +47,21 @@ export const kaderMenu = [
 
 export const orangTuaMenu = [
   {
-    id: "balance",
-    link: "/balance",
+    id: "dashboardortu",
+    link: "/DashboardOrangTua",
     icon: <Icon.Dashboard />,
-    label: "Balance",
+    label: "Dashboard",
+  },
+  {
+    id: "edukasiortu",
+    link: "/EdukasiOrangTua",
+    icon: <Icon.Dashboard />,
+    label: "Edukasi",
+  },
+  {
+    id: "dashboardortu",
+    link: "/DashboardOrangTua",
+    icon: <Icon.Dashboard />,
+    label: "Dashboard",
   },
 ];

@@ -6,7 +6,7 @@ const Sidebar = ({ open }) => {
   const { user, logout } = useAuth();
   if (!user) return null;
 
-  const menu = user.role === "kader" ? kaderMenu : orangTuaMenu;
+  const menu = user.role === "orangtua" ? kaderMenu : orangTuaMenu;
 
   return (
     <aside

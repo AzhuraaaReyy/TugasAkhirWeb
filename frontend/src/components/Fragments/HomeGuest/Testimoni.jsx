@@ -11,57 +11,20 @@ import PrevArrow from "../../../assets/icons/Arrows/PrevArrow";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-
+import { useState } from "react";
+import TestimoniCard from "../../Elements/Card/TestimoniCard";
+import testimoni from "../../../data/testimoni";
+import FormTestimoni from "../FormTestimoni";
 import { useRef } from "react";
-
-const testimonials = [
-  {
-    nama: "Siti Rahma",
-    peran: "Kader Posyandu",
-    komentar:
-      "Sistem ini sangat membantu kami dalam memantau pertumbuhan anak secara lebih cepat dan akurat.",
-    foto: "https://i.pravatar.cc/150?img=32",
-  },
-  {
-    nama: "Budi Santoso",
-    peran: "Orang Tua",
-    komentar:
-      "Saya jadi lebih mudah mengetahui status gizi anak saya tanpa harus bingung membaca grafik manual.",
-    foto: "https://i.pravatar.cc/150?img=12",
-  },
-  {
-    nama: "Dinas Kesehatan",
-    peran: "Instansi",
-    komentar:
-      "Platform ini mendukung program pemerintah dalam pencegahan stunting secara digital.",
-    foto: "https://i.pravatar.cc/150?img=5",
-  },
-  {
-    nama: "Andhika Pratama",
-    peran: "Orang Tua",
-    komentar:
-      "Platform ini mendukung program pemerintah dalam pencegahan stunting secara digital.",
-    foto: "https://i.pravatar.cc/150?img=6",
-  },
-  {
-    nama: "Dilan & Milea",
-    peran: "Kader Posyandu",
-    komentar:
-      "Platform ini mendukung program pemerintah dalam pencegahan stunting secara digital.",
-    foto: "https://i.pravatar.cc/150?img=7",
-  },
-  {
-    nama: "Puskesmas",
-    peran: "Instansi",
-    komentar:
-      "Platform ini mendukung program pemerintah dalam pencegahan stunting secara digital.",
-    foto: "https://i.pravatar.cc/150?img=8",
-  },
-];
 
 const Testimoni = () => {
   const prevRef = useRef(null);
   const nextRef = useRef(null);
+  const [testimonials, setTestimonials] = useState(testimoni);
+
+  const addTestimoni = (data) => {
+    setTestimonials((prev) => [...prev, data]);
+  };
 
   return (
     <section
@@ -104,11 +67,11 @@ const Testimoni = () => {
       <div className="absolute bottom-110 right-150 w-[300px] h-[300px] bg-blue-300 rounded-full blur-3xl opacity-30"></div>
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
-       <FadeSlide direction="left" delay={200}>
+        <FadeSlide direction="left" delay={200}>
           <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
             Testimoni Pengguna
           </span>
-     </FadeSlide>
+        </FadeSlide>
 
         <FadeUp delay={300}>
           <h2 className="mt-4 text-4xl font-bold text-gray-800">
@@ -185,7 +148,6 @@ hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]
 "
                   >
                     <FadeUp delay={400}>
-                      
                       {/* Foto */}
                       <img
                         src={item.foto}
@@ -223,6 +185,12 @@ hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]
                 </SwiperSlide>
               ))}
             </Swiper>
+          </div>
+        </FadeUp>
+        {/* FORM ULASAN */}
+        <FadeUp delay={600}>
+          <div className="mb-10">
+            <FormTestimoni onSubmit={addTestimoni} />
           </div>
         </FadeUp>
       </div>

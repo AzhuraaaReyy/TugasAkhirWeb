@@ -5,17 +5,26 @@ import { useState } from "react";
 import Typewriter from "../../Animations/Typewriter";
 import { useInView } from "../../../hooks/UseInView";
 import FadeSlide from "../../Animations/FadeSlide";
+import { NavLink } from "react-router-dom";
+import AuthModal from "../../Elements/Modal/AuthModal";
 const Edukasi = () => {
   const [active, setActive] = useState(null);
-
+  const [showAuth, setShowAuth] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
   const [refHeader, headerVisible] = useInView(0.3);
   const [refSec1, sec1Visible] = useInView(0.3);
-  const [refSec2, sec2Visible] = useInView(0.3);
-  const [refSec3, sec3Visible] = useInView(0.3);
   const [refSec4, sec4Visible] = useInView(0.3);
 
   return (
     <>
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        onLoginSuccess={() => {
+          setIsLogin(true);
+          setShowAuth(false);
+        }}
+      />
       {/* SECTION STUNTING */}
       <section
         id="edukasi"
@@ -79,7 +88,7 @@ const Edukasi = () => {
           <div className="text-center">
             <FadeSlide direction="left" delay={200}>
               <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold text-center">
-                Edukasi
+                Edukasi Stunting
               </span>
             </FadeSlide>
           </div>
@@ -163,7 +172,7 @@ const Edukasi = () => {
                 {sec1Visible && (
                   <Typewriter
                     key="sec1"
-                    speed={20}
+                    speed={25}
                     highlightWords={["Stunting?"]}
                     highlightClass="text-emerald-600 font-bold"
                     delay={1600}
@@ -176,7 +185,7 @@ const Edukasi = () => {
               <p className="mt-6 text-gray-600 leading-relaxed text-justify">
                 {sec1Visible && (
                   <Typewriter
-                    speed={20}
+                    speed={25}
                     highlightWords={["Stunting"]}
                     delay={1600}
                   >
@@ -196,193 +205,18 @@ const Edukasi = () => {
                   </Typewriter>
                 )}
               </p>
-            </div>
-          </div>
-
-          {/* ================= SECTION 2 ================= */}
-          <div
-            ref={refSec2}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 mb-15 ${
-              sec2Visible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-12"
-            }`}
-          >
-            {/* TEXT */}
-            <div className="order-2 md:order-1 -mt-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
-                {sec2Visible && (
-                  <Typewriter
-                    key="sec2"
-                    speed={25}
-                    highlightWords={["Stunting?"]}
-                    highlightClass="text-emerald-600 font-bold"
-                  >
-                    Apa Dampak Stunting?
-                  </Typewriter>
-                )}
-              </h2>
-
-              <p className="mt-6 text-gray-600 leading-relaxed text-justify">
-                {sec2Visible && (
-                  <Typewriter
-                    key="sec2"
-                    speed={20}
-                    highlightWords={["Dampak"]}
-                    highlightClass="text-emerald-600 font-bold"
-                  >
-                    Dampak stunting tidak hanya menyebabkan tinggi badan anak
-                    lebih pendek dari standar usianya, tetapi juga berpengaruh
-                    pada perkembangan otak, kemampuan belajar, dan konsentrasi
-                    sehingga dapat menurunkan prestasi akademik di masa sekolah.
-                    Anak yang mengalami stunting juga memiliki daya tahan tubuh
-                    lebih lemah dan lebih rentan terhadap penyakit. Dalam jangka
-                    panjang, kondisi ini dapat memengaruhi produktivitas saat
-                    dewasa serta meningkatkan risiko penyakit tidak menular,
-                    sehingga menjadi masalah kesehatan masyarakat yang serius
-                    menurut World Health Organization.
-                  </Typewriter>
-                )}
-              </p>
-            </div>
-
-            {/* IMAGE */}
-            <div
-              className="relative w-full h-[650px] order-2 md:order-2"
-              onMouseLeave={() => setActive(null)}
-            >
-              {/* FOTO 1 - KIRI ATAS */}
-              <div
-                onMouseEnter={() => setActive("kiri2")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-      ${
-        active === "kiri2"
-          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
-          : "left-5 top-30 w-[270px] h-[270px] z-10"
-      }`}
-              >
-                <img src={stunting1} className="w-full h-full object-cover" />
-              </div>
-
-              {/* FOTO 2 - TENGAH TURUN */}
-              <div
-                onMouseEnter={() => setActive("tengah2")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-      ${
-        active === "tengah2"
-          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
-          : "left-[140px] top-[240px] w-[270px] h-[270px] z-20"
-      }`}
-              >
-                <img src={stunting2} className="w-full h-full object-cover" />
-              </div>
-
-              {/* FOTO 3 - KANAN BAWAH */}
-              <div
-                onMouseEnter={() => setActive("kanan2")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-      ${
-        active === "kanan2"
-          ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
-          : "left-[280px] top-[330px] w-[250px] h-[250px] z-30"
-      }`}
-              >
-                <img src={stunting3} className="w-full h-full object-cover" />
-              </div>
-            </div>
-          </div>
-          <div
-            ref={refSec3}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 mb-20 ${
-              sec3Visible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-12"
-            }`}
-          >
-            {/* IMAGE */}
-            <div
-              className="relative w-full h-[520px] flex items-center justify-center"
-              onMouseLeave={() => setActive(null)}
-            >
-              {/* FOTO KIRI */}
-              <div
-                onMouseEnter={() => setActive("kiri3")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-    ${
-      active === "kiri3"
-        ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
-        : "bottom-5 left-15 -translate-x-1/2 w-[250px] h-[250px] z-10 -rotate-5"
-    }`}
-              >
-                <img src={stunting1} className="w-full h-full object-cover" />
-              </div>
-
-              {/* FOTO TENGAH */}
-              <div
-                onMouseEnter={() => setActive("tengah3")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-    ${
-      active === "tengah3"
-        ? "left-60 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] h-[500px] z-40"
-        : "top-10 left-50 -translate-x-1/2 w-[350px] h-[270px] z-0"
-    }`}
-              >
-                <img src={stunting2} className="w-full h-full object-cover" />
-              </div>
-
-              {/* FOTO KANAN */}
-              <div
-                onMouseEnter={() => setActive("kanan3")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
-    ${
-      active === "kanan3"
-        ? "left-60 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[620px] h-[500px] z-40"
-        : "bottom-5 right-45 translate-x-1/2 w-[250px] h-[250px] z-10 rotate-5"
-    }`}
-              >
-                <img src={stunting3} className="w-full h-full object-cover" />
-              </div>
-            </div>
-
-            {/* TEXT */}
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
-                {sec3Visible && (
-                  <Typewriter
-                    key="sec3"
-                    speed={25}
-                    highlightWords={["Stunting?"]}
-                    highlightClass="text-emerald-600 font-bold"
-                  >
-                    Bagaimana Ciri-Ciri Stunting?
-                  </Typewriter>
-                )}
-              </h2>
-
-              <p className="mt-6 text-gray-600 leading-relaxed text-justify">
-                {sec3Visible && (
-                  <Typewriter
-                    key="sec3"
-                    speed={20}
-                    highlightWords={["Stunting"]}
-                    highlightClass="text-emerald-600 font-bold"
-                  >
-                    Stunting dapat dikenali ketika anak memiliki tinggi badan
-                    yang lebih pendek dibandingkan standar tinggi sesuai usianya
-                    berdasarkan kurva pertumbuhan, terutama jika kondisi
-                    tersebut terjadi dalam jangka waktu lama akibat kekurangan
-                    gizi kronis. Selain tubuh yang lebih pendek, anak dengan
-                    stunting juga dapat mengalami keterlambatan perkembangan
-                    motorik dan kognitif, seperti lambat berbicara, sulit
-                    berkonsentrasi, daya tahan tubuh yang lemah sehingga mudah
-                    sakit, serta berat badan yang tidak bertambah sesuai tahapan
-                    pertumbuhan. Deteksi dini dapat dilakukan melalui pemantauan
-                    rutin tinggi dan berat badan di posyandu atau fasilitas
-                    kesehatan dengan membandingkannya pada grafik pertumbuhan
-                    anak.
-                  </Typewriter>
-                )}
-              </p>
+              <FadeSlide direction="right" delay={2100}>
+                <button
+                  onClick={() => {
+                    if (!isLogin) {
+                      setShowAuth(true);
+                    }
+                  }}
+                  className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400"
+                >
+                  Baca Selengkapnya →
+                </button>
+              </FadeSlide>
             </div>
           </div>
           {/* ================= SECTION 4 ================= */}
@@ -413,7 +247,7 @@ const Edukasi = () => {
                 {sec4Visible && (
                   <Typewriter
                     key="sec4"
-                    speed={20}
+                    speed={25}
                     highlightWords={["Cara"]}
                     highlightClass="text-emerald-600 font-bold"
                   >
@@ -431,6 +265,19 @@ const Edukasi = () => {
                   </Typewriter>
                 )}
               </p>
+
+              <FadeSlide direction="left" delay={2100}>
+                <button
+                  onClick={() => {
+                    if (!isLogin) {
+                      setShowAuth(true);
+                    }
+                  }}
+                  className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400"
+                >
+                  Baca Selengkapnya →
+                </button>
+              </FadeSlide>
             </div>
 
             {/* IMAGE */}

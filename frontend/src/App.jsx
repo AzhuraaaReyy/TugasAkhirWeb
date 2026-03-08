@@ -23,6 +23,7 @@ import Riwayat from "./pages/Kader/RiwayatGrafik";
 import DashboardOrangTua from "./pages/OrangTua/Dashboard";
 import Laporan from "./pages/Kader/Laporan";
 import Notifikasi from "./pages/Kader/Notifikasi";
+import EdukasiKesehatanAnak from "./pages/OrangTua/Edukasi";
 const RequireAuth = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
   return isLoggedIn ? children : <Navigate to="/login" />;
@@ -102,6 +103,10 @@ const App = () => {
     {
       path: "/DashboardOrangTua",
       element: <DashboardOrangTua />,
+    },
+    {
+      path: "/EdukasiOrangTua",
+      element: <EdukasiKesehatanAnak />,
     },
   ]);
 

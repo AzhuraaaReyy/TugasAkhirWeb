@@ -116,7 +116,7 @@ const Berita = () => {
         <div className="text-center mb-16 z-40 ">
           <FadeSlide direction="left" delay={200}>
             <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
-              Berita & Informasi
+              Berita Stunting
             </span>
           </FadeSlide>
           <FadeSlide direction="left" delay={400}>
