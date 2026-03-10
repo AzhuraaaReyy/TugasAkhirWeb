@@ -3,7 +3,7 @@ import stunting2 from "../../../assets/images/3efe462b-579d-4a62-b536-77b6b867ae
 import stunting3 from "../../../assets/images/image_2k_2560x1440_v3.png";
 import { useState } from "react";
 import Typewriter from "../../Animations/Typewriter";
-import { useInView } from "../../../hooks/UseInView";
+import { useInView } from "../../../hooks/useInView";
 import FadeSlide from "../../Animations/FadeSlide";
 import { NavLink } from "react-router-dom";
 import AuthModal from "../../Elements/Modal/AuthModal";
