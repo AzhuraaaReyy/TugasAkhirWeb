@@ -1,11 +1,9 @@
 import { useRef } from "react";
 
 const GlareHover = ({
-  width = "500px",
-  height = "500px",
-  background = "#000",
+  background = "#ffffff",
   borderRadius = "10px",
-  borderColor = "#333",
+
   children,
   glareColor = "#ffffff",
   glareOpacity = 0.5,
@@ -58,10 +56,11 @@ const GlareHover = ({
   const overlayStyle = {
     position: "absolute",
     inset: 0,
+    zIndex: 10, // tambahkan ini
     background: `linear-gradient(${glareAngle}deg,
-        hsla(0,0%,0%,0) 60%,
-        ${rgba} 70%,
-        hsla(0,0%,0%,0) 100%)`,
+      hsla(0,0%,0%,0) 60%,
+      ${rgba} 70%,
+      hsla(0,0%,0%,0) 100%)`,
     backgroundSize: `${glareSize}% ${glareSize}%, 100% 100%`,
     backgroundRepeat: "no-repeat",
     backgroundPosition: "-100% -100%, 0 0",
@@ -72,11 +71,9 @@ const GlareHover = ({
     <div
       className={`relative grid place-items-center overflow-hidden border cursor-pointer ${className}`}
       style={{
-        width,
-        height,
         background,
         borderRadius,
-        borderColor,
+
         ...style,
       }}
       onMouseEnter={animateIn}

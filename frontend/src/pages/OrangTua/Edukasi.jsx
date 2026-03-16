@@ -12,6 +12,10 @@ import AnimatedList from "../../components/Animations/AnimatedList";
 import ArtikelDetail from "@/components/Fragments/Edukasi/ArtikelDetail";
 import ArtikelPanel from "@/components/Fragments/Edukasi/ArtikelPanel";
 import PengertianDetail from "@/components/Fragments/Stunting/Pengertian";
+import PenyebabDetail from "@/components/Fragments/Stunting/Penyebab";
+import DampakDetail from "@/components/Fragments/Stunting/Dampak";
+import PencegahanDetail from "@/components/Fragments/Stunting/Pencegahan";
+import CiriDetail from "@/components/Fragments/Stunting/Ciri";
 export default function EdukasiStunting() {
   const [tab, setTab] = useState("pengertian");
 

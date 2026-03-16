@@ -1,11 +1,17 @@
-export default function PengertianDetail({ detailRef, handleClose }) {
+import stunting from "../../../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
+const PengertianDetail = ({ detailRef, handleClose }) => {
   return (
     <section ref={detailRef} className="py-24 bg-white">
       <div className="max-w-4xl mx-auto px-6">
-        <h2 className="text-3xl font-bold text-gray-800 mb-6">
+        <h2 className="text-3xl font-extrabold text-gray-800 mb-6">
           Pengertian Stunting
         </h2>
-
+        <div className="relative flex items-center justify-center">
+          <img
+            className="rounded-xl w-screen h-[450px] shadow-xl mb-6 object-cover transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out hover:scale-105 "
+            src={stunting}
+          />
+        </div>
         <p className="text-gray-600 leading-relaxed mb-6 text-justify">
           Menurut World Health Organization (WHO), stunting merupakan kondisi
           terganggunya pertumbuhan dan perkembangan anak yang disebabkan oleh
@@ -37,11 +43,12 @@ export default function PengertianDetail({ detailRef, handleClose }) {
 
         <button
           onClick={handleClose}
-          className="mt-8 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600"
+          className="mt-8 px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600"
         >
           Tutup
         </button>
       </div>
     </section>
   );
-}
+};
+export default PengertianDetail;
