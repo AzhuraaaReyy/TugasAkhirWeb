@@ -40,9 +40,10 @@ const PenyebabDetail = ({ detailRef, handleClose }) => {
           Penyebab Stunting
         </h2>
         <div className="relative flex items-center justify-center">
-          <img src={stunting}
-          className="rounded-xl w-screen h-[450px] shadow-xl mb-6 object-cover transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out hover:scale-105 " />
-        
+          <img
+            src={stunting}
+            className=" border-emerald-200 border-2 rounded-xl w-screen h-[450px] shadow-xl mb-6 object-cover transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out hover:scale-105 "
+          />
         </div>
         <p className="text-gray-600 leading-relaxed mb-6 text-justify">
           Menurut World Health Organization (WHO), Penyebab stunting antara lain

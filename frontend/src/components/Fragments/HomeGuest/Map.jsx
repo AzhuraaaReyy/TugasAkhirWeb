@@ -122,7 +122,7 @@ const Map = () => {
     <section
       className="py-30 px-6 bg-emerald-50 relative overflow-hidden"
       id="map"
-      >
+    >
       <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
       <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
       <div className="absolute -top-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
@@ -161,13 +161,7 @@ const Map = () => {
         {/* TITLE */}
 
         <div className="text-center mb-12">
-          <div className="mb-5">
-            <FadeSlide direction="left" delay={200}>
-              <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
-                Lokasi Posyandu
-              </span>
-            </FadeSlide>
-          </div>
+          <div className="mb-5"></div>
           <FadeUp delay={200}>
             <h2 className="text-4xl font-bold text-gray-800">
               Cari Posyandu Terdekat
@@ -287,22 +281,21 @@ const Map = () => {
                       />
                     </div>
 
-                    <div className="space-y-2 justify-center text-justify">
+                    <div className="space-y-2 justify-center text-justify mt-5">
                       <p>
-                        🩺 <strong>Nama Posyandu:</strong>{" "}
-                        {selectedLocation.name}
+                        <strong>Nama Posyandu:</strong> {selectedLocation.name}
                       </p>
                       <p>
-                        🏙 <strong>Kota:</strong> {selectedLocation.kota}
+                        <strong>Kota:</strong> {selectedLocation.kota}
                       </p>
                       <p>
-                        📍<strong>Alamat:</strong> {selectedLocation.alamat}
+                        <strong>Alamat:</strong> {selectedLocation.alamat}
                       </p>
                       <p>
-                        🕒 <strong>Jadwal:</strong> {selectedLocation.jadwal}
+                        <strong>Jadwal:</strong> {selectedLocation.jadwal}
                       </p>
                       <p>
-                        📞 <strong>Telepon:</strong> {selectedLocation.telepon}
+                        <strong>Telepon:</strong> {selectedLocation.telepon}
                       </p>
                     </div>
                   </FadeUp>

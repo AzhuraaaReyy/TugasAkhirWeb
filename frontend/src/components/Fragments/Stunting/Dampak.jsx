@@ -1,7 +1,7 @@
 const DampakDetail = ({ detailRef, handleClose }) => {
   return (
     <section ref={detailRef} className="py-24 bg-white">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-6">
         {/* Judul */}
         <h2 className="text-3xl font-extrabold text-gray-800 mb-6">
           Dampak Stunting
@@ -12,7 +12,7 @@ const DampakDetail = ({ detailRef, handleClose }) => {
           <img
             src="/images/dampak-stunting.jpg"
             alt="Dampak Stunting"
-            className="rounded-xl w-full h-[450px] shadow-xl mb-8 object-cover transition-transform duration-700 ease-out hover:scale-105"
+            className=" border-emerald-200 border-2 rounded-xl w-full h-[450px] shadow-xl mb-8 object-cover transition-transform duration-700 ease-out hover:scale-105"
           />
         </div>
 

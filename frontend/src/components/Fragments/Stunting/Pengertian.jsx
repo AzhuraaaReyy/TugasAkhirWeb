@@ -6,9 +6,9 @@ const PengertianDetail = ({ detailRef, handleClose }) => {
         <h2 className="text-3xl font-extrabold text-gray-800 mb-6">
           Pengertian Stunting
         </h2>
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center ">
           <img
-            className="rounded-xl w-screen h-[450px] shadow-xl mb-6 object-cover transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out hover:scale-105 "
+            className=" border-emerald-200 border-2 rounded-xl w-screen h-[450px] hover:shadow-xl mb-6 object-cover transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out hover:scale-105 "
             src={stunting}
           />
         </div>

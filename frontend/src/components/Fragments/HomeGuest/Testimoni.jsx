@@ -67,12 +67,6 @@ const Testimoni = () => {
       <div className="absolute bottom-110 right-150 w-[300px] h-[300px] bg-blue-300 rounded-full blur-3xl opacity-30"></div>
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
-        <FadeSlide direction="left" delay={200}>
-          <span className="px-4 py-2 bg-emerald-100 text-emerald-600 rounded-full text-sm font-semibold">
-            Testimoni Pengguna
-          </span>
-        </FadeSlide>
-
         <FadeUp delay={300}>
           <h2 className="mt-4 text-4xl font-bold text-gray-800">
             Apa Kata Mereka?

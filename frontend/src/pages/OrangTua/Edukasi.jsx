@@ -3,11 +3,9 @@ import { useState, useRef, useEffect } from "react";
 import FadeSlide from "../../components/Animations/FadeSlide";
 import Typewriter from "../../components/Animations/Typewriter";
 import Particles from "../../components/Animations/Particles";
-import stunting1 from "../../assets/images/unnamed.jpg";
-import stunting2 from "../../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
-import stunting3 from "../../assets/images/image_2k_2560x1440_v3.png";
+
 import FadeUp from "../../components/Animations/FadeUp";
-import stunting4 from "../../assets/images/image_2k_2560x1440.png";
+
 import AnimatedList from "../../components/Animations/AnimatedList";
 import ArtikelDetail from "@/components/Fragments/Edukasi/ArtikelDetail";
 import ArtikelPanel from "@/components/Fragments/Edukasi/ArtikelPanel";
@@ -16,48 +14,24 @@ import PenyebabDetail from "@/components/Fragments/Stunting/Penyebab";
 import DampakDetail from "@/components/Fragments/Stunting/Dampak";
 import PencegahanDetail from "@/components/Fragments/Stunting/Pencegahan";
 import CiriDetail from "@/components/Fragments/Stunting/Ciri";
+import artikel from "@/data/artikel";
+import { data } from "@/data/stunting";
 export default function EdukasiStunting() {
-  const [tab, setTab] = useState("pengertian");
+  const [activeKey, setActiveKey] = useState("pengertian");
 
   const [selectedArtikel, setSelectedArtikel] = useState(null);
-  const data = {
-    pengertian: {
-      title: "1.) Apa Itu Stunting?",
-      image: [stunting4, stunting2, stunting3],
-      text: "Stunting menurut WHO adalah gangguan pertumbuhan dan perkembangan anak akibat kekurangan gizi kronis dan infeksi berulang, yang ditandai dengan panjang atau tinggi badannya berada di bawah standar kurva pertumbuhan WHO (kurang dari -2 standar deviasi/SD). Kondisi ini terjadi akibat asupan gizi yang tidak adekuat selama 1000 hari pertama kehidupan (sejak janin hingga usia 2 tahun).",
-    },
-    penyebab: {
-      title: "2.) Penyebab Stunting",
-      image: [stunting1, stunting2, stunting4],
-      text: "Menurut WHO, penyebab utama stunting adalah malnutrisi kronis (jangka panjang) yang terjadi sejak dalam kandungan hingga dua tahun pertama kehidupan, yang diperburuk oleh infeksi berulang, kurangnya asupan gizi seimbang, serta sanitasi dan lingkungan yang tidak sehat. Sekitar 20% kasus stunting sudah dimulai sejak janin dalam kandungan.",
-    },
-    dampak: {
-      title: "3.) Dampak Stunting",
-      image: [stunting1, stunting4, stunting3],
-      text: "Menurut WHO, stunting adalah gangguan pertumbuhan fisik dan perkembangan otak akibat kekurangan gizi kronis, ditandai dengan tinggi badan di bawah -2 standar deviasi kurva pertumbuhan WHO. Dampaknya meliputi penurunan kemampuan kognitif, imunitas lemah, risiko penyakit kronis (diabetes/hipertensi) saat dewasa, hingga penurunan produktivitas ekonomi.",
-    },
-    pencegahan: {
-      title: "4.) Pencegahan Stunting",
-      image: [stunting1, stunting2, stunting3],
-      text: "Pencegahan stunting menurut WHO berfokus pada intervensi gizi dan kesehatan selama 1000 Hari Pertama Kehidupan (HPK), mulai dari kehamilan hingga anak usia 2 tahun. Upaya utama meliputi nutrisi optimal ibu hamil, ASI eksklusif 6 bulan, MPASI bergizi (kaya protein hewani), pemantauan tumbuh kembang, imunisasi, dan sanitasi bersih.",
-    },
-    ciri: {
-      title: "5.) Ciri-Ciri Stunting",
-      image: [stunting1, stunting2, stunting3],
-      text: "Ciri utama stunting menurut WHO adalah tinggi badan anak berada di bawah -2 standar deviasi (SD) dari kurva pertumbuhan standar WHO. Anak tampak jauh lebih pendek dari usianya, pertumbuhan tulang tertunda, berat badan tidak naik, dan perkembangan kognitif/motorik terlambat. Stunting terjadi akibat gizi kronis, ditandai dengan anak kurang aktif, mudah sakit, dan nafsu makan rendah. ",
-    },
-  };
-  const activeData = data[tab];
+
+  const activeData = data[0][activeKey];
+  const images = activeData.image;
   const artikelRefs = useRef([]); // simpan ref semua artikel
   const [fade, setFade] = useState(true);
 
-  const images = activeData.image;
   const detailRef = useRef(null);
   const changeTab = (value, newTab) => {
     setFade(false);
 
     setTimeout(() => {
-      setTab(value);
+      setActiveKey(value);
       setFade(true);
     }, 200);
     if (selectedDetail) {
@@ -84,38 +58,6 @@ export default function EdukasiStunting() {
     },
   ];
 
-  const artikel = [
-    {
-      title: "Tips Makanan Bergizi",
-      image:
-        "https://images.unsplash.com/photo-1543332164-6e82f355bad8?q=80&w=1974",
-      desc: "Makanan bergizi merupakan salah satu faktor utama dalam mendukung pertumbuhan dan perkembangan balita.",
-    },
-    {
-      title: "Menu MPASI",
-      image:
-        "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?q=80&w=1974",
-      desc: "MPASI atau Makanan Pendamping ASI merupakan makanan tambahan yang diberikan kepada bayi setelah berusia enam bulan.",
-    },
-    {
-      title: "Nafsu Makan Anak",
-      image:
-        "https://images.unsplash.com/photo-1484981138541-3d074aa97716?q=80&w=1974",
-      desc: "Untuk meningkatkan nafsu makan anak, orang tua dapat mencoba beberapa cara seperti memberikan variasi menu makanan, menyajikan makanan dengan tampilan yang menarik, serta menciptakan suasana makan yang nyaman.",
-    },
-    {
-      title: "Pola Asuh Anak",
-      image:
-        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1974",
-      desc: "Pola asuh yang baik memiliki peran penting dalam mendukung perkembangan fisik maupun mental anak. Orang tua perlu memberikan perhatian, kasih sayang, serta stimulasi yang cukup agar anak dapat tumbuh dan berkembang dengan optimal.",
-    },
-    {
-      title: "Pentingnya Imunisasi",
-      image:
-        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1974",
-      desc: "Imunisasi merupakan salah satu upaya penting dalam melindungi anak dari berbagai penyakit berbahaya. Melalui imunisasi, tubuh anak akan membentuk kekebalan terhadap penyakit tertentu sehingga risiko terkena penyakit dapat berkurang.",
-    },
-  ];
   const [activeVideo, setActiveVideo] = useState(items[0]);
 
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -147,7 +89,7 @@ export default function EdukasiStunting() {
   const detail2Ref = useRef(null);
   const topRef = useRef(null);
   const handleDetail = () => {
-    setSelectedDetail(tab);
+    setSelectedDetail(activeKey);
 
     setTimeout(() => {
       detail2Ref.current?.scrollIntoView({
@@ -293,7 +235,7 @@ export default function EdukasiStunting() {
                 <button
                   onClick={() => changeTab("pengertian")}
                   className={`pb-1 ${
-                    tab === "pengertian"
+                    activeKey === "pengertian"
                       ? "text-emerald-500 border-b-2 border-emerald-500"
                       : "text-gray-500"
                   }`}
@@ -304,7 +246,7 @@ export default function EdukasiStunting() {
                 <button
                   onClick={() => changeTab("penyebab")}
                   className={`pb-1 ${
-                    tab === "penyebab"
+                    activeKey === "penyebab"
                       ? "text-emerald-500 border-b-2 border-emerald-500"
                       : "text-gray-500"
                   }`}
@@ -315,7 +257,7 @@ export default function EdukasiStunting() {
                 <button
                   onClick={() => changeTab("dampak")}
                   className={`pb-1 ${
-                    tab === "dampak"
+                    activeKey === "dampak"
                       ? "text-emerald-500 border-b-2 border-emerald-500"
                       : "text-gray-500"
                   }`}
@@ -326,7 +268,7 @@ export default function EdukasiStunting() {
                 <button
                   onClick={() => changeTab("pencegahan")}
                   className={`pb-1 ${
-                    tab === "pencegahan"
+                    activeKey === "pencegahan"
                       ? "text-emerald-500 border-b-2 border-emerald-500"
                       : "text-gray-500"
                   }`}
@@ -337,7 +279,7 @@ export default function EdukasiStunting() {
                 <button
                   onClick={() => changeTab("ciri")}
                   className={`pb-1 ${
-                    tab === "ciri"
+                    activeKey === "ciri"
                       ? "text-emerald-500 border-b-2 border-emerald-500"
                       : "text-gray-500"
                   }`}
