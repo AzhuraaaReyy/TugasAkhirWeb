@@ -27,6 +27,7 @@ export default function EdukasiStunting() {
   const [fade, setFade] = useState(true);
 
   const detailRef = useRef(null);
+
   const changeTab = (value, newTab) => {
     setFade(false);
 
@@ -88,6 +89,7 @@ export default function EdukasiStunting() {
   const [selectedDetail, setSelectedDetail] = useState(null);
   const detail2Ref = useRef(null);
   const topRef = useRef(null);
+  const topRef2 = useRef(null);
   const handleDetail = () => {
     setSelectedDetail(activeKey);
 
@@ -109,6 +111,15 @@ export default function EdukasiStunting() {
       });
     }, 200);
   };
+
+  useEffect(() => {
+    if (selectedArtikel) {
+      detailRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
+  }, [selectedArtikel]);
+  const SelectedComponent = selectedArtikel?.component;
   return (
     <MainLayouts type="edukasiortu">
       <section
@@ -340,7 +351,10 @@ export default function EdukasiStunting() {
       {selectedDetail === "ciri" && (
         <CiriDetail detailRef={detail2Ref} handleClose={handleClose} />
       )}
-      <section className="relative w-full bg-emerald-50 py-10 overflow-hidden">
+      <section
+        ref={topRef2}
+        className="relative w-full bg-emerald-50 py-10 overflow-hidden"
+      >
         {/* 🌊 FLOATING WAVE */}
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
@@ -404,30 +418,61 @@ export default function EdukasiStunting() {
           <FadeUp delay={400}>
             <ArtikelPanel
               artikel={artikel}
-              artikelRefs={artikelRefs}
               onSelect={(item, index) => {
                 setSelectedArtikel({ ...item, index });
-
-                setTimeout(() => {
-                  detailRef.current?.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                }, 100);
               }}
+              artikelRefs={artikelRefs}
             />
           </FadeUp>
         </div>
       </section>
-      <div ref={detailRef} className="">
-        <ArtikelDetail
-          artikel={selectedArtikel}
-          onClose={() => setSelectedArtikel(null)}
-          artikelRefs={artikelRefs}
-        />
+      <div ref={detailRef}>
+        {SelectedComponent && (
+          <SelectedComponent
+            detailRef={detailRef}
+            handleClose={() => {
+              setSelectedArtikel(null);
+
+              setTimeout(() => {
+                topRef2.current?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }, 100);
+            }}
+          />
+        )}
       </div>
       <section className="relative w-full bg-emerald-50 py-10 overflow-hidden">
         {/* Particles Background */}
+        {/* 🌊 FLOATING WAVE */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
+          {/* Layer 1 */}
+          <svg
+            className="block w-full h-[160px] wave-float"
+            viewBox="0 0 1440 320"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#9bf4ca"
+              fillOpacity="0.5"
+              d="M0,224L80,176C160,128,320,128,480,170.7C640,213,800,299,960,293.3C1120,288,1280,192,1360,144L1440,96L1440,320L0,320Z"
+            />
+          </svg>
+
+          {/* Layer 2 */}
+          <svg
+            className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+            viewBox="0 0 1440 320"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#00ff80"
+              fillOpacity="0.3"
+              d="M0,192L120,208C240,224,480,256,720,229.3C960,203,1200,117,1320,74.7L1440,32L1440,320L0,320Z"
+            />
+          </svg>
+        </div>
         <div className="absolute inset-0 pointer-events-none">
           <Particles
             particleColors={["#00ff1e"]}

@@ -41,9 +41,8 @@ const Artikel = forwardRef(
               <p className="text-gray-200 text-sm leading-relaxed">
                 {item.desc}
               </p>
-
               <button
-                onClick={onSelect}
+                onClick={() => onSelect(item, index)}
                 className="mt-6 px-5 py-2 bg-emerald-500 border border-white/30 rounded-lg text-sm hover:bg-emerald-600 transition"
               >
                 Selengkapnya
