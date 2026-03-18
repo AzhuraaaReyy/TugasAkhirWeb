@@ -59,9 +59,15 @@ export const orangTuaMenu = [
     label: "Edukasi",
   },
   {
-    id: "dashboardortu",
-    link: "/DashboardOrangTua",
+    id: "riwayatortu",
+    link: "/RiwayatOrangTua",
     icon: <Icon.Dashboard />,
-    label: "Dashboard",
+    label: "Riwayat Pemeriksaan",
+  },
+  {
+    id: "notifikasiortu",
+    link: "/NotifikasiOrangTua",
+    icon: <Icon.Dashboard />,
+    label: "Notifikasi",
   },
 ];

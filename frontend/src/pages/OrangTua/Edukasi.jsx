@@ -3,11 +3,9 @@ import { useState, useRef, useEffect } from "react";
 import FadeSlide from "../../components/Animations/FadeSlide";
 import Typewriter from "../../components/Animations/Typewriter";
 import Particles from "../../components/Animations/Particles";
-
 import FadeUp from "../../components/Animations/FadeUp";
-
+import { useInView } from "@/hooks/useInView";
 import AnimatedList from "../../components/Animations/AnimatedList";
-import ArtikelDetail from "@/components/Fragments/Edukasi/ArtikelDetail";
 import ArtikelPanel from "@/components/Fragments/Edukasi/ArtikelPanel";
 import PengertianDetail from "@/components/Fragments/Stunting/Pengertian";
 import PenyebabDetail from "@/components/Fragments/Stunting/Penyebab";
@@ -16,6 +14,7 @@ import PencegahanDetail from "@/components/Fragments/Stunting/Pencegahan";
 import CiriDetail from "@/components/Fragments/Stunting/Ciri";
 import artikel from "@/data/artikel";
 import { data } from "@/data/stunting";
+
 export default function EdukasiStunting() {
   const [activeKey, setActiveKey] = useState("pengertian");
 
@@ -101,15 +100,18 @@ export default function EdukasiStunting() {
     }, 200);
   };
 
+  useEffect(() => {
+    if (!selectedDetail) {
+      requestAnimationFrame(() => {
+        topRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+  }, [selectedDetail]);
   const handleClose = () => {
     setSelectedDetail(null);
-
-    setTimeout(() => {
-      topRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 200);
   };
 
   useEffect(() => {
@@ -120,6 +122,10 @@ export default function EdukasiStunting() {
     }
   }, [selectedArtikel]);
   const SelectedComponent = selectedArtikel?.component;
+
+  const [refHeader, headerVisible] = useInView(0.3);
+  const [refSec1, sec1Visible] = useInView(0.3);
+  const [refSec4, sec4Visible] = useInView(0.3);
   return (
     <MainLayouts type="edukasiortu">
       <section
@@ -141,22 +147,6 @@ export default function EdukasiStunting() {
           />
         </div>
         {/* Background Decoration */}
-        <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
-        <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
-
-        <div className="absolute top-210 right-290 w-[400px] h-[400px] bg-emerald-200 rounded-full blur-3xl opacity-40 -z-10"></div>
-        <div className="absolute top-160 right-40 w-[400px] h-[400px] bg-blue-200 rounded-full blur-3xl opacity-40 -z-10"></div>
-        <div className="absolute top-300 right-200 w-[300px] h-[300px] bg-blue-200 rounded-full blur-3xl opacity-40 -z-10"></div>
-
-        <div className="absolute top-380 left-140 w-[300px] h-[300px] bg-emerald-200 rounded-full blur-3xl opacity-40 -z-10"></div>
-        <div className="absolute top-460 right-40 w-[400px] h-[400px] bg-blue-200 rounded-full blur-3xl opacity-40 -z-10"></div>
-        <div className="absolute top-640 -right-30 w-[400px] h-[400px] bg-blue-400 rounded-full blur-3xl opacity-40 -z-10"></div>
-
-        <div className="absolute top-550 left-40 w-[300px] h-[300px] bg-emerald-200 rounded-full blur-3xl opacity-40 -z-10"></div>
-        <div className="absolute top-640 left-140 w-[200px] h-[200px] bg-blue-300 rounded-full blur-3xl opacity-40 -z-10"></div>
-
-        <div className="absolute top-5 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-60"></div>
-        <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
         <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
         <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
 
@@ -191,19 +181,21 @@ export default function EdukasiStunting() {
           </svg>
         </div>
         <div
+          ref={refHeader}
           className={`max-w-6xl mx-auto px-6 relative z-10  transition-all duration-700  `}
         >
-          <div className="text-center"></div>
           <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
-            <Typewriter speed={20}>Edukasi Stunting Pada Anak</Typewriter>
+            {headerVisible && (
+              <Typewriter speed={20}>Edukasi Stunting Pada Anak</Typewriter>
+            )}
           </h2>
-          <FadeSlide direction="right" delay={300}>
+          <FadeUp delay={400}>
             <p className="mt-4 max-w-2xl mx-auto text-gray-600 text-center">
               Sistem membantu kader posyandu dan orang tua dalam melakukan
               pencatatan, pemantauan pertumbuhan balita, serta deteksi dini
               risiko stunting secara digital dan sistematis."
             </p>
-          </FadeSlide>
+          </FadeUp>
         </div>
 
         <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-14 items-center">
@@ -234,14 +226,14 @@ export default function EdukasiStunting() {
 
           <div className="mb-10 min-h-[360px]">
             {/* TITLE */}
-            <FadeSlide direction="right" delay={500}>
+            <FadeSlide direction="left" delay={700}>
               <h2 className="mt-3 text-3xl md:text-4xl font-extrabold text-gray-800 leading-snug">
                 {activeData.title}
               </h2>
             </FadeSlide>
 
             {/* TAB MENU */}
-            <FadeUp delay={600}>
+            <FadeSlide direction="left" delay={700}>
               <div className="relative flex gap-6 mt-6 text-sm font-semibold text-gray-500">
                 <button
                   onClick={() => changeTab("pengertian")}
@@ -328,7 +320,7 @@ export default function EdukasiStunting() {
               >
                 Selengkapnya
               </button>
-            </FadeUp>
+            </FadeSlide>
           </div>
         </div>
       </section>
@@ -355,6 +347,9 @@ export default function EdukasiStunting() {
         ref={topRef2}
         className="relative w-full bg-emerald-50 py-10 overflow-hidden"
       >
+        <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
+        <div className="absolute -top-40 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-40 "></div>
+
         {/* 🌊 FLOATING WAVE */}
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
@@ -398,11 +393,11 @@ export default function EdukasiStunting() {
         </div>
         <div className="max-w-7xl mx-auto px-6">
           {/* Title Section */}
-          <div className="text-center mb-16">
+          <div ref={refSec1} className="text-center mb-16">
             <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
-              <Typewriter speed={20}>
-                Panduan Gizi dan Perawatan Anak
-              </Typewriter>
+              {sec1Visible && (
+                <Typewriter speed={20}>Panduan Gizi Pada Anak</Typewriter>
+              )}
             </h2>
             <FadeSlide direction="right" delay={300}>
               <p className="text-gray-400 mt-4 max-w-2xl mx-auto">
@@ -487,15 +482,21 @@ export default function EdukasiStunting() {
           />
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 relative z-10">
+        <div ref={refSec4} className="max-w-6xl mx-auto px-6 relative z-10">
           {/* Title */}
 
           <div className="text-center text-black mb-12">
-            <h2 className="text-4xl font-extrabold">Video Edukasi Stunting</h2>
-            <p className="text-gray-500 mt-2">
-              Pelajari cara mencegah stunting melalui video edukasi kesehatan
-              anak.
-            </p>
+            <h2 className="text-4xl font-extrabold">
+              {sec4Visible && (
+                <Typewriter speed={20}>Video Edukasi Stunting</Typewriter>
+              )}
+            </h2>
+            <FadeSlide direction="left">
+              <p className="text-gray-500 mt-2">
+                Pelajari cara mencegah stunting melalui video edukasi kesehatan
+                anak.
+              </p>
+            </FadeSlide>
           </div>
 
           {/* Grid */}
@@ -524,11 +525,13 @@ export default function EdukasiStunting() {
           </div>
 
           {/* Button */}
-          <div className="text-center mt-10">
-            <button className="bg-emerald-500 text-white px-6 py-3 rounded-full hover:bg-emerald-600 transition">
-              Lihat Semua Video
-            </button>
-          </div>
+          <FadeSlide direction="right">
+            <div className="text-center mt-10">
+              <button className="bg-emerald-500 text-white px-6 py-3 rounded-full hover:bg-emerald-600 transition">
+                Lihat Semua Video
+              </button>
+            </div>
+          </FadeSlide>
         </div>
       </section>
     </MainLayouts>

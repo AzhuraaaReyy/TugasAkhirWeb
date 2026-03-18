@@ -21,7 +21,7 @@ const StatusChart = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-500  p-6 w-full">
+    <div className="bg-white rounded-2xl border border-emerald-500  p-6 w-full">
       {/* Header */}
       <div className="mb-6">
        

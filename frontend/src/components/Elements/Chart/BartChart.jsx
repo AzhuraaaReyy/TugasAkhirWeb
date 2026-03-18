@@ -47,7 +47,7 @@ const Barchart = () => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-emerald-50 to-white border border-emerald-500   rounded-3xl  p-6">
+    <div className="bg-white border border-emerald-500   rounded-3xl  p-6">
      
 
       <BarChart

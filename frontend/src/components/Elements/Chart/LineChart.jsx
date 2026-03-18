@@ -51,7 +51,7 @@ const Linechart = () => {
 
   return (
     <div className="bg-white rounded-3xl ">
-      <div className="rounded-3xl p-6 bg-gradient-to-br from-emerald-50 to-white border border-emerald-500 ">
+      <div className="rounded-3xl p-6 bg-white border border-emerald-500 ">
         {/* 🔹 Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-gray-800 text-xl font-semibold tracking-wide"></h2>

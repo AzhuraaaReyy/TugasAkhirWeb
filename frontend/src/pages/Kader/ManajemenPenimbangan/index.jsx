@@ -100,6 +100,8 @@ const ManajemenPenimbangan = () => {
                   <th className="px-4 py-3">Tanggal Penimbangan</th>
                   <th className="px-4 py-3">Berat Badan(kg)</th>
                   <th className="px-4 py-3">Tinggi Badan(cm)</th>
+                  <th className="px-4 py-3">Lingkar Kepala(cm)</th>
+                  <th className="px-4 py-3">Lingkar Lengan Atas(cm)</th>
                   <th className="px-4 py-3">Dicatat Oleh</th>
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
@@ -123,6 +125,12 @@ const ManajemenPenimbangan = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.berat}kg
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.tinggi}cm
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                      {item.tinggi}cm
                     </td>
                     <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                       {item.tinggi}cm

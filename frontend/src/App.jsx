@@ -24,6 +24,9 @@ import DashboardOrangTua from "./pages/OrangTua/Dashboard";
 import Laporan from "./pages/Kader/Laporan";
 import Notifikasi from "./pages/Kader/Notifikasi";
 import EdukasiKesehatanAnak from "./pages/OrangTua/Edukasi";
+import RiwayatPemeriksaan from "./pages/OrangTua/Riwayat";
+import Deteksi from "./pages/OrangTua/Deteksi";
+import NotifikasiOrtu from "./pages/OrangTua/Notifikasi";
 const RequireAuth = ({ children }) => {
   const { isLoggedIn } = useContext(AuthContext);
   return isLoggedIn ? children : <Navigate to="/login" />;
@@ -86,7 +89,7 @@ const App = () => {
       path: "/riwayat",
       element: <Riwayat />,
     },
-   
+
     {
       path: "/laporan",
       element: <Laporan />,
@@ -96,10 +99,6 @@ const App = () => {
       element: <Notifikasi />,
     },
 
-
-
-
-
     {
       path: "/DashboardOrangTua",
       element: <DashboardOrangTua />,
@@ -107,6 +106,18 @@ const App = () => {
     {
       path: "/EdukasiOrangTua",
       element: <EdukasiKesehatanAnak />,
+    },
+    {
+      path: "/RiwayatOrangTua",
+      element: <RiwayatPemeriksaan />,
+    },
+    {
+      path: "/DeteksiOrangTua",
+      element: <Deteksi />,
+    },
+    {
+      path: "/NotifikasiOrangTua",
+      element: <NotifikasiOrtu />,
     },
   ]);
 

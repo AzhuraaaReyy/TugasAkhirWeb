@@ -8,10 +8,12 @@ const CreatePenimbangan = () => {
   const [form, setForm] = useState({
     nama: "",
     umur: "",
-
     tanggal: "",
-    berat: "",
-    tinggi: "",
+    berat_badan: "",
+    tinggi_badan: "",
+    lingkar_kepala: "",
+    lingkar_lengan: "",
+    petugas: "",
   });
 
   const handleChange = (e) => {
@@ -67,10 +69,10 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="text"
-                  name="orangtua"
-                  value={form.orangtua}
+                  name="umur"
+                  value={form.umur}
                   onChange={handleChange}
-                  placeholder="Contoh: Ibu Melati"
+                  placeholder="Contoh: 20 Bulan"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
@@ -123,6 +125,36 @@ const CreatePenimbangan = () => {
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lingkar Kepala (cm)
+                </label>
+                <input
+                  type="number"
+                  name="lingkar_kepala"
+                  value={form.lingkar_kepala}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="Contoh: 10"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lingkar Lengan Atas (cm)
+                </label>
+                <input
+                  type="number"
+                  name="lingkar_lengan"
+                  value={form.lingkar_lengan}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="Contoh: 20"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -130,8 +162,8 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="text"
-                  name="orangtua"
-                  value={form.orangtua}
+                  name="petugas"
+                  value={form.petugas}
                   onChange={handleChange}
                   placeholder="Contoh: Kader Melati"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
