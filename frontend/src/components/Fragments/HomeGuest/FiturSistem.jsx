@@ -2,6 +2,10 @@ import { useInView } from "../../../hooks/useInView";
 import FadeSlide from "../../Animations/FadeSlide";
 import FadeUp from "../../Animations/FadeUp";
 import Typewriter from "../../Animations/Typewriter";
+import stunting from "../../../assets/images/sistem.jpg";
+import monitoring from "../../../assets/images/Aplikasi-Monitoring-Jaringan.jpg";
+import edukasi from "../../../assets/images/pixverse_t2i_ori_c2060860-0997-4480-ae6b-d12b9d41511f.webp";
+import BorderGlow from "../../Animations/BorderGlow";
 const FiturSistem = () => {
   const [refHeader, headerVisible] = useInView(0.3);
 
@@ -49,90 +53,128 @@ const FiturSistem = () => {
           <div className="mt-20 mb-10 grid md:grid-cols-3 gap-8">
             {/* FITUR 1 */}
             <FadeUp delay={400}>
-              <div
-                className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
+              <BorderGlow
+                edgeSensitivity={30}
+                glowColor="0 255 150"
+                borderRadius={20}
+                glowRadius={50}
+                glowIntensity={1.2}
+                animated={true}
+                colors={["#22c55e", "#4ade80", "#86efac"]}
+              >
+                <div
+                  className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
                     transition-all duration-300 ease-out
                     hover:-translate-y-3 hover:shadow-xl hover:scale-105"
-              >
-                <div className="w-14 h-14 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-xl text-2xl mx-auto group-hover:bg-emerald-500 group-hover:text-white transition">
-                  📚
+                >
+                  {/* 🔥 GAMBAR */}
+                  <img
+                    src={edukasi}
+                    alt="Edukasi"
+                    className="w-full h-[200px] object-cover rounded-xl"
+                  />
+                  <FadeSlide direction="left" delay={400}>
+                    <h3 className="mt-6 text-xl font-bold text-gray-800">
+                      Edukasi Gizi dan Stunting
+                    </h3>
+                  </FadeSlide>
+                  <FadeUp delay={400}>
+                    <p className="mt-3 text-gray-600">
+                      Menyediakan informasi mengenai nutrisi balita, pencegahan
+                      stunting, serta panduan tumbuh kembang anak berdasarkan
+                      sumber kesehatan terpercaya.
+                    </p>
+                  </FadeUp>
+                  <FadeSlide direction="right" delay={400}>
+                    <button className="mt-5 text-emerald-600 font-semibold hover:underline">
+                      Pelajari Sekarang →
+                    </button>
+                  </FadeSlide>
                 </div>
-                <FadeSlide direction="left" delay={400}>
-                  <h3 className="mt-6 text-xl font-bold text-gray-800">
-                    Edukasi Gizi dan Stunting
-                  </h3>
-                </FadeSlide>
-                <FadeUp delay={400}>
-                  <p className="mt-3 text-gray-600">
-                    Menyediakan informasi mengenai nutrisi balita, pencegahan
-                    stunting, serta panduan tumbuh kembang anak berdasarkan
-                    sumber kesehatan terpercaya.
-                  </p>
-                </FadeUp>
-                <FadeSlide direction="right" delay={400}>
-                  <button className="mt-5 text-emerald-600 font-semibold hover:underline">
-                    Pelajari Sekarang →
-                  </button>
-                </FadeSlide>
-              </div>
+              </BorderGlow>
             </FadeUp>
             {/* FITUR 2 */}
             <FadeUp delay={600}>
-              <div
-                className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
+              <BorderGlow
+                edgeSensitivity={30}
+                glowColor="0 255 150"
+                borderRadius={20}
+                glowRadius={50}
+                glowIntensity={1.2}
+                animated={true}
+                colors={["#22c55e", "#4ade80", "#86efac"]}
+              >
+                <div
+                  className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
                     transition-all duration-300 ease-out
                     hover:-translate-y-3 hover:shadow-xl hover:scale-105"
-              >
-                <div className="w-14 h-14 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-xl text-2xl mx-auto group-hover:bg-emerald-500 group-hover:text-white transition">
-                  📊
+                >
+                  <img
+                    src={monitoring}
+                    alt="Edukasi"
+                    className="w-full h-[200px] object-cover rounded-xl"
+                  />
+                  <FadeSlide direction="left" delay={600}>
+                    <h3 className="mt-6 text-xl font-bold text-gray-800">
+                      Monitoring Pertumbuhan Balita
+                    </h3>
+                  </FadeSlide>
+                  <FadeUp delay={600}>
+                    <p className="mt-3 text-gray-600">
+                      Mencatat dan memantau data tinggi badan, berat badan,
+                      serta umur balita dengan visualisasi grafik pertumbuhan
+                      sesuai standar WHO.
+                    </p>
+                  </FadeUp>
+                  <FadeSlide direction="right" delay={600}>
+                    <button className="mt-5 text-emerald-600 font-semibold hover:underline">
+                      Monitoring Sekarang →
+                    </button>
+                  </FadeSlide>
                 </div>
-                <FadeSlide direction="left" delay={600}>
-                  <h3 className="mt-6 text-xl font-bold text-gray-800">
-                    Monitoring Pertumbuhan Balita
-                  </h3>
-                </FadeSlide>
-                <FadeUp delay={600}>
-                  <p className="mt-3 text-gray-600">
-                    Mencatat dan memantau data tinggi badan, berat badan, serta
-                    umur balita dengan visualisasi grafik pertumbuhan sesuai
-                    standar WHO.
-                  </p>
-                </FadeUp>
-                <FadeSlide direction="right" delay={600}>
-                  <button className="mt-5 text-emerald-600 font-semibold hover:underline">
-                    Monitoring Sekarang →
-                  </button>
-                </FadeSlide>
-              </div>
+              </BorderGlow>
             </FadeUp>
 
             {/* FITUR 3 */}
             <FadeUp delay={800}>
-              <div
-                className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
+              <BorderGlow
+                edgeSensitivity={30}
+                glowColor="0 255 150"
+                borderRadius={20}
+                glowRadius={50}
+                glowIntensity={1.2}
+                animated={true}
+                colors={["#22c55e", "#4ade80", "#86efac"]}
+              >
+                <div
+                  className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
                     transition-all duration-300 ease-out
                     hover:-translate-y-3 hover:shadow-xl hover:scale-105"
-              >
-                <div className="w-14 h-14 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded-xl text-2xl mx-auto group-hover:bg-emerald-500 group-hover:text-white transition">
-                  🧠
+                >
+                  <img
+                    src={stunting}
+                    alt="Edukasi"
+                    className="w-full h-[200px] object-cover rounded-xl"
+                  />
+                  <FadeSlide direction="left" delay={800}>
+                    <h3 className="mt-6 text-xl font-bold text-gray-800">
+                      Deteksi Risiko Stunting
+                    </h3>
+                  </FadeSlide>
+                  <FadeUp delay={800}>
+                    <p className="mt-3 text-gray-600">
+                      Melakukan klasifikasi risiko stunting menggunakan sistem
+                      berbasis aturan yang mengacu pada standar antropometri
+                      WHO.
+                    </p>
+                  </FadeUp>
+                  <FadeSlide direction="right" delay={800}>
+                    <button className="mt-12 text-emerald-600 font-semibold hover:underline">
+                      Deteksi Sekarang →
+                    </button>
+                  </FadeSlide>
                 </div>
-                <FadeSlide direction="left" delay={800}>
-                  <h3 className="mt-6 text-xl font-bold text-gray-800">
-                    Deteksi Risiko Stunting
-                  </h3>
-                </FadeSlide>
-                <FadeUp delay={800}>
-                  <p className="mt-3 text-gray-600">
-                    Melakukan klasifikasi risiko stunting menggunakan sistem
-                    berbasis aturan yang mengacu pada standar antropometri WHO.
-                  </p>
-                </FadeUp>
-                <FadeSlide direction="right" delay={800}>
-                  <button className="mt-12 text-emerald-600 font-semibold hover:underline">
-                    Deteksi Sekarang →
-                  </button>
-                </FadeSlide>
-              </div>
+              </BorderGlow>
             </FadeUp>
           </div>
         </div>

@@ -257,9 +257,9 @@ export default function Deteksi() {
 
   return (
     <MainLayouts type="deteksiortu">
-      <div className="min-h-screen bg-gray-100 p-8 space-y-8 font-sans">
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h1 className="text-2xl font-bold tracking-tight  text-gray-800">
+      <div className="min-h-screen bg-emerald-50 p-8 space-y-8 font-sans">
+        <div className="">
+          <h1 className="text-2xl font-extrabold tracking-tight  text-gray-800 mt-5">
             Sistem Deteksi Dini Stunting
           </h1>
           <p className="text-sm text-gray-500 mt-1 mb-5">
@@ -268,7 +268,7 @@ export default function Deteksi() {
           </p>
 
           {/* ================= INPUT ================= */}
-          <div className="bg-emerald-50 rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
+          <div className="bg-white rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
             <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="text-sm text-gray-600">Pilih Balita</label>
@@ -300,7 +300,7 @@ export default function Deteksi() {
                   unstyled
                   classNames={{
                     control: () =>
-                      "w-full mt-1 border rounded-xl px-2 py-1 bg-emerald-50",
+                      "w-full mt-1 border rounded-xl px-2 py-1 bg-white",
                     menu: () => "border mt-1 rounded-xl shadow-md bg-white",
                     menuList: () => "max-h-40 overflow-y-auto",
                     option: ({ isFocused, isSelected }) =>

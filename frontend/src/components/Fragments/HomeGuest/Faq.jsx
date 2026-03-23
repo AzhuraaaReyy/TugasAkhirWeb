@@ -18,11 +18,7 @@ const FAQ = () => {
       <div className="max-w-4xl mx-auto">
         {/* Title */}
         <div className="text-center mb-12">
-          <FadeSlide direction="left" delay={200}>
-            <span className="px-4 py-2 bg-emerald-200 text-emerald-600 rounded-full text-sm font-semibold ">
-              Informasi Stunting
-            </span>
-          </FadeSlide>
+         
 
           <FadeUp delay={300}>
             <h2 className="mt-4 text-4xl font-bold text-gray-800">

@@ -75,8 +75,7 @@ const Testimoni = () => {
 
         <FadeSlide direction="left" delay={500}>
           <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-            Pengalaman pengguna yang telah menggunakan sistem deteksi dini
-            stunting.
+            Cerita dan pengalaman dari mereka yang telah menggunakan sistem ini.
           </p>
         </FadeSlide>
 

@@ -9,7 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-
+import stunting from "../../assets/images/image_2k.png";
 export default function DashboardOrtu() {
   const anak = {
     nama: "Aisyah",
@@ -21,46 +21,52 @@ export default function DashboardOrtu() {
   const dataPertumbuhan = [
     {
       bulan: "Jan",
-      tinggi: 65,
-      tinggiWHO: 67,
+      umur: 10,
+      tinggi: 70,
+      berat: 11,
       statusTinggi: "Normal",
-      berat: 7.2,
-      beratWHO: 7.4,
       statusBerat: "Normal",
     },
     {
       bulan: "Feb",
-      tinggi: 66,
-      tinggiWHO: 68,
+      umur: 11,
+      tinggi: 71,
+      berat: 8.2,
       statusTinggi: "Normal",
-      berat: 7.5,
-      beratWHO: 7.7,
       statusBerat: "Normal",
     },
     {
       bulan: "Mar",
-      tinggi: 67,
-      tinggiWHO: 69,
+      umur: 12,
+      tinggi: 72,
+      berat: 8.4,
       statusTinggi: "Normal",
-      berat: 7.8,
-      beratWHO: 8.0,
       statusBerat: "Normal",
     },
     {
       bulan: "Apr",
-      tinggi: 68,
-      tinggiWHO: 70,
-      statusTinggi: "Berisiko Stunting",
-      berat: 8.0,
-      beratWHO: 8.3,
+      umur: 13,
+      tinggi: 72.5,
+      berat: 8.3,
+      statusTinggi: "Pendek",
+      statusBerat: "Kurus",
+    },
+    {
+      bulan: "Mei",
+      umur: 14,
+      tinggi: 73,
+      berat: 8.1,
+      statusTinggi: "Pendek",
+      statusBerat: "Kurus",
+    },
+    {
+      bulan: "Jun",
+      umur: 15,
+      tinggi: 74,
+      berat: 8.5,
+      statusTinggi: "Normal",
       statusBerat: "Normal",
     },
-  ];
-
-  const tips = [
-    "Berikan makanan tinggi protein seperti telur dan ikan",
-    "Pastikan anak makan sayur dan buah setiap hari",
-    "Pantau pertumbuhan anak setiap bulan di Posyandu",
   ];
 
   return (
@@ -79,11 +85,14 @@ export default function DashboardOrtu() {
         {/* PROFILE ANAK */}
         <div className="bg-white rounded-2xl shadow shadow-lg p-6 flex items-center gap-6 mb-10 border border-gray-100">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-3xl">
-            👶
+            <img
+              src={stunting}
+              className="rounded-full w-20 h-20 object-cover"
+            ></img>
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold">{anak.nama}</h2>
+            <h2 className="text-2xl font-semibold">{anak.nama}</h2>
             <p className="text-gray-500 text-sm">{anak.umur}</p>
           </div>
 
@@ -132,8 +141,23 @@ export default function DashboardOrtu() {
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={dataPertumbuhan}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="bulan" />
-                  <YAxis />
+                  <XAxis
+                    dataKey="umur"
+                    label={{
+                      value: "Umur (bulan)",
+                      position: "insideBottom",
+                      textAnchor: "middle",
+                      offset: -5,
+                    }}
+                  />
+                  <YAxis
+                    label={{
+                      value: "Tinggi Badan (kg)",
+                      angle: -90,
+                      position: "insideLeft",
+                      textAnchor: "middle",
+                    }}
+                  />
                   <Tooltip />
                   <Legend />
 
@@ -142,16 +166,12 @@ export default function DashboardOrtu() {
                     dataKey="tinggi"
                     stroke="#10b981"
                     strokeWidth={3}
-                    name="Tinggi Anak"
-                  />
-
-                  <Line
-                    type="monotone"
-                    dataKey="tinggiWHO"
-                    stroke="#3b82f6"
-                    strokeDasharray="5 5"
-                    strokeWidth={2}
-                    name="Standar WHO"
+                    name="Tinggi Badan"
+                    dot={({ payload }) => {
+                      const color =
+                        payload.statusTinggi === "Pendek" ? "red" : "#10b981";
+                      return <circle r={5} fill={color} />;
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -184,8 +204,24 @@ export default function DashboardOrtu() {
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={dataPertumbuhan}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="bulan" />
-                  <YAxis />
+                  <XAxis
+                    dataKey="umur"
+                    label={{
+                      value: "Umur (bulan)",
+                      position: "insideBottom",
+                      textAnchor: "middle",
+                      offset: -5,
+                    }}
+                  />
+
+                  <YAxis
+                    label={{
+                      value: "Berat Badan (kg)",
+                      angle: -90,
+                      position: "insideLeft",
+                      textAnchor: "middle",
+                    }}
+                  />
                   <Tooltip />
                   <Legend />
 
@@ -194,16 +230,12 @@ export default function DashboardOrtu() {
                     dataKey="berat"
                     stroke="#f59e0b"
                     strokeWidth={3}
-                    name="Berat Anak"
-                  />
-
-                  <Line
-                    type="monotone"
-                    dataKey="beratWHO"
-                    stroke="#6366f1"
-                    strokeDasharray="5 5"
-                    strokeWidth={2}
-                    name="Standar WHO"
+                    name="Berat Badan"
+                    dot={({ payload }) => {
+                      const color =
+                        payload.statusBerat === "Kurus" ? "red" : "#f59e0b";
+                      return <circle r={5} fill={color} />;
+                    }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -238,22 +270,6 @@ export default function DashboardOrtu() {
             <span className="font-semibold"> 15 Juli 2026</span>. Jangan lupa
             melakukan penimbangan anak.
           </p>
-        </div>
-
-        {/* TIPS GIZI */}
-        <div className="bg-white rounded-2xl shadow p-6 mb-10 shadow shadow-lg border border-gray-100">
-          <h2 className="font-semibold text-gray-700 mb-4">Tips Gizi Anak</h2>
-
-          <ul className="space-y-3">
-            {tips.map((tip, i) => (
-              <li
-                key={i}
-                className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm"
-              >
-                🥗 {tip}
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
     </MainLayouts>

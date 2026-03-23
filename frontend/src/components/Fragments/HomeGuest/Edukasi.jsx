@@ -85,9 +85,7 @@ const Edukasi = () => {
               : "opacity-0 translate-y-10"
           }`}
         >
-          <div className="text-center">
-          
-          </div>
+          <div className="text-center"></div>
           <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
             {headerVisible && (
               <Typewriter speed={20}>Edukasi Stunting Pada Anak</Typewriter>
@@ -97,9 +95,9 @@ const Edukasi = () => {
           <p className="mt-4 max-w-2xl mx-auto text-gray-600 text-center">
             {headerVisible && (
               <Typewriter speed={20}>
-                Sistem membantu kader posyandu dan orang tua dalam melakukan
-                pencatatan, pemantauan pertumbuhan balita, serta deteksi dini
-                risiko stunting secara digital dan sistematis."
+                Pelajari apa itu stunting dan bagaimana pengaruhnya pada anak.
+                Ketahui langkah sederhana untuk menjaga tumbuh kembangnya tetap
+                optimal.
               </Typewriter>
             )}
           </p>

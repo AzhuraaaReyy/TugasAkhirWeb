@@ -42,16 +42,16 @@ function Navbar() {
           {/* Desktop Menu */}
           <ul className="hidden md:flex items-center gap-8">
             {menus.map((menu, i) => (
-              <li key={i} className="relative group">
+              <li key={i} className="relative group zoom-in">
                 <Link
                   to={menu.link}
                   smooth={true}
                   duration={600}
                   offset={-70}
                   spy={true}
-                  activeClass="text-emerald-600 font-semibold"
+                  activeClass="text-emerald-600 font-semibold "
                   className={`cursor-pointer transition ${
-                    scrolled ? "text-gray-700 " : "text-white"
+                    scrolled ? "text-gray-700 " : "text-white "
                   }`}
                 >
                   {menu.name}
@@ -67,7 +67,7 @@ function Navbar() {
           <div className="hidden md:flex gap-3">
             <NavLink
               to="/login"
-              className="px-4 py-2 text-emerald-600 font-medium hover:underline"
+              className="px-5 py-2 bg-white text-emerald-500 rounded-xl hover:bg-emerald-600 transition hover:text-white"
             >
               Login
             </NavLink>

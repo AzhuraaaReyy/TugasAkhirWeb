@@ -124,8 +124,8 @@ const Berita = () => {
           <FadeSlide direction="right" delay={400}>
             <div>
               <p className="mt-5 max-w-2xl mx-auto text-gray-600">
-                Dapatkan informasi terbaru mengenai pencegahan, edukasi gizi,
-                serta perkembangan penelitian terkait stunting.
+                Berbagai informasi seputar stunting, mulai dari fakta,
+                perkembangan, hingga hal-hal penting yang perlu diketahui
               </p>
             </div>
           </FadeSlide>

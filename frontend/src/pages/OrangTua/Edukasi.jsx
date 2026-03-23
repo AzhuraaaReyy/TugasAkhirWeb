@@ -14,6 +14,7 @@ import PencegahanDetail from "@/components/Fragments/Stunting/Pencegahan";
 import CiriDetail from "@/components/Fragments/Stunting/Ciri";
 import artikel from "@/data/artikel";
 import { data } from "@/data/stunting";
+import { motion } from "framer-motion";
 
 export default function EdukasiStunting() {
   const [activeKey, setActiveKey] = useState("pengertian");
@@ -502,16 +503,22 @@ export default function EdukasiStunting() {
           {/* Grid */}
           <div className="grid md:grid-cols-3 gap-8">
             {/* VIDEO UTAMA */}
-
-            <div className="md:col-span-2">
-              <iframe
-                className="w-full h-[400px] rounded-lg"
-                src={`https://www.youtube.com/embed/${activeVideo.videoId}`}
-                title={activeVideo.title}
-                allowFullScreen
-              ></iframe>
-            </div>
-
+            <motion.div
+              key={activeVideo.videoId}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="md:col-span-2"
+            >
+              <div className="md:col-span-2">
+                <iframe
+                  className="w-full h-[400px] rounded-lg"
+                  src={`https://www.youtube.com/embed/${activeVideo.videoId}`}
+                  title={activeVideo.title}
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </motion.div>
             {/* LIST VIDEO */}
             <div className="space-y-4">
               <AnimatedList

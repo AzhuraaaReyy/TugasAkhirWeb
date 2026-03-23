@@ -1,6 +1,7 @@
 import stunting from "../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
 import FadeSlide from "../components/Animations/FadeSlide";
 import FadeUp from "../components/Animations/FadeUp";
+import Particles from "@/components/Animations/Particles";
 const AuthLayout = (props) => {
   const { children, type } = props;
 
@@ -14,12 +15,26 @@ const AuthLayout = (props) => {
           alt="Illustration"
           className="w-full h-full object-cover rounded-lg shadow-lg"
         />
+
         {/* Teks di atas gambar */}
         <div className="absolute text-black text-2xl font-bold  p-4 rounded-lg"></div>
       </div>
       {/* Bagian kiri (Form Login) */}
 
-      <div className="w-1/2 flex justify-center items-center bg-white relative overflow-hidden">
+      <div className="w-1/2 flex justify-center items-center bg-white relative overflow-hidden z-20">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <Particles
+            particleColors={["#00ff1e"]}
+            particleCount={200}
+            particleSpread={10}
+            speed={0.1}
+            particleBaseSize={100}
+            moveParticlesOnHover
+            alphaParticles={false}
+            disableRotation={false}
+            pixelRatio={1}
+          />
+        </div>
         <div className="w-full max-w-sm">
           {/* BACKGROUND BLUR DECORATION */}
           <div className="absolute -top-40 bottom-0 -left-50 w-[400px] h-[400px] bg-emerald-300 rounded-full blur-3xl opacity-30 animate-pulse z-0"></div>
@@ -28,7 +43,7 @@ const AuthLayout = (props) => {
 
           {/* Logo */}
           <FadeUp delay={200}>
-            <div className="flex justify-center font-poppins tracking-wide text-black text-4xl mt-10">
+            <div className="flex justify-center font-poppins tracking-wide text-black text-4xl mt-10 z-20">
               {type == "login" ? (
                 <span className="font-bold text-emerald-400 ">Login</span>
               ) : (
