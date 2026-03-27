@@ -153,10 +153,6 @@ hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]
                         {item.nama}
                       </h4>
 
-                      <span className="text-sm text-gray-500">
-                        {item.peran}
-                      </span>
-
                       {/* Rating */}
                       <div className="flex justify-center mt-3">
                         {[...Array(5)].map((_, i) => (

@@ -1,13 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { kaderMenu, orangTuaMenu } from "../Menu";
+import { kaderMenu, orangTuaMenu, adminMenu } from "../Menu";
 
 const Sidebar = ({ open }) => {
   const { user, logout } = useAuth();
   if (!user) return null;
 
-  const menu = user.role === "orangtua" ? kaderMenu : orangTuaMenu;
-
+  const menu =
+    user.role === "admin"
+      ? adminMenu
+      : user.role === "kader"
+        ? kaderMenu
+        : orangTuaMenu;
   return (
     <aside
       className={`fixed left-0 top-0 h-screen z-40 transition-all duration-300

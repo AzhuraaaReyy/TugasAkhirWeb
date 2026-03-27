@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import axios from "axios";
 import LabeledInput from "../Elements/LabeledInput";
 import CheckBox from "../Elements/CheckBox/Index";
 {
@@ -6,6 +7,7 @@ import CheckBox from "../Elements/CheckBox/Index";
 }
 import Button from "../Elements/Button/Index";
 import { FcGoogle } from "react-icons/fc";
+import { useNavigate } from "react-router-dom";
 const FormLogin = () => {
   {
     /* const { setMsg, setOpen, setIsLoading, msg, open } = useContext(NotifContext);
@@ -13,7 +15,7 @@ const FormLogin = () => {
   const navigate = useNavigate();
 */
   }
-
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -23,8 +25,30 @@ const FormLogin = () => {
   });
 
   const onErrors = (errors) => console.error(errors);
-  const onFormSubmit = (data) => {
-    console.log("LOGIN DATA:", data);
+  const onFormSubmit = async (data) => {
+    try {
+      const res = await axios.post("http://localhost:8000/api/login", data);
+
+      // ✅ simpan token
+      localStorage.setItem("token", res.data.token);
+
+      // ✅ simpan user
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      const role = res.data.user.role;
+
+      // ✅ redirect berdasarkan role
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "kader") {
+        navigate("/kader/dashboard");
+      } else {
+        navigate("/orangtua/dashboard");
+      }
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+      alert("Login gagal: email atau password salah");
+    }
   };
   const handleGoogleLogin = () => {
     // redirect ke backend OAuth endpoint

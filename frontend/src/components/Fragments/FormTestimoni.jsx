@@ -41,14 +41,6 @@ const FormTestimoni = ({ onSubmit }) => {
           onChange={(e) => setForm({ ...form, nama: e.target.value })}
         />
 
-        <input
-          type="text"
-          placeholder="Peran (Orang Tua / Kader Posyandu)"
-          className="w-full border rounded-lg p-3"
-          value={form.peran}
-          onChange={(e) => setForm({ ...form, peran: e.target.value })}
-        />
-
         <textarea
           placeholder="Tulis ulasan Anda..."
           required

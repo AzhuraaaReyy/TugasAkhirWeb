@@ -6,7 +6,6 @@ import {
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthContext from "./context/AuthContext";
-import { useContext } from "react";
 import Dashboard from "./pages/Kader/Dashboard";
 import Homepage from "./pages/homepage";
 import ManajemenBalita from "./pages/Kader/ManajemenBalita/ManajemenBalita";
@@ -27,9 +26,16 @@ import EdukasiKesehatanAnak from "./pages/OrangTua/Edukasi";
 import RiwayatPemeriksaan from "./pages/OrangTua/Riwayat";
 import Deteksi from "./pages/OrangTua/Deteksi";
 import NotifikasiOrtu from "./pages/OrangTua/Notifikasi";
-const RequireAuth = ({ children }) => {
-  const { isLoggedIn } = useContext(AuthContext);
-  return isLoggedIn ? children : <Navigate to="/login" />;
+const RequireAuth = ({ children, role }) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  if (!user) return <Navigate to="/login" />;
+
+  if (role && user.role !== role) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
 };
 const App = () => {
   const myRouter = createBrowserRouter([
@@ -38,8 +44,12 @@ const App = () => {
       element: <Homepage />,
     },
     {
-      path: "/dashboard",
-      element: <Dashboard />,
+      path: "/admin/dashboard",
+      element: (
+        <RequireAuth role="admin">
+          <Dashboard />
+        </RequireAuth>
+      ),
     },
     {
       path: "/login",
