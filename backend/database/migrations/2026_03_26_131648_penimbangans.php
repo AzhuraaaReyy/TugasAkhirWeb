@@ -21,6 +21,7 @@ return new class extends Migration
             $table->float('tinggi');
             $table->float('lingkar_kepala');
             $table->float('lingkar_lengan');
+            $table->timestamps();
         });
     }
 
@@ -30,6 +31,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('penimbangans');
-        
     }
 };
