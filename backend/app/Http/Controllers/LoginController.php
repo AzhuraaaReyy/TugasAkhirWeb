@@ -38,4 +38,26 @@ class LoginController extends Controller
             ]
         ]);
     }
+
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Logout berhasil'
+        ]);
+    }
+
+    public function user(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    public function ambiluser(Request $request)
+    {
+        $role = $request->query('role'); // ambil ?role=orangtua
+        $users = User::when($role, fn($q) => $q->where('role', $role))
+            ->get(['id', 'name', 'email']); // hanya kirim field penting
+        return response()->json(['data' => $users]);
+    }
 }
