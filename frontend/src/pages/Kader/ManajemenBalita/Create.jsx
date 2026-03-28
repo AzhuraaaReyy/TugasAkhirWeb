@@ -7,6 +7,7 @@ const CreateFormBalita = () => {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
+  const [posyandus, setPosyandus] = useState([]);
   const [form, setForm] = useState({
     name: "",
     user_id: "",
@@ -14,7 +15,7 @@ const CreateFormBalita = () => {
     tgl_lahir: "",
     tmp_lahir: "",
     alamat: "",
-    posyandu: "",
+    posyandu_id: "",
   });
 
   //ambil user orangtua
@@ -36,7 +37,18 @@ const CreateFormBalita = () => {
       [e.target.name]: e.target.value,
     });
   };
+  useEffect(() => {
+    const fetchPosyandu = async () => {
+      try {
+        const res = await api.get("/posyandu");
+        setPosyandus(res.data.data);
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+      }
+    };
 
+    fetchPosyandu();
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -94,7 +106,7 @@ const CreateFormBalita = () => {
                   <option value="">Pilih Orang Tua</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.name} ({user.email})
+                      {user.name}
                     </option>
                   ))}
                 </select>
@@ -143,22 +155,23 @@ const CreateFormBalita = () => {
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
-
               {/* Posyandu */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Posyandu
                 </label>
                 <select
-                  name="posyandu"
-                  value={form.posyandu}
+                  name="posyandu_id"
+                  value={form.posyandu_id}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
                   <option value="">Pilih Posyandu</option>
-                  <option value="Posyandu 1">Posyandu 1</option>
-                  <option value="Posyandu 2">Posyandu 2</option>
-                  <option value="Posyandu 3">Posyandu 3</option>
+                  {posyandus.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nama_posyandu}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

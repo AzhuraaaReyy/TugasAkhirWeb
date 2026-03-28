@@ -2,41 +2,57 @@ import { useState } from "react";
 import MainLayouts from "../../../layouts/MainLayouts";
 import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-
+import api from "@/services/api";
+import { useEffect } from "react";
 const ManajemenBalita = () => {
-  const [data] = useState([
-    {
-      id: 1,
-      nama: "Aisyah",
-      orangtua: "Melati",
-      tanggal: "2024-01-12",
-      tempatlahir: "Semarang",
-      posyandu: "Posyandu 1",
-      jk: "Perempuan",
-      alamat: "Soka RT02/04 Kecamatan Ungaran Barat",
-    },
-    {
-      id: 2,
-      nama: "Rafi",
-      orangtua: "Mawar",
-      tanggal: "2004-01-12",
-      tempatlahir: "Ungaran",
-      posyandu: "Posyandu 2",
-      jk: "Laki-Laki",
-      alamat: "Soka RT02/04 Kecamatan Ungaran Barat",
-    },
-    {
-      id: 3,
-      nama: "Zahra",
-      orangtua: "Matahari",
-      tanggal: "2020-01-12",
-      tempatlahir: "Lerep",
-      posyandu: "Posyandu 3",
-      jk: "Perempuan",
-      alamat: "Soka RT02/04 Kecamatan Ungaran Barat",
-    },
-  ]);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [posyandu, setPosyandu] = useState("");
+  useEffect(() => {
+    const fetchBalita = async () => {
+      try {
+        const res = await api.get("/balitas"); // endpoint index
+        setData(res.data.data || res.data || []);
+      } catch (error) {
+        console.error(error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchBalita();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Yakin ingin menghapus data?")) return;
+
+    try {
+      await api.delete(`/balitas/${id}`);
+
+      // ✅ hapus dari state (langsung update UI)
+      setData((prev) => prev.filter((item) => item.id !== id));
+
+      alert("Data berhasil dihapus");
+    } catch (error) {
+      console.error(error);
+      alert("Gagal menghapus data");
+    }
+  };
+  if (loading) {
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+  }
+
+  const filteredData = data.filter((item) => {
+    return (
+      item.nama?.toLowerCase().includes(search.toLowerCase()) &&
+      (posyandu === "" || item.posyandu === posyandu)
+    );
+  });
   return (
     <MainLayouts type="manajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
@@ -65,22 +81,25 @@ const ManajemenBalita = () => {
           </div>
 
           {/* FILTER SECTION */}
+          {/* FILTER */}
           <div className="bg-gray-50 rounded-xl p-4 flex flex-wrap items-center gap-4 mb-6">
             <input
               type="text"
               placeholder="Cari nama balita..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
             />
 
-            <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none">
-              <option>Pilih Posyandu</option>
-              <option>Melati 1</option>
-              <option>Anggrek 2</option>
+            <select
+              value={posyandu}
+              onChange={(e) => setPosyandu(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+            >
+              <option value="">Semua Posyandu</option>
+              <option value="Posyandu Melati">Posyandu Melati</option>
+              <option value="Posyandu Anggrek">Posyandu Anggrek</option>
             </select>
-
-            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
-              Search
-            </button>
 
             <div className="ml-auto">
               <Link
@@ -109,70 +128,83 @@ const ManajemenBalita = () => {
               </thead>
 
               <tbody className="divide-y divide-gray-100 text-center">
-                {data.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {index + 1}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.nama}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.orangtua}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium truncate ${
-                          item.jk === "Perempuan"
-                            ? "bg-emerald-100 text-emerald-600"
-                            : "bg-blue-100 text-blue-600"
-                        }`}
-                      >
-                        {item.jk}
-                      </span>
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.tempatlahir}, {item.tanggal}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.alamat}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.posyandu}
-                    </td>
-
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex justify-center gap-3">
-                        {/* Detail */}
-                        <Link
-                          to="/detailmanajemenbalita"
-                          className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition"
-                        >
-                          <FaEye size={14} />
-                        </Link>
-
-                        {/* Edit */}
-                        <Link
-                          to="/updatemanajemenbalita"
-                          className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg transition"
-                        >
-                          <FaEdit size={14} />
-                        </Link>
-
-                        {/* Hapus */}
-                        <button className="text-red-600 hover:bg-red-100 p-2 rounded-lg transition">
-                          <FaTrash size={14} />
-                        </button>
-                      </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="py-6 text-gray-400">
+                      Loading...
                     </td>
                   </tr>
-                ))}
+                ) : filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="py-6 text-gray-400">
+                      Data tidak ditemukan
+                    </td>
+                  </tr>
+                ) : (
+                  filteredData.map((item, index) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.nama || "-"}
+                      </td>
+
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.orangtua || "-"}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            item.jk === "Perempuan"
+                              ? "bg-emerald-100 text-emerald-600"
+                              : "bg-blue-100 text-blue-600"
+                          }`}
+                        >
+                          {item.jk || "-"}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.tempatlahir},{" "}
+                        {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                      </td>
+
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.alamat || "-"}
+                      </td>
+
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.posyandu || "-"}
+                      </td>
+
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex justify-center gap-3">
+                          <Link
+                            to={`/kader/detailmanajemenbalita/${item.id}`}
+                            className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"
+                          >
+                            <FaEye size={14} />
+                          </Link>
+
+                          <Link
+                            to={`/kader/updatemanajemenbalita/${item.id}`}
+                            className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg"
+                          >
+                            <FaEdit size={14} />
+                          </Link>
+
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="text-red-600 hover:bg-red-100 p-2 rounded-lg"
+                          >
+                            <FaTrash size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
