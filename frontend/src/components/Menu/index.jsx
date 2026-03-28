@@ -3,43 +3,43 @@ import { Icon } from "../../assets/icons";
 export const kaderMenu = [
   {
     id: "dashboard",
-    link: "/dashboard",
+    link: "/kader/dashboard",
     icon: <Icon.Dashboard />,
     label: "Dashboard",
   },
   {
     id: "manajemenbalita",
-    link: "/manajemenbalita",
+    link: "/kader/manajemenbalita",
     icon: <Icon.Manajemen />,
     label: "Manajemen Balita",
   },
   {
     id: "inputdatapenimbangan",
-    link: "/manajemenpenimbangan",
+    link: "/kader/manajemenpenimbangan",
     icon: <Icon.InputPenimbangan />,
     label: "Manajemen Penimbangan",
   },
   {
     id: "deteksidini",
-    link: "/deteksidini",
+    link: "/kader/deteksidini",
     icon: <Icon.DeteksiDini />,
     label: "Deteksi Dini",
   },
   {
     id: "riwayat",
-    link: "/riwayat",
+    link: "/kader/riwayat",
     icon: <Icon.Riwayat />,
     label: "Riwayat & Grafik",
   },
   {
     id: "laporan",
-    link: "/laporan",
+    link: "/kader/laporan",
     icon: <Icon.Laporan />,
     label: "Laporan",
   },
   {
     id: "notif",
-    link: "/notif",
+    link: "/kader/notif",
     icon: <Icon.Notification />,
     label: "Manajemen Notifikasi",
   },
@@ -48,26 +48,26 @@ export const kaderMenu = [
 export const orangTuaMenu = [
   {
     id: "dashboardortu",
-    link: "/DashboardOrangTua",
+    link: "/orangtua/dashboard",
     icon: <Icon.Dashboard />,
     label: "Dashboard",
   },
   {
     id: "notifikasiortu",
-    link: "/DeteksiOrangTua",
+    link: "/orangtua/deteksi",
     icon: <Icon.Dashboard />,
     label: "Deteksi Dini",
   },
   {
     id: "edukasiortu",
-    link: "/EdukasiOrangTua",
+    link: "/orangtua/edukasi",
     icon: <Icon.Edukasi />,
     label: "Edukasi",
   },
 
   {
     id: "riwayatortu",
-    link: "/RiwayatOrangTua",
+    link: "/orangtua/riwayat",
     icon: <Icon.Dashboard />,
     label: "Riwayat Pemeriksaan",
   },

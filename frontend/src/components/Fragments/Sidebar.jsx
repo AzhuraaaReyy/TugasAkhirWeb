@@ -1,9 +1,21 @@
-import { NavLink } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { Navigate, NavLink } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 import { kaderMenu, orangTuaMenu, adminMenu } from "../Menu";
-
+import { useNavigate } from "react-router-dom";
 const Sidebar = ({ open }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+  if (loading)
+    return (
+      <div
+        className={`fixed left-0 top-0 h-screen w-${open ? "64" : "20"} bg-gray-800 animate-pulse`}
+      />
+    );
+
   if (!user) return null;
 
   const menu =
@@ -44,7 +56,7 @@ const Sidebar = ({ open }) => {
         {open && (
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-lg">
-              {user.name || "User"}@gmail.com
+              {user.email || "User"}
             </span>
             <span className="text-sm text-slate-400 capitalize">
               {user.role} Posyandu
@@ -102,7 +114,7 @@ const Sidebar = ({ open }) => {
       {/* ===== Logout ===== */}
       <div className="p-4 border-t border-white/10">
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
           text-red-400 hover:bg-red-500/20 transition-all duration-200
           ${!open && "justify-center"}`}

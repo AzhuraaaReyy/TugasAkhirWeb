@@ -84,7 +84,7 @@ const ManajemenBalita = () => {
 
             <div className="ml-auto">
               <Link
-                to="/createmanajemenbalita"
+                to="/kader/createmanajemenbalita"
                 className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
               >
                 Tambah Data

@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import axios from "axios";
+
 import LabeledInput from "../Elements/LabeledInput";
 import CheckBox from "../Elements/CheckBox/Index";
 {
@@ -8,6 +8,7 @@ import CheckBox from "../Elements/CheckBox/Index";
 import Button from "../Elements/Button/Index";
 import { FcGoogle } from "react-icons/fc";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/useAuth";
 const FormLogin = () => {
   {
     /* const { setMsg, setOpen, setIsLoading, msg, open } = useContext(NotifContext);
@@ -15,10 +16,12 @@ const FormLogin = () => {
   const navigate = useNavigate();
 */
   }
+  const { login } = useAuth();
   const navigate = useNavigate();
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isValid, isSubmitting },
   } = useForm({
     mode: "onChange",
@@ -26,28 +29,24 @@ const FormLogin = () => {
 
   const onErrors = (errors) => console.error(errors);
   const onFormSubmit = async (data) => {
-    try {
-      const res = await axios.post("http://localhost:8000/api/login", data);
+    const res = await login(data.email, data.password);
 
-      // ✅ simpan token
-      localStorage.setItem("token", res.data.token);
+    if (!res.success) {
+      setError("root", {
+        type: "manual",
+        message: res.message,
+      });
+      return;
+    }
 
-      // ✅ simpan user
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+    const role = res.user.role;
 
-      const role = res.data.user.role;
-
-      // ✅ redirect berdasarkan role
-      if (role === "admin") {
-        navigate("/admin/dashboard");
-      } else if (role === "kader") {
-        navigate("/kader/dashboard");
-      } else {
-        navigate("/orangtua/dashboard");
-      }
-    } catch (error) {
-      console.error(error.response?.data || error.message);
-      alert("Login gagal: email atau password salah");
+    if (role === "admin") {
+      navigate("/admin/dashboard");
+    } else if (role === "kader") {
+      navigate("/kader/dashboard");
+    } else {
+      navigate("/orangtua/dashboard");
     }
   };
   const handleGoogleLogin = () => {
@@ -96,6 +95,11 @@ const FormLogin = () => {
             </div>
           )}
         </div>
+        {errors?.root && (
+          <div className="text-center text-red-500 mb-3">
+            {errors.root.message}
+          </div>
+        )}
         <div className="mb-3">
           <CheckBox label="Keep me signed in" name="status" />
         </div>

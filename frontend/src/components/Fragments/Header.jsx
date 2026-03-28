@@ -1,5 +1,5 @@
 import { Bell, Settings, Menu } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { useRef, useEffect } from "react";
 
 const Header = ({

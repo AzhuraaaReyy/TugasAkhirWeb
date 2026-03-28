@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "../components/Fragments/Sidebar";
 import Header from "../components/Fragments/Header";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { kaderMenu, orangTuaMenu } from "../components/Menu";
 const MainLayouts = ({ children }) => {
   const [open, setOpen] = useState(true);
