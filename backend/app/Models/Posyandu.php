@@ -14,4 +14,9 @@ class Posyandu extends Model
         'latitude',
         'longitude',
     ];
+
+    public function balitas()
+    {
+        return $this->hasMany(Balita::class);
+    }
 }

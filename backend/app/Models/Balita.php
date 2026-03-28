@@ -14,10 +14,20 @@ class Balita extends Model
         'jk',
         'tgl_lahir',
         'tmp_lahir',
-        'alamat'
+        'alamat',
+        'posyandu_id'
     ];
 
     protected $casts = [
         'tgl_lahir' => 'date',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    public function posyandu()
+    {
+        return $this->belongsTo(Posyandu::class);
+    }
 }

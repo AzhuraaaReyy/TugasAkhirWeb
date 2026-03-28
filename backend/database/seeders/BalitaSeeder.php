@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Balita;
 use Carbon\Carbon;
+
 class BalitaSeeder extends Seeder
 {
     /**
@@ -21,6 +22,7 @@ class BalitaSeeder extends Seeder
                 'tgl_lahir' => '2025-10-10',
                 'tmp_lahir' => "Semarang",
                 'alamat' => 'Soka Rt02/Rw04',
+                'posyandu_id' => 1,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
@@ -30,6 +32,7 @@ class BalitaSeeder extends Seeder
                 'jk' => 'P',
                 'tgl_lahir' => '2025-10-10',
                 'tmp_lahir' => "Salatiga",
+                'posyandu_id' => 2,
                 'alamat' => 'Soka Rt05/Rw04',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),

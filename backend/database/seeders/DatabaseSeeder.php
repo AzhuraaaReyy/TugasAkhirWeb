@@ -17,12 +17,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
+            PosyanduSeeder::class,
             BalitaSeeder::class,
             PenimbanganSeeder::class,
             DeteksiSeeder::class,
             TestimoniSeeder::class,
             FAQSeeder::class,
-            PosyanduSeeder::class,
             KaderPosyanduSeeder::class,
             NotifikasiSeeder::class,
             EdukasiSeeder::class,

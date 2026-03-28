@@ -14,6 +14,7 @@ return new class extends Migration
         schema::create('balitas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('posyandu_id')->constrained('posyandus')->cascadeOnDelete();
             $table->string('name');
             $table->enum('jk', ['L', 'P']);
             $table->date('tgl_lahir');
