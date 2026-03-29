@@ -36,9 +36,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/balitas/{id}', [BalitaController::class, 'update']);
         Route::get('/balitas/detail/{id}', [BalitaController::class, 'show']);
         Route::delete('/balitas/{id}', [BalitaController::class, 'destroy']);
+
         Route::get('/users', [LoginController::class, 'ambiluser']);
 
         Route::get('/posyandu', [PosyanduController::class, 'index']);
+       
     });
 
 

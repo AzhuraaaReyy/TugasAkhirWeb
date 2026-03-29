@@ -9,7 +9,9 @@ class BalitaController extends Controller
 {
     public function index()
     {
-        $balitas = Balita::with(['user', 'posyandu'])->latest()->get();
+        $balitas = Balita::with(['user', 'posyandu'])->orderBy('id', 'asc') // 🔥 urut dari ID kecil ke besar
+            ->get();
+
 
         $data = $balitas->map(function ($balita) {
             return [

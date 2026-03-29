@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Balita;
 use App\Models\Posyandu;
 use Illuminate\Http\Request;
 
