@@ -52,11 +52,13 @@ const CreateFormBalita = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/balitas", form); //
-      console.log(res.data);
+      await api.post("/balitas", form); //
+
+      alert("Data berhasil ditambahkan");
       navigate("/kader/manajemenbalita");
     } catch (err) {
       console.error(err.response?.data || err.message);
+      alert("Gagal update data");
     }
   };
 
@@ -88,7 +90,8 @@ const CreateFormBalita = () => {
                   name="name"
                   onChange={handleChange}
                   placeholder="Contoh: Aisyah Putri"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none "
+                  required
                 />
               </div>
 
@@ -101,6 +104,7 @@ const CreateFormBalita = () => {
                   name="user_id"
                   value={form.user_id}
                   onChange={handleChange}
+                  required
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
                   <option value="">Pilih Orang Tua</option>
@@ -120,6 +124,7 @@ const CreateFormBalita = () => {
                 <select
                   name="jk"
                   onChange={handleChange}
+                  required
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
                   <option value="">Pilih Jenis Kelamin</option>
@@ -136,6 +141,7 @@ const CreateFormBalita = () => {
                 <input
                   type="date"
                   name="tgl_lahir"
+                  required
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
@@ -149,6 +155,7 @@ const CreateFormBalita = () => {
                 <input
                   type="text"
                   name="tmp_lahir"
+                  required
                   value={form.tmp_lahir}
                   onChange={handleChange}
                   placeholder="Contoh: Semarang"
@@ -162,6 +169,7 @@ const CreateFormBalita = () => {
                 </label>
                 <select
                   name="posyandu_id"
+                  required
                   value={form.posyandu_id}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -184,6 +192,7 @@ const CreateFormBalita = () => {
               <textarea
                 name="alamat"
                 value={form.alamat}
+                required
                 onChange={handleChange}
                 rows="3"
                 placeholder="Contoh: Soka RT02/04 Kecamatan Ungaran Barat"

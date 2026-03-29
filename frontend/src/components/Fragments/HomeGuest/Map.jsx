@@ -176,55 +176,57 @@ const Map = () => {
 
         {/* SEARCH PROFESSIONAL */}
         <div className="relative w-96 mx-auto mb-12 z-[9999]" ref={dropdownRef}>
-          <input
-            type="text"
-            placeholder="Cari kota..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setOpenDropdown(true);
-            }}
-            onFocus={() => setOpenDropdown(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const found = cities.find(
-                  (city) => city.toLowerCase() === searchTerm.toLowerCase(),
-                );
-                if (found) {
-                  setSelectedCity(found);
-                  setSearchTerm(found);
-                  setOpenDropdown(false);
-                  setSelectedLocation(null);
+          <FadeUp delay={300}>
+            <input
+              type="text"
+              placeholder="Cari kota..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setOpenDropdown(true);
+              }}
+              onFocus={() => setOpenDropdown(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const found = cities.find(
+                    (city) => city.toLowerCase() === searchTerm.toLowerCase(),
+                  );
+                  if (found) {
+                    setSelectedCity(found);
+                    setSearchTerm(found);
+                    setOpenDropdown(false);
+                    setSelectedLocation(null);
+                  }
                 }
-              }
-            }}
-            className="w-full px-5 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-emerald-400 outline-none"
-          />
+              }}
+              className="w-full px-5 py-3 rounded-2xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-emerald-400 outline-none"
+            />
 
-          {openDropdown && (
-            <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-2xl shadow-2xl border max-h-64 overflow-y-auto z-[9999]">
-              {filteredCities.length > 0 ? (
-                filteredCities.map((city, index) => (
-                  <div
-                    key={index}
-                    onClick={() => {
-                      setSelectedCity(city);
-                      setSearchTerm(city);
-                      setOpenDropdown(false);
-                      setSelectedLocation(null);
-                    }}
-                    className="px-4 py-3 hover:bg-emerald-50 cursor-pointer transition text-sm"
-                  >
-                    {city}
+            {openDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-full bg-white rounded-2xl shadow-2xl border max-h-64 overflow-y-auto z-[9999]">
+                {filteredCities.length > 0 ? (
+                  filteredCities.map((city, index) => (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        setSelectedCity(city);
+                        setSearchTerm(city);
+                        setOpenDropdown(false);
+                        setSelectedLocation(null);
+                      }}
+                      className="px-4 py-3 hover:bg-emerald-50 cursor-pointer transition text-sm"
+                    >
+                      {city}
+                    </div>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-gray-400 text-sm">
+                    Kota tidak ditemukan
                   </div>
-                ))
-              ) : (
-                <div className="px-4 py-3 text-gray-400 text-sm">
-                  Kota tidak ditemukan
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </FadeUp>
         </div>
 
         {/* GRID */}

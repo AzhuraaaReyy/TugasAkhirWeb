@@ -7,6 +7,7 @@ import api from "@/services/api";
 const DetailFormBalita = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
     user_id: "",
@@ -30,11 +31,21 @@ const DetailFormBalita = () => {
         });
       } catch (err) {
         console.error("Gagal ambil data:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
     if (id) fetchDetail();
   }, [id]);
+
+  if (loading) {
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+  }
   return (
     <MainLayouts type="detailmanajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
@@ -72,7 +83,7 @@ const DetailFormBalita = () => {
               </label>
               <input
                 type="text"
-                value={form.orangtua || "-"}
+                value={form.orangtua}
                 readOnly
                 placeholder="Contoh: Ibu Melati"
                 className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -91,7 +102,7 @@ const DetailFormBalita = () => {
                     ? "Laki-Laki"
                     : form.jk === "P"
                       ? "Perempuan"
-                      : "-"
+                      : ""
                 }
                 readOnly
                 className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -105,7 +116,7 @@ const DetailFormBalita = () => {
               </label>
               <input
                 type="date"
-                value={form.tgl_lahir || "-"}
+                value={form.tgl_lahir}
                 readOnly
                 className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
               />
@@ -118,7 +129,7 @@ const DetailFormBalita = () => {
               </label>
               <input
                 type="text"
-                value={form.tmp_lahir || "-"}
+                value={form.tmp_lahir}
                 readOnly
                 placeholder="Contoh: Semarang"
                 className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -132,7 +143,7 @@ const DetailFormBalita = () => {
               </label>
               <input
                 type="text"
-                value={form.posyandu || "-"}
+                value={form.posyandu }
                 readOnly
                 placeholder="Contoh: Posyandu Mawar"
                 className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -146,7 +157,7 @@ const DetailFormBalita = () => {
               Alamat
             </label>
             <textarea
-              value={form.alamat || "-"}
+              value={form.alamat}
               readOnly
               rows="3"
               placeholder="Contoh: Soka RT02/04 Kecamatan Ungaran Barat"
