@@ -16,11 +16,11 @@ class BalitaController extends Controller
         $data = $balitas->map(function ($balita) {
             return [
                 'id' => $balita->id,
-                'nama' => $balita->name,
+                'name' => $balita->name,
                 'orangtua' => $balita->user?->name,
                 'jk' => $balita->jk === 'L' ? 'Laki-Laki' : 'Perempuan',
-                'tanggal' => $balita->tgl_lahir,
-                'tempatlahir' => $balita->tmp_lahir,
+                'tgl_lahir' => $balita->tgl_lahir,
+                'tmp_lahir' => $balita->tmp_lahir,
                 'alamat' => $balita->alamat,
                 'posyandu' => $balita->posyandu?->nama_posyandu,
             ];

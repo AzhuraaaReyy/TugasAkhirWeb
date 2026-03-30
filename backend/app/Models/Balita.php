@@ -19,7 +19,7 @@ class Balita extends Model
     ];
 
     protected $casts = [
-        'tgl_lahir' => 'date',
+        'tgl_lahir' => 'date:Y-m-d',
     ];
 
     public function user()
