@@ -22,4 +22,16 @@ class Penimbangan extends Model
     protected $casts = [
         'tgl_penimbangan' => 'date',
     ];
+
+    // relasi ke balita
+    public function balita()
+    {
+        return $this->belongsTo(Balita::class);
+    }
+
+    // relasi ke user (kader)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

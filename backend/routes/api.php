@@ -3,6 +3,7 @@
 use App\Http\Controllers\BalitaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\RegisterController;
 
@@ -37,10 +38,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/balitas/detail/{id}', [BalitaController::class, 'show']);
         Route::delete('/balitas/{id}', [BalitaController::class, 'destroy']);
 
+        Route::get('/penimbangans', [PenimbanganController::class, 'index']);
+        Route::post('/penimbangans', [PenimbanganController::class, 'store']);
+        Route::put('/penimbangans/{id}', [PenimbanganController::class, 'update']);
+        Route::get('/penimbangans/detail/{id}', [PenimbanganController::class, 'show']);
+        Route::delete('/penimbangans/{id}', [PenimbanganController::class, 'destroy']);
+
         Route::get('/users', [LoginController::class, 'ambiluser']);
 
         Route::get('/posyandu', [PosyanduController::class, 'index']);
-       
     });
 
 

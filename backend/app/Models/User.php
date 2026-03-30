@@ -54,4 +54,8 @@ class User extends Authenticatable
     {
         return $this->hasMany(Balita::class);
     }
+    public function penimbangans()
+    {
+        return $this->hasMany(Penimbangan::class);
+    }
 }

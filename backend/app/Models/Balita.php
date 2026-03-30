@@ -30,4 +30,9 @@ class Balita extends Model
     {
         return $this->belongsTo(Posyandu::class);
     }
+
+    public function penimbangans()
+    {
+        return $this->hasMany(Penimbangan::class);
+    }
 }
