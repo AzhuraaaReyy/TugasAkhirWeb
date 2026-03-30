@@ -6,7 +6,6 @@ import {
 } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AuthContext from "./context/AuthContext";
 import Dashboard from "./pages/Kader/Dashboard";
 import Homepage from "./pages/homepage";
 import ManajemenBalita from "./pages/Kader/ManajemenBalita/ManajemenBalita";
@@ -97,9 +96,24 @@ const App = () => {
         { path: "notifikasi", element: <NotifikasiOrtu /> },
       ],
     },
-  ]);
 
-  //admin
+    //admin
+    {
+      path: "/admin",
+      element: (
+        <RequireAuth role="admin">
+          <Outlet />
+        </RequireAuth>
+      ),
+      children: [
+        { path: "dashboard", element: <DashboardOrangTua /> },
+        { path: "manajemenposyandu", element: <EdukasiKesehatanAnak /> },
+        { path: "manajemenedukasi", element: <RiwayatPemeriksaan /> },
+        { path: "manajemenberita", element: <Deteksi /> },
+        { path: "manajemenfaqs", element: <NotifikasiOrtu /> },
+      ],
+    },
+  ]);
 
   return (
     <>

@@ -2,38 +2,63 @@ import { useState } from "react";
 import MainLayouts from "../../../layouts/MainLayouts";
 import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import { useEffect } from "react";
+import api from "../../../services/api";
 
 const ManajemenPenimbangan = () => {
-  const [data] = useState([
-    {
-      id: 1,
-      nama: "Aisyah",
-      umur: "11",
-      tinggi: "11",
-      berat: "10",
-      tanggal: "2004-01-12",
-      petugas: "Budiyono",
-    },
-    {
-      id: 1,
-      nama: "Rafi",
-      umur: "11",
-      tinggi: "11",
-      berat: "10",
-      tanggal: "2004-01-12",
-      petugas: "Budisukasiti",
-    },
-    {
-      id: 1,
-      nama: "Putri",
-      umur: "11",
-      tinggi: "11",
-      berat: "10",
-      tanggal: "2004-01-12",
-      petugas: "Budisukakamu",
-    },
-  ]);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [tanggal, setTanggal] = useState("");
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/penimbangans"); // endpoint index
+        setData(res.data.data || res.data || []);
+      } catch (error) {
+        console.error(error.response?.data || error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Delete balita
+  const handleDelete = async (id) => {
+    if (!window.confirm("Yakin ingin menghapus data?")) return;
+
+    try {
+      await api.delete(`/penimbangans/${id}`);
+      setData((prev) => prev.filter((item) => item.id !== id));
+      alert("Data berhasil dihapus");
+    } catch (error) {
+      console.error(error);
+      alert("Gagal menghapus data");
+    }
+  };
+
+  //filter
+  const filteredData = data.filter((item) => {
+    const nama = item.nama_balita || "";
+    const tgl = item.tgl_penimbangan || "";
+
+    const matchSearch = nama.toLowerCase().includes(search.toLowerCase());
+
+    const matchTanggal = tanggal === "" || tgl.startsWith(tanggal);
+
+    return matchSearch && matchTanggal;
+  });
+
+  if (loading) {
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+  }
   return (
     <MainLayouts type="manajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
@@ -66,22 +91,21 @@ const ManajemenPenimbangan = () => {
             <input
               type="text"
               placeholder="Cari nama balita..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
             />
 
-            <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none">
-              <option>Pilih Posyandu</option>
-              <option>Melati 1</option>
-              <option>Anggrek 2</option>
-            </select>
-
-            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700">
-              Search
-            </button>
+            <input
+              type="date"
+              value={tanggal}
+              onChange={(e) => setTanggal(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+            />
 
             <div className="ml-auto">
               <Link
-                to="/createpenimbangan"
+                to="/kader/createpenimbangan"
                 className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
               >
                 Tambah Data
@@ -108,63 +132,72 @@ const ManajemenPenimbangan = () => {
               </thead>
 
               <tbody className="divide-y divide-gray-100 text-center">
-                {data.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {index + 1}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.nama}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.umur} tahun
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.tanggal}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.berat}kg
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.tinggi}cm
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.tinggi}cm
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.tinggi}cm
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                      {item.petugas}
-                    </td>
-
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex justify-center gap-3">
-                        {/* Detail */}
-                        <Link
-                          to="/detailpenimbangan"
-                          className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition"
-                        >
-                          <FaEye size={14} />
-                        </Link>
-
-                        {/* Edit */}
-                        <Link
-                          to="/updatepenimbangan"
-                          className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg transition"
-                        >
-                          <FaEdit size={14} />
-                        </Link>
-
-                        {/* Hapus */}
-                        <button className="text-red-600 hover:bg-red-100 p-2 rounded-lg transition">
-                          <FaTrash size={14} />
-                        </button>
-                      </div>
+                {filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="py-6 text-gray-400">
+                      Data tidak ditemukan
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredData.map((item, index) => (
+                    <tr key={item.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.nama_balita || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.umur || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.tgl_penimbangan
+                          ? new Date(item.tgl_penimbangan).toLocaleDateString(
+                              "id-ID",
+                            )
+                          : "-"}
+                      </td>
+
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.berat || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.tinggi || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.lingkar_kepala || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.lingkar_lengan || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.nama_kader || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex justify-center gap-3">
+                          <Link
+                            to={`/kader/detailmanajemenbalita/${item.id}`}
+                            className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"
+                          >
+                            <FaEye size={14} />
+                          </Link>
+
+                          <Link
+                            to={`/kader/updatemanajemenbalita/${item.id}`}
+                            className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg"
+                          >
+                            <FaEdit size={14} />
+                          </Link>
+
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="text-red-600 hover:bg-red-100 p-2 rounded-lg"
+                          >
+                            <FaTrash size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
