@@ -1,35 +1,121 @@
 import MainLayouts from "../../../layouts/MainLayouts";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-
+import { useParams } from "react-router-dom";
+import { useEffect } from "react";
+import api from "../../../services/api";
 const UpdatePenimbangan = () => {
   const navigate = useNavigate();
-
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [balita, setBalita] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
-    nama: "",
+    balita_id: "",
     umur: "",
-    jk: "",
-    tanggal: "",
+    tgl_penimbangan: "",
     berat: "",
     tinggi: "",
-    ztbu: "",
-    zbbu: "",
-    zbbtb: "",
+    lingkar_kepala: "",
+    lingkar_lengan: "",
   });
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await api.get("/user");
+      setUser(res.data);
+    };
+    fetchUser();
+  }, []);
+
+  const getUmurFromBalita = (balitaId, tglPenimbangan) => {
+    const selected = balita.find((b) => b.id === Number(balitaId));
+    if (!selected || !selected.tgl_lahir || !tglPenimbangan) return 0;
+
+    const tglLahir = new Date(selected.tgl_lahir);
+    const tglTimbang = new Date(tglPenimbangan);
+
+    let bulan =
+      (tglTimbang.getFullYear() - tglLahir.getFullYear()) * 12 +
+      (tglTimbang.getMonth() - tglLahir.getMonth());
+
+    // OPTIONAL: kalau tanggal belum lewat dalam bulan itu
+    if (tglTimbang.getDate() < tglLahir.getDate()) {
+      bulan -= 1;
+    }
+
+    return bulan < 0 ? 0 : bulan;
+  };
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    let newForm = { ...form, [name]: value };
+
+    if (name === "balita_id" || name === "tgl_penimbangan") {
+      newForm.umur = getUmurFromBalita(
+        name === "balita_id" ? value : form.balita_id,
+        name === "tgl_penimbangan" ? value : form.tgl_penimbangan,
+      );
+    }
+
+    setForm(newForm);
   };
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get(`/penimbangans/detail/${id}`);
+        const data = res.data.data;
+
+        setForm({
+          balita_id: String(data.balita_id || ""),
+          umur: data.umur || "",
+          tgl_penimbangan: data.tgl_penimbangan?.slice(0, 10) || "",
+          berat: data.berat || "",
+          tinggi: data.tinggi || "",
+          lingkar_kepala: data.lingkar_kepala || "",
+          lingkar_lengan: data.lingkar_lengan || "",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchData();
+  }, [id]);
+
+  useEffect(() => {
+    const fetchBalita = async () => {
+      try {
+        const res = await api.get("/balitas");
+        setBalita(res.data);
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+      }
+    };
+    fetchBalita();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(form);
-    navigate("/manajemenpenimbangan");
-  };
 
+    try {
+      await api.put(`/penimbangans/${id}`, form); // id dari params
+
+      alert("Data berhasil diupdate");
+      navigate("/kader/manajemenpenimbangan");
+    } catch (error) {
+      console.error(error);
+      alert("Gagal update data");
+    }
+  };
+  if (loading) {
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+  }
   return (
     <MainLayouts type="createpenimbangan">
       <div className="min-h-screen bg-slate-100 p-6">
@@ -37,10 +123,10 @@ const UpdatePenimbangan = () => {
           {/* HEADER */}
           <div className="border-b border-gray-200 pb-4 mb-6">
             <h1 className="text-xl font-semibold text-gray-800">
-              Tambah Data Penimbangan
+              Update Data Penimbangan
             </h1>
             <p className="text-sm text-gray-500">
-              Isi data penimbangan balita dengan lengkap.
+              Mengupdate data penimbangan balita dengan lengkap.
             </p>
           </div>
 
@@ -53,25 +139,31 @@ const UpdatePenimbangan = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Balita
                 </label>
-                <input
-                  type="text"
-                  name="nama"
-                  value={form.nama}
+                <select
+                  name="balita_id"
+                  value={form.balita_id}
                   onChange={handleChange}
-                  placeholder="Contoh: Aisyah Putri"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
+                >
+                  <option value="">Pilih Balita</option>
+                  {balita.map((bal) => (
+                    <option key={bal.id} value={bal.id}>
+                      {bal.nama}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Nama Orang Tua */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Umur
+                  Umur (Bulan)
                 </label>
                 <input
                   type="text"
-                  name="orangtua"
-                  value={form.orangtua}
+                  name="umur"
+                  readOnly
+                  value={form.umur}
                   onChange={handleChange}
                   placeholder="Contoh: Ibu Melati"
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
@@ -85,8 +177,8 @@ const UpdatePenimbangan = () => {
                 </label>
                 <input
                   type="date"
-                  name="tanggal"
-                  value={form.tanggal}
+                  name="tgl_penimbangan"
+                  value={form.tgl_penimbangan}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
@@ -99,8 +191,8 @@ const UpdatePenimbangan = () => {
                 </label>
                 <input
                   type="number"
-                  name="berat_badan"
-                  value={form.berat_badan}
+                  name="berat"
+                  value={form.berat}
                   onChange={handleChange}
                   step="0.01"
                   min="0"
@@ -115,8 +207,8 @@ const UpdatePenimbangan = () => {
                 </label>
                 <input
                   type="number"
-                  name="tinggi_badan"
-                  value={form.tinggi_badan}
+                  name="tinggi"
+                  value={form.tinggi}
                   onChange={handleChange}
                   step="0.01"
                   min="0"
@@ -130,11 +222,9 @@ const UpdatePenimbangan = () => {
                 </label>
                 <input
                   type="text"
-                  name="orangtua"
-                  value={form.orangtua}
-                  onChange={handleChange}
-                  placeholder="Contoh: Kader Melati"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={user?.name || ""}
+                  readOnly
+                  className="w-full h-12 bg-gray-100 border border-gray-300 rounded-lg px-4 text-sm"
                 />
               </div>
             </div>
@@ -143,7 +233,7 @@ const UpdatePenimbangan = () => {
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => navigate("/manajemenpenimbangan")}
+                onClick={() => navigate("/kader/manajemenpenimbangan")}
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
               >
                 Kembali

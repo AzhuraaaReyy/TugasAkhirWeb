@@ -4,12 +4,15 @@ import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import { useEffect } from "react";
 import api from "../../../services/api";
-
+import Pagination from "@/components/Pagination/pagination";
 const ManajemenPenimbangan = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tanggal, setTanggal] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +55,13 @@ const ManajemenPenimbangan = () => {
     return matchSearch && matchTanggal;
   });
 
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const currentData = filteredData.slice(startIndex, endIndex);
+
   if (loading) {
     return (
       <MainLayouts>
@@ -71,19 +81,6 @@ const ManajemenPenimbangan = () => {
             <p className="text-gray-500 text-sm">
               Kelola pengukuran dan penimbangan balita.
             </p>
-          </div>
-
-          {/* TABS */}
-          <div className="flex gap-3 mb-6">
-            <button className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium shadow">
-              Semua Data
-            </button>
-            <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm hover:bg-gray-200">
-              Posyandu Melati
-            </button>
-            <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm hover:bg-gray-200">
-              Posyandu Anggrek
-            </button>
           </div>
 
           {/* FILTER SECTION */}
@@ -139,9 +136,11 @@ const ManajemenPenimbangan = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((item, index) => (
+                  currentData.map((item, index) => (
                     <tr key={item.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {startIndex + index + 1}
+                      </td>
                       <td className="px-4 py-3 text-gray-500">
                         {item.nama_balita || "-"}
                       </td>
@@ -174,14 +173,14 @@ const ManajemenPenimbangan = () => {
                       <td className="px-4 py-3 text-center">
                         <div className="flex justify-center gap-3">
                           <Link
-                            to={`/kader/detailmanajemenbalita/${item.id}`}
+                            to={`/kader/detailpenimbangan/${item.id}`}
                             className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"
                           >
                             <FaEye size={14} />
                           </Link>
 
                           <Link
-                            to={`/kader/updatemanajemenbalita/${item.id}`}
+                            to={`/kader/updatepenimbangan/${item.id}`}
                             className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg"
                           >
                             <FaEdit size={14} />
@@ -202,24 +201,11 @@ const ManajemenPenimbangan = () => {
             </table>
           </div>
 
-          {/* PAGINATION */}
-          <div className="flex justify-end items-center gap-2 mt-6">
-            <button className="px-3 py-1 border rounded-md text-gray-500 hover:bg-gray-100">
-              &lt;
-            </button>
-            <button className="px-3 py-1 bg-emerald-600 text-white rounded-md">
-              1
-            </button>
-            <button className="px-3 py-1 border rounded-md hover:bg-gray-100">
-              2
-            </button>
-            <button className="px-3 py-1 border rounded-md hover:bg-gray-100">
-              3
-            </button>
-            <button className="px-3 py-1 border rounded-md text-gray-500 hover:bg-gray-100">
-              &gt;
-            </button>
-          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
     </MainLayouts>

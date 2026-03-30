@@ -1,32 +1,97 @@
 import MainLayouts from "../../../layouts/MainLayouts";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useEffect } from "react";
+import api from "../../../services/api";
 
 const CreatePenimbangan = () => {
   const navigate = useNavigate();
-
+  const [user, setUser] = useState(null);
+  const [balita, setBalita] = useState([]);
   const [form, setForm] = useState({
-    nama: "",
+    balita_id: "",
     umur: "",
-    tanggal: "",
-    berat_badan: "",
-    tinggi_badan: "",
+    tgl_penimbangan: "",
+    berat: "",
+    tinggi: "",
     lingkar_kepala: "",
     lingkar_lengan: "",
-    petugas: "",
   });
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      const res = await api.get("/user");
+      setUser(res.data);
+    };
+    fetchUser();
+  }, []);
+
+  const formatUmur = (bulan) => {
+    if (bulan === "" || bulan === undefined || bulan === null) return "";
+
+    const tahun = Math.floor(bulan / 12);
+    const sisaBulan = bulan % 12;
+
+    if (tahun === 0) return `${sisaBulan} bulan`;
+    if (sisaBulan === 0) return `${tahun} tahun`;
+    return `${tahun} tahun ${sisaBulan} bulan`;
+  };
+  const getUmurFromBalita = (balitaId, tglPenimbangan) => {
+    const selected = balita.find((b) => b.id === Number(balitaId));
+    if (!selected || !selected.tgl_lahir || !tglPenimbangan) return 0;
+
+    const tglLahir = new Date(selected.tgl_lahir);
+    const tglTimbang = new Date(tglPenimbangan);
+
+    let bulan =
+      (tglTimbang.getFullYear() - tglLahir.getFullYear()) * 12 +
+      (tglTimbang.getMonth() - tglLahir.getMonth());
+
+    // OPTIONAL: kalau tanggal belum lewat dalam bulan itu
+    if (tglTimbang.getDate() < tglLahir.getDate()) {
+      bulan -= 1;
+    }
+
+    return bulan < 0 ? 0 : bulan;
+  };
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    let newForm = { ...form, [name]: value };
+
+    if (name === "balita_id" || name === "tgl_penimbangan") {
+      newForm.umur = getUmurFromBalita(
+        name === "balita_id" ? value : form.balita_id,
+        name === "tgl_penimbangan" ? value : form.tgl_penimbangan,
+      );
+    }
+
+    setForm(newForm);
   };
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const fetchBalita = async () => {
+      try {
+        const res = await api.get("/balitas");
+        setBalita(res.data);
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+      }
+    };
+    fetchBalita();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(form);
-    navigate("/manajemenpenimbangan");
+    try {
+      await api.post("/penimbangans", form); //
+
+      alert("Data berhasil ditambahkan");
+      navigate("/kader/manajemenpenimbangan");
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Gagal update data");
+    }
   };
 
   return (
@@ -52,14 +117,20 @@ const CreatePenimbangan = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nama Balita
                 </label>
-                <input
-                  type="text"
-                  name="nama"
-                  value={form.nama}
+                <select
+                  name="balita_id"
+                  value={form.balita_id}
                   onChange={handleChange}
-                  placeholder="Contoh: Aisyah Putri"
+                  required
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
+                >
+                  <option value="">Pilih Balita</option>
+                  {balita.map((bal) => (
+                    <option key={bal.id} value={bal.id}>
+                      {bal.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Nama Orang Tua */}
@@ -69,16 +140,11 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="text"
-                  name="umur"
-                  value={form.umur}
-                  onChange={handleChange}
-                  placeholder="Contoh: 20 Bulan"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={form.umur ? formatUmur(form.umur) : ""}
+                  readOnly
+                  className="w-full h-12 bg-gray-100 border border-gray-300 rounded-lg px-4 text-sm"
                 />
               </div>
-
-              {/* Jenis Kelamin */}
-
               {/* Tanggal Lahir */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -86,8 +152,8 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="date"
-                  name="tanggal"
-                  value={form.tanggal}
+                  name="tgl_penimbangan"
+                  value={form.tgl_penimbangan}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
@@ -100,8 +166,8 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="number"
-                  name="berat_badan"
-                  value={form.berat_badan}
+                  name="berat"
+                  value={form.berat}
                   onChange={handleChange}
                   step="0.01"
                   min="0"
@@ -116,8 +182,8 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="number"
-                  name="tinggi_badan"
-                  value={form.tinggi_badan}
+                  name="tinggi"
+                  value={form.tinggi}
                   onChange={handleChange}
                   step="0.01"
                   min="0"
@@ -162,11 +228,9 @@ const CreatePenimbangan = () => {
                 </label>
                 <input
                   type="text"
-                  name="petugas"
-                  value={form.petugas}
-                  onChange={handleChange}
-                  placeholder="Contoh: Kader Melati"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={user?.name || ""}
+                  readOnly
+                  className="w-full h-12 bg-gray-100 border border-gray-300 rounded-lg px-4 text-sm"
                 />
               </div>
             </div>
@@ -175,7 +239,7 @@ const CreatePenimbangan = () => {
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => navigate("/manajemenpenimbangan")}
+                onClick={() => navigate("/kader/manajemenpenimbangan")}
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
               >
                 Kembali

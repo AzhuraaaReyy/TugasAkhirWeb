@@ -3,13 +3,15 @@ import MainLayouts from "../../../layouts/MainLayouts";
 import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import api from "@/services/api";
-
+import Pagination from "@/components/Pagination/pagination";
 const ManajemenBalita = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [posyandu, setPosyandu] = useState("");
   const [posyanduList, setPosyanduList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch balita
   useEffect(() => {
@@ -65,6 +67,12 @@ const ManajemenBalita = () => {
     return matchSearch && matchPosyandu;
   });
 
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const currentData = filteredData.slice(startIndex, endIndex);
   if (loading) {
     return (
       <MainLayouts>
@@ -144,11 +152,13 @@ const ManajemenBalita = () => {
                     </td>
                   </tr>
                 ) : (
-                  filteredData.map((item, index) => (
+                  currentData.map((item, index) => (
                     <tr key={item.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-gray-500">{index + 1}</td>
                       <td className="px-4 py-3 text-gray-500">
-                        {item.nama || "-"}
+                        {startIndex + index + 1}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.name || "-"}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {item.orangtua || "-"}
@@ -204,6 +214,11 @@ const ManajemenBalita = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
     </MainLayouts>
