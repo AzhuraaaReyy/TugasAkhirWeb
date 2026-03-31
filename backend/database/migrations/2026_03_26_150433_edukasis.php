@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        schema::create('edukasis', function (Blueprint $table) {
+        Schema::create('edukasis', function (Blueprint $table) {
             $table->id();
             $table->string('judul');
             $table->text('konten')->nullable();

@@ -35,4 +35,9 @@ class Balita extends Model
     {
         return $this->hasMany(Penimbangan::class);
     }
+
+    public function penimbanganTerakhir()
+    {
+        return $this->hasOne(Penimbangan::class)->latestOfMany();
+    }
 }

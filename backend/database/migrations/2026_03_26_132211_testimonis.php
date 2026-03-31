@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        schema::create('testimonis', function (Blueprint $table) {
+        Schema::create('testimonis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->integer('rating');

@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        schema::create('deteksis', function (Blueprint $table) {
+        Schema::create('deteksis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('balita_id')->constrained('balitas')->cascadeOnDelete();
-            $table->date('tgl_penimbangan');
-            $table->float('z-score_tb_u');
-            $table->float('z-score_bb_u');
-            $table->float('z-score_tb_bb');
+            $table->foreignId('penimbangan_id')->constrained('penimbangans')->cascadeOnDelete();
+            $table->decimal('zscore_tb_u');
+            $table->float('zscore_bb_u');
+            $table->float('zscore_tb_bb');
             $table->string('status_tb_u');
             $table->string('status_bb_u');
             $table->string('status_tb_bb');

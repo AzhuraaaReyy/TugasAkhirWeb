@@ -27,6 +27,9 @@ class DatabaseSeeder extends Seeder
             NotifikasiSeeder::class,
             EdukasiSeeder::class,
             BeritaSeeder::class,
+            WhoBbUSeeder::class,
+            WhoTbUSeeder::class,
+            WhoBbTbSeeder::class,
         ]);
     }
 }
