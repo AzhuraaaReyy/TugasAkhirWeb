@@ -175,8 +175,8 @@ const ManajemenBalita = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500">
-                        {item.tempatlahir},{" "}
-                        {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                        {item.tmp_lahir},{" "}
+                        {new Date(item.tgl_lahir).toLocaleDateString("id-ID")}
                       </td>
                       <td className="px-4 py-3 text-gray-500">
                         {item.alamat || "-"}
