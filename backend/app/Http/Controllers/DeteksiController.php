@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Balita;
+use App\Models\Penimbangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -30,7 +31,7 @@ class DeteksiController extends Controller
     public function deteksi(Request $request)
     {
         $request->validate([
-            'balita_id' => 'required|exists:balita,id',
+            'balita_id' => 'required|exists:balitas,id',
         ]);
 
         $balita = Balita::with('penimbanganTerakhir')->find($request->balita_id);
@@ -39,92 +40,243 @@ class DeteksiController extends Controller
             return response()->json(['message' => 'Data penimbangan tidak ditemukan'], 404);
         }
 
-        $umurBulan = $this->hitungUmurBulan($balita->tgl_lahir);
-        $jk = $balita->jk;
+        $penimbangan = Penimbangan::where('balita_id', $request->balita_id)
+            ->latest('tgl_penimbangan')
+            ->first();
+
+        $jk = strtoupper(substr($balita->jk, 0, 1)); // L / P
         $bb = $balita->penimbanganTerakhir->berat;
         $tb = $balita->penimbanganTerakhir->tinggi;
+        $umur = $penimbangan->umur;
 
-        // Status BB/U
-        $statusBBU = $this->deteksiBBU($umurBulan, $jk, $bb);
-
-        // Status TB/U
-        $statusTBU = $this->deteksiTBU($umurBulan, $jk, $tb);
-
-        // Status BB/TB
-        $statusBBTB = $this->deteksiBBTB($tb, $jk, $bb);
+        $z_bbu = $this->hitungZScoreBBU($umur, $jk, $bb);
+        $z_tbu = $this->hitungZScoreTBU($umur, $jk, $tb);
+        $z_bbtb = $this->hitungZScoreBBTB($tb, $jk, $bb);
 
         return response()->json([
             'balita_id' => $balita->id,
             'name' => $balita->name,
-            'umur_bulan' => $umurBulan,
+            'umur' => $penimbangan->umur,
             'bb' => $bb,
             'tb' => $tb,
-            'status_bbu' => $statusBBU,
-            'status_tbu' => $statusTBU,
-            'status_bb_tb' => $statusBBTB,
+            'zscore_bbu' => round($z_bbu, 2),
+            'zscore_tbu' => round($z_tbu, 2),
+            'zscore_bbtb' => round($z_bbtb, 2),
+            'status_bbu' => $this->formatStatusBBU($z_bbu),
+            'status_tbu' => $this->formatStatusTBU($z_tbu),
+            'status_bb_tb' => $this->formatStatusBBTB($z_bbtb),
+            'rekomendasi_bbu' => $this->rekomendasiBBU($this->deteksiBBU($z_bbu)),
+            'rekomendasi_tbu' => $this->rekomendasiTBU($this->deteksiTBU($z_tbu)),
+            'rekomendasi_bbtb' => $this->rekomendasiBBTB($this->deteksiBBTB($z_bbtb)),
         ]);
     }
 
     // ================================
-    // Fungsi bantu
+    // Format status lengkap
     // ================================
-
-    private function hitungUmurBulan($tgl_lahir)
+    private function formatStatusBBU($z)
     {
-        $lahir = Carbon::parse($tgl_lahir);
-        $sekarang = Carbon::now();
-        return $lahir->diffInMonths($sekarang);
+        $status = $this->deteksiBBU($z);
+        return [
+            'status' => $status,
+            'warna' => $this->warnaBBU($status),
+            'keterangan' => $this->keteranganBBU($status),
+        ];
     }
 
-    private function deteksiBBU($umur, $jk, $bb)
+    private function formatStatusTBU($z)
     {
+        $status = $this->deteksiTBU($z);
+        return [
+            'status' => $status,
+            'warna' => $this->warnaTBU($status),
+            'keterangan' => $this->keteranganTBU($status),
+        ];
+    }
+
+    private function formatStatusBBTB($z)
+    {
+        $status = $this->deteksiBBTB($z);
+        return [
+            'status' => $status,
+            'warna' => $this->warnaBBTB($status),
+            'keterangan' => $this->keteranganBBTB($status),
+        ];
+    }
+
+    // ================================
+    // Fungsi deteksi status
+    // ================================
+    private function deteksiBBU($z)
+    {
+        if ($z < -3) return "Berat badan sangat kurang (severely underweight)";
+        if ($z >= -3 && $z < -2) return "Berat badan kurang (underweight)";
+        if ($z >= -2 && $z <= 2) return "Berat badan normal";
+        if ($z > 2) return "Risiko Berat badan lebih";
+    }
+
+    private function deteksiTBU($z)
+    {
+        if ($z < -3) return "Sangat pendek (severely stunted)";
+        if ($z >= -3 && $z < -2) return "Pendek (stunted)";
+        if ($z >= -2 && $z <= 3) return "Normal";
+        if ($z > 3) return "Tinggi";
+    }
+
+    private function deteksiBBTB($z)
+    {
+        if ($z < -3) return "Gizi buruk (severely wasted)";
+        if ($z >= -3 && $z < -2) return "Gizi kurang (wasted)";
+        if ($z >= -2 && $z <= 1) return "Gizi baik (normal)";
+        if ($z > 1 && $z <= 2) return "Berisiko gizi lebih (possible risk of overweight)";
+        if ($z > 2 && $z <= 3) return "Gizi lebih (overweight)";
+        if ($z > 3) return "Obesitas (obese)";
+    }
+
+    // ================================
+    // Fungsi warna untuk Tailwind
+    // ================================
+    private function warnaBBU($status)
+    {
+        return match ($status) {
+            "Berat badan sangat kurang (severely underweight)" => "bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Berat badan kurang (underweight)" => "bg-yellow-400 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Berat badan normal" => "bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Risiko Berat badan lebih" => "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            default => "bg-gray-300 text-black px-3 py-1 rounded-full text-sm font-semibold",
+        };
+    }
+
+    private function warnaTBU($status)
+    {
+        return match ($status) {
+            "Sangat pendek (severely stunted)" => "bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Pendek (stunted)" => "bg-yellow-400 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Normal" => "bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Tinggi" => "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            default => "bg-gray-300 text-black px-3 py-1 rounded-full text-sm font-semibold",
+        };
+    }
+
+    private function warnaBBTB($status)
+    {
+        return match ($status) {
+            "Gizi buruk (severely wasted)" => "bg-red-600 text-white",
+            "Gizi kurang (wasted)" => "bg-yellow-400 text-white",
+            "Gizi baik (normal)" => "bg-green-500 text-white",
+            "Berisiko gizi lebih (possible risk of overweight)" => "bg-blue-300 text-white",
+            "Gizi lebih (overweight)" => "bg-blue-500 text-white",
+            "Obesitas (obese)" => "bg-purple-600 text-white",
+            default => "bg-gray-300 text-black",
+        };
+    }
+
+    // ================================
+    // Keterangan lengkap untuk masing-masing status
+    // ================================
+    private function keteranganBBU($status)
+    {
+        return match ($status) {
+            "Berat badan sangat kurang (severely underweight)" => "Berat badan sangat rendah dibandingkan umur, menunjukkan kemungkinan kekurangan gizi berat",
+            "Berat badan kurang (underweight)" => "Berat badan kurang dibandingkan umur, mengindikasikan adanya masalah gizi",
+            "Berat badan normal" => "Berat badan sesuai dengan umur",
+            "Risiko Berat badan lebih" => "Berat badan cenderung melebihi standar umur dan berisiko menjadi gizi lebih",
+            default => "-",
+        };
+    }
+
+    private function keteranganTBU($status)
+    {
+        return match ($status) {
+            "Sangat pendek (severely stunted)" => "Tinggi badan sangat rendah dibandingkan umur, menunjukkan kemungkinan kekurangan gizi kronis",
+            "Pendek (stunted)" => "Tinggi badan kurang dibandingkan umur, mengindikasikan risiko stunting",
+            "Normal" => "Tinggi badan sesuai dengan umur",
+            "Tinggi" => "Tinggi badan lebih tinggi dibandingkan rata-rata umur",
+            default => "-",
+        };
+    }
+
+    private function keteranganBBTB($status)
+    {
+        return match ($status) {
+            "Gizi buruk (severely wasted)" => "Berat badan sangat rendah dibandingkan tinggi badan (gizi buruk akut)",
+            "Gizi kurang (wasted)" => "Berat badan kurang dibandingkan tinggi badan",
+            "Gizi baik (normal)" => "Berat badan sesuai dengan tinggi badan",
+            "Berisiko gizi lebih (possible risk of overweight)" => "Berat badan mulai melebihi proporsi ideal terhadap tinggi badan",
+            "Gizi lebih (overweight)" => "Berat badan lebih dibandingkan tinggi badan",
+            "Obesitas (obese)" => "Berat badan sangat berlebih dibandingkan tinggi badan (obesitas)",
+            default => "-",
+        };
+    }
+
+    private function hitungZScoreBBU($umur, $jk, $bb)
+    {
+        $umur = (int) $umur;
+
         $dataWHO = DB::table('who_bb_u')
             ->where('month', $umur)
             ->where('gender', $jk)
             ->first();
 
-        if (!$dataWHO) return "Data WHO tidak ditemukan";
+        if (!$dataWHO) return null;
 
-        $z = ($bb - $dataWHO->m) / $dataWHO->s;
+        if ($dataWHO->l == 0) {
+            return log($bb / $dataWHO->m) / $dataWHO->s;
+        }
 
-        if ($z < -3) return "Gizi Buruk";
-        if ($z >= -3 && $z < -2) return "Gizi Kurang";
-        if ($z >= -2 && $z <= 2) return "Gizi Normal";
-        if ($z > 2) return "Berat Badan Lebih";
+        return (pow(($bb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
     }
-
-    private function deteksiTBU($umur, $jk, $tb)
+    private function hitungZScoreTBU($umur, $jk, $tb)
     {
+        $umur = (int) $umur;
+
         $dataWHO = DB::table('who_tb_u')
             ->where('month', $umur)
             ->where('gender', $jk)
             ->first();
 
-        if (!$dataWHO) return "Data WHO tidak ditemukan";
+        if (!$dataWHO) return null;
 
-        $z = ($tb - $dataWHO->m) / $dataWHO->s;
+        if ($dataWHO->l == 0) {
+            return log($tb / $dataWHO->m) / $dataWHO->s;
+        }
 
-        if ($z < -3) return "Sangat Pendek";
-        if ($z >= -3 && $z < -2) return "Pendek";
-        if ($z >= -2 && $z <= 3) return "Normal";
-        if ($z > 3) return "Tinggi";
+        return (pow(($tb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
     }
-
-    private function deteksiBBTB($tb, $jk, $bb)
+    private function hitungZScoreBBTB($tb, $jk, $bb)
     {
-        // BB/TB lookup berdasarkan tinggi
+        $tb = round($tb * 2) / 2;
+
         $dataWHO = DB::table('who_bb_tb')
-            ->where('height', $tb)
+            ->whereRaw('ABS(height - ?) < 0.01', [$tb])
             ->where('gender', $jk)
             ->first();
 
-        if (!$dataWHO) return "Data WHO tidak ditemukan";
+        if (!$dataWHO) return null;
 
-        $z = ($bb - $dataWHO->m) / $dataWHO->s;
+        if ($dataWHO->l == 0) {
+            return log($bb / $dataWHO->m) / $dataWHO->s;
+        }
 
-        if ($z < -3) return "Sangat Kurus";
-        if ($z >= -3 && $z < -2) return "Kurus";
-        if ($z >= -2 && $z <= 1) return "Normal";
-        if ($z > 1) return "Gemuk / Obesitas";
+        return (pow(($bb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
+    }
+
+    //rekomendasi tindakan
+    private function rekomendasiBBTB($status)
+    {
+        $rekomendasi = include base_path('storage/data/rekomendasi.php');
+        return $rekomendasi['bbtb'][$status] ?? ["-"];
+    }
+
+    private function rekomendasiTBU($status)
+    {
+        $rekomendasi = include base_path('storage/data/rekomendasi.php');
+        return $rekomendasi['tbu'][$status] ?? ["-"];
+    }
+
+    private function rekomendasiBBU($status)
+    {
+        $rekomendasi = include base_path('storage/data/rekomendasi.php');
+        return $rekomendasi['bbu'][$status] ?? ["-"];
     }
 }

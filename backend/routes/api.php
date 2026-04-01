@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BalitaController;
+use App\Http\Controllers\DeteksiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PenimbanganController;
@@ -47,6 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [LoginController::class, 'ambiluser']);
 
         Route::get('/posyandu', [PosyanduController::class, 'index']);
+
+        Route::get('/ambilbalita', [DeteksiController::class, 'ambildatabalita']);
+        Route::post('/deteksi', [DeteksiController::class, 'deteksi']);
     });
 
 
