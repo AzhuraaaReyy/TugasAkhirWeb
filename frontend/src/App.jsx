@@ -26,6 +26,7 @@ import EdukasiKesehatanAnak from "./pages/OrangTua/Edukasi";
 import RiwayatPemeriksaan from "./pages/OrangTua/Riwayat";
 import Deteksi from "./pages/OrangTua/Deteksi";
 import NotifikasiOrtu from "./pages/OrangTua/Notifikasi";
+import DetailDeteksi from "./pages/Kader/DetailDeteksi";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -77,6 +78,7 @@ const App = () => {
         { path: "riwayat", element: <Riwayat /> },
         { path: "laporan", element: <Laporan /> },
         { path: "notif", element: <Notifikasi /> },
+        { path: "detaildeteksi", element: <DetailDeteksi /> },
       ],
     },
 

@@ -3,12 +3,10 @@ import MainLayouts from "../../layouts/MainLayouts";
 import Select from "react-select";
 import api from "@/services/api";
 import { Navigate, NavLink } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+
 export default function DeteksiDini() {
   const [balitaList, setBalitaList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const [errorMsg, setErrorMsg] = useState("");
 
   const [form, setForm] = useState({
     balita_id: "",
@@ -79,9 +77,8 @@ export default function DeteksiDini() {
         rekomendasi_bbtb: data.rekomendasi_bbtb || "",
       });
     } catch (error) {
-      const message = error.response?.data?.message || "Terjadi kesalahan";
-
-      setErrorMsg(message);
+      console.error(error.response?.data || error.message);
+      alert("Gagal melakukan deteksi");
     } finally {
       setLoading(false);
     }
@@ -100,11 +97,8 @@ export default function DeteksiDini() {
         rekomendasi: detailForm.rekomendasi,
       });
       alert("Deteksi berhasil disimpan!");
-      navigate("/kader/detaildeteksi");
     } catch (error) {
-      const message = error.response?.data?.message || "Terjadi kesalahan";
-
-      setErrorMsg(message);
+      console.error(error);
     }
   };
   useEffect(() => {
@@ -132,15 +126,45 @@ export default function DeteksiDini() {
         <div className="p-6">Loading data...</div>
       </MainLayouts>
     );
+  const warnaTBU = {
+    "Sangat pendek (severely stunted)":
+      "bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    "Pendek (stunted)":
+      "bg-yellow-400 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    Normal:
+      "bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    Tinggi:
+      "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    default:
+      "bg-gray-300 text-black px-3 py-1 rounded-full text-sm font-semibold",
+  };
 
+  const warnaBBU = {
+    "Berat badan sangat kurang (severely underweight)":
+      "bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    "Berat badan kurang (underweight)":
+      "bg-yellow-400 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    "Berat badan normal":
+      "bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    "Risiko Berat badan lebih":
+      "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+    default:
+      "bg-gray-300 text-black px-3 py-1 rounded-full text-sm font-semibold",
+  };
+
+  const warnaBBTB = {
+    "Gizi buruk (severely wasted)": "bg-red-600 text-white",
+    "Gizi kurang (wasted)": "bg-yellow-400 text-white",
+    "Gizi baik (normal)": "bg-green-500 text-white",
+    "Berisiko gizi lebih (possible risk of overweight)":
+      "bg-blue-300 text-white",
+    "Gizi lebih (overweight)": "bg-blue-500 text-white",
+    "Obesitas (obese)": "bg-purple-600 text-white",
+    default: "bg-gray-300 text-black",
+  };
   return (
     <MainLayouts type="deteksidini">
       <div className="min-h-screen bg-gray-100 p-8 space-y-8 font-sans">
-        {errorMsg && (
-          <div className="bg-red-100 text-red-700 p-3 rounded-lg mb-4">
-            {errorMsg}
-          </div>
-        )}
         <div className="bg-white rounded-2xl shadow-md p-6">
           <h1 className="text-2xl font-bold tracking-tight  text-gray-800">
             Sistem Deteksi Dini Stunting
@@ -449,35 +473,6 @@ export default function DeteksiDini() {
               </NavLink>
             </div>
           )}
-        </div>
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h1 className="text-2xl font-bold tracking-tight  text-gray-800">
-            Detail Deteksi
-          </h1>
-          <p className="text-sm text-gray-500 mt-1 mb-5">
-            Lakukan skrining awal untuk mendeteksi risiko stunting berdasarkan
-            data pertumbuhan balita.
-          </p>
-
-          {/* FORM INPUT */}
-          <div className="bg-emerald-50 rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-sm text-left border-collapse">
-                <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
-                  <tr>
-                    <th className="px-4 py-3">No</th>
-                    <th className="px-4 py-3">Nama Balita</th>
-                    <th className="px-4 py-3">Orang Tua</th>
-                    <th className="px-4 py-3">JK</th>
-                    <th className="px-4 py-3">TTL</th>
-                    <th className="px-4 py-3">Alamat</th>
-                    <th className="px-4 py-3">Posyandu</th>
-                    <th className="px-4 py-3 text-center">Aksi</th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
-          </div>
         </div>
       </div>
     </MainLayouts>
