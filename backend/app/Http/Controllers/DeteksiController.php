@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Balita;
+use App\Models\Deteksi;
 use App\Models\Penimbangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,9 +21,9 @@ class DeteksiController extends Controller
                 'name' => $b->name,
                 'jk' => $b->jk === 'L' ? 'Laki-Laki' : 'Perempuan',
                 'tanggal_lahir' => $b->tgl_lahir,
-
                 'berat' => $b->penimbanganTerakhir->berat ?? "",
                 'tinggi' => $b->penimbanganTerakhir->tinggi ?? "",
+                'umur' => $b->penimbanganTerakhir->umur ?? "",
                 'tgl_penimbangan' => $b->penimbanganTerakhir->tgl_penimbangan ?? "",
             ];
         }));
@@ -32,6 +33,7 @@ class DeteksiController extends Controller
     {
         $request->validate([
             'balita_id' => 'required|exists:balitas,id',
+            'tgl_deteksi' => 'required',
         ]);
 
         $balita = Balita::with('penimbanganTerakhir')->find($request->balita_id);
@@ -39,24 +41,48 @@ class DeteksiController extends Controller
         if (!$balita || !$balita->penimbanganTerakhir) {
             return response()->json(['message' => 'Data penimbangan tidak ditemukan'], 404);
         }
+        $penimbangan = $balita->penimbanganTerakhir;
 
-        $penimbangan = Penimbangan::where('balita_id', $request->balita_id)
-            ->latest('tgl_penimbangan')
-            ->first();
+        $sudahDeteksi = Deteksi::where('balita_id', $penimbangan->id)->exists();
+
+        if ($sudahDeteksi) {
+            return response()->json([
+                'message' => 'Penimbangan ini sudah pernah dideteksi.'
+            ], 400);
+        }
+
 
         $jk = strtoupper(substr($balita->jk, 0, 1)); // L / P
         $bb = $balita->penimbanganTerakhir->berat;
         $tb = $balita->penimbanganTerakhir->tinggi;
-        $umur = $penimbangan->umur;
+        $umur =  $balita->penimbanganTerakhir->umur;
 
         $z_bbu = $this->hitungZScoreBBU($umur, $jk, $bb);
         $z_tbu = $this->hitungZScoreTBU($umur, $jk, $tb);
         $z_bbtb = $this->hitungZScoreBBTB($tb, $jk, $bb);
 
+        $status_bbu = $this->deteksiBBU($z_bbu);
+        $status_tbu = $this->deteksiTBU($z_tbu);
+        $status_bbtb = $this->deteksiBBTB($z_bbtb);
+
+        //create
+        $deteksi = Deteksi::create([
+            'balita_id' => $penimbangan->id,
+            'tgl_deteksi' => $request->tgl_deteksi,
+            'zscore_tb_u' => round($z_tbu, 2),
+            'zscore_bb_u' => round($z_bbu, 2),
+            'zscore_tb_bb' => round($z_bbtb, 2),
+            'status_tb_u' => $status_tbu,
+            'status_bb_u' => $status_bbu,
+            'status_tb_bb' => $status_bbtb,
+
+        ]);
         return response()->json([
+            'id' => $deteksi->id,
             'balita_id' => $balita->id,
             'name' => $balita->name,
-            'umur' => $penimbangan->umur,
+            'tgl_deteksi' => $request->tgl_deteksi,
+            'umur' => $umur,
             'bb' => $bb,
             'tb' => $tb,
             'zscore_bbu' => round($z_bbu, 2),
@@ -71,9 +97,7 @@ class DeteksiController extends Controller
         ]);
     }
 
-    // ================================
-    // Format status lengkap
-    // ================================
+
     private function formatStatusBBU($z)
     {
         $status = $this->deteksiBBU($z);
@@ -104,9 +128,7 @@ class DeteksiController extends Controller
         ];
     }
 
-    // ================================
-    // Fungsi deteksi status
-    // ================================
+
     private function deteksiBBU($z)
     {
         if ($z < -3) return "Berat badan sangat kurang (severely underweight)";
@@ -133,9 +155,7 @@ class DeteksiController extends Controller
         if ($z > 3) return "Obesitas (obese)";
     }
 
-    // ================================
-    // Fungsi warna untuk Tailwind
-    // ================================
+
     private function warnaBBU($status)
     {
         return match ($status) {
@@ -161,19 +181,17 @@ class DeteksiController extends Controller
     private function warnaBBTB($status)
     {
         return match ($status) {
-            "Gizi buruk (severely wasted)" => "bg-red-600 text-white",
-            "Gizi kurang (wasted)" => "bg-yellow-400 text-white",
-            "Gizi baik (normal)" => "bg-green-500 text-white",
-            "Berisiko gizi lebih (possible risk of overweight)" => "bg-blue-300 text-white",
-            "Gizi lebih (overweight)" => "bg-blue-500 text-white",
-            "Obesitas (obese)" => "bg-purple-600 text-white",
-            default => "bg-gray-300 text-black",
+            "Gizi buruk (severely wasted)" => "bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Gizi kurang (wasted)" => "bg-yellow-400 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Gizi baik (normal)" => "bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Berisiko gizi lebih (possible risk of overweight)" => "bg-blue-300 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Gizi lebih (overweight)" => "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Obesitas (obese)" => "bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            default => "bg-gray-300 text-black px-3 py-1 rounded-full text-sm font-semibold",
         };
     }
 
-    // ================================
-    // Keterangan lengkap untuk masing-masing status
-    // ================================
+
     private function keteranganBBU($status)
     {
         return match ($status) {
@@ -261,7 +279,7 @@ class DeteksiController extends Controller
         return (pow(($bb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
     }
 
-    //rekomendasi tindakan
+    //rekomendasi 
     private function rekomendasiBBTB($status)
     {
         $rekomendasi = include base_path('storage/data/rekomendasi.php');

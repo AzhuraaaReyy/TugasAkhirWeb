@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BalitaController;
+use App\Http\Controllers\DetailDeteksiController;
 use App\Http\Controllers\DeteksiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
@@ -51,6 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/ambilbalita', [DeteksiController::class, 'ambildatabalita']);
         Route::post('/deteksi', [DeteksiController::class, 'deteksi']);
+
+        Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
+        Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
     });
 
 

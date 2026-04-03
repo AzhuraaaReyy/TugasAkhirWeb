@@ -9,17 +9,27 @@ class Deteksi extends Model
     protected $table = 'deteksis';
     protected $fillable = [
         'balita_id',
-        'tgl_penimbangan',
-        'z-score_tb_u',
-        'z-score_bb_u',
-        'z-score_tb_bb',
+        'tgl_deteksi',
+        'zscore_tb_u',
+        'zscore_bb_u',
+        'zscore_tb_bb',
         'status_tb_u',
         'status_bb_u',
         'status_tb_bb',
-        'kesimpulan',
+
     ];
 
     protected $casts = [
-        'tgl_penimbangan' => 'date',
+        'tgl_deteksi' => 'date',
     ];
+
+    public function balita()
+    {
+        return $this->belongsTo(Balita::class);
+    }
+
+    public function detaildeteksis()
+    {
+        return $this->hasMany(DetailDeteksi::class);
+    }
 }

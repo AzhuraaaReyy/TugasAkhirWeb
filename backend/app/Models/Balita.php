@@ -40,4 +40,9 @@ class Balita extends Model
     {
         return $this->hasOne(Penimbangan::class)->latestOfMany();
     }
+
+    public function deteksis()
+    {
+        return $this->hasMany(Deteksi::class);
+    }
 }

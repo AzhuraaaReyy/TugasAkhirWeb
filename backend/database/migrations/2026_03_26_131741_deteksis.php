@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('deteksis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('penimbangan_id')->constrained('penimbangans')->cascadeOnDelete();
+            $table->foreignId('balita_id')->constrained('balitas')->cascadeOnDelete();
+            $table->date('tgl_deteksi');
             $table->decimal('zscore_tb_u');
             $table->float('zscore_bb_u');
             $table->float('zscore_tb_bb');
             $table->string('status_tb_u');
             $table->string('status_bb_u');
             $table->string('status_tb_bb');
-            $table->string('kesimpulan');
             $table->timestamps();
         });
     }

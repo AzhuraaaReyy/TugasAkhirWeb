@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             BalitaSeeder::class,
             PenimbanganSeeder::class,
             DeteksiSeeder::class,
+            DetailDeteksiSeeder::class,
             TestimoniSeeder::class,
             FAQSeeder::class,
             KaderPosyanduSeeder::class,
