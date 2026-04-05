@@ -3,11 +3,13 @@
 use App\Http\Controllers\BalitaController;
 use App\Http\Controllers\DetailDeteksiController;
 use App\Http\Controllers\DeteksiController;
+use App\Http\Controllers\LaporanController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\RiwayatGrafikController;
 
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/register', [RegisterController::class, 'register']);
@@ -52,9 +54,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/ambilbalita', [DeteksiController::class, 'ambildatabalita']);
         Route::post('/deteksi', [DeteksiController::class, 'deteksi']);
+        Route::delete('/deteksi/delete/{id}', [DeteksiController::class, 'destroy']);
+        Route::get('/deteksi', [DeteksiController::class, 'index']);
 
         Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
         Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
+
+        Route::get('/riwayat/{id}', [RiwayatGrafikController::class, 'ambildatabalita']);
+        Route::get('/grafik/{id}', [RiwayatGrafikController::class, 'grafik']);
+
+        Route::get('/laporan', [LaporanController::class, 'laporan']);
     });
 
 

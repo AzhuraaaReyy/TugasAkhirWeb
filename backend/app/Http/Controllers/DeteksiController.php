@@ -11,6 +11,22 @@ use Carbon\Carbon;
 
 class DeteksiController extends Controller
 {
+    public function index()
+    {
+        $deteksi = Deteksi::with('balita.penimbanganTerakhir')->get();
+        $data = $deteksi->map(function ($deteksi) {
+            return [
+                'id' => $deteksi->id,
+                'name' => $deteksi->balita?->name,
+                'umur' => $deteksi->balita?->penimbanganTerakhir?->umur,
+                'berat' => $deteksi->balita?->penimbanganTerakhir?->berat,
+                'tinggi' => $deteksi->balita?->penimbanganTerakhir?->tinggi,
+                'status_tb_u' => $deteksi->status_tb_u,
+            ];
+        });
+        return response()->json($data);
+    }
+
     public function ambildatabalita()
     {
         $balita = Balita::with('penimbanganTerakhir')->get();
@@ -21,10 +37,10 @@ class DeteksiController extends Controller
                 'name' => $b->name,
                 'jk' => $b->jk === 'L' ? 'Laki-Laki' : 'Perempuan',
                 'tanggal_lahir' => $b->tgl_lahir,
-                'berat' => $b->penimbanganTerakhir->berat ?? "",
-                'tinggi' => $b->penimbanganTerakhir->tinggi ?? "",
-                'umur' => $b->penimbanganTerakhir->umur ?? "",
-                'tgl_penimbangan' => $b->penimbanganTerakhir->tgl_penimbangan ?? "",
+                'berat' => $b->penimbanganTerakhir?->berat ?? "",
+                'tinggi' => $b->penimbanganTerakhir?->tinggi ?? "",
+                'umur' => $b->penimbanganTerakhir?->umur ?? "",
+                'tgl_penimbangan' => $b->penimbanganTerakhir?->tgl_penimbangan ?? "",
             ];
         }));
     }
@@ -96,7 +112,14 @@ class DeteksiController extends Controller
             'rekomendasi_bbtb' => $this->rekomendasiBBTB($this->deteksiBBTB($z_bbtb)),
         ]);
     }
-
+    public function destroy($id)
+    {
+        $deteksi = Deteksi::findOrFail($id);
+        $deteksi->delete();
+        return response()->json([
+            'message' => 'Data berhasil dihapus',
+        ]);
+    }
 
     private function formatStatusBBU($z)
     {

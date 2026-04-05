@@ -17,6 +17,7 @@ class DetailDeteksiController extends Controller
         return response()->json([
             'message' => "Detail data deteksi",
             'data' => [
+                'id' => $detaildeteksi->id,
                 'name' => $balita->name,
                 'umur' => $penimbangan->umur,
                 'tgl_deteksi' => $deteksi->tgl_deteksi,
@@ -24,10 +25,10 @@ class DetailDeteksiController extends Controller
                 'berat' => $penimbangan->berat,
                 'zscore_tbu' => $deteksi->zscore_tb_u,
                 'zscore_bbu' => $deteksi->zscore_bb_u,
-                'zscore_bbtb' => $deteksi->zscore_bb_tb,
+                'zscore_bbtb' => $deteksi->zscore_tb_bb,
                 'status_tbu' => $deteksi->status_tb_u,
                 'status_bbu' => $deteksi->status_bb_u,
-                'status_bbtb' => $deteksi->status_bb_tb,
+                'status_bbtb' => $deteksi->status_tb_bb,
                 'keterangan' => $detaildeteksi->keterangan,
                 'rekomendasi' => $detaildeteksi->rekomendasi,
             ]

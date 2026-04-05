@@ -13,7 +13,7 @@ class DetailDeteksi extends Model
         'rekomendasi'
     ];
 
-    public function deteksis()
+    public function deteksi()
     {
         return $this->belongsTo(Deteksi::class);
     }

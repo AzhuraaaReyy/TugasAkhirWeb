@@ -1,0 +1,4 @@
+downlaod pdf dan excel 
+
+excel = composer require maatwebsite/excel
+pdf = composer require barryvdh/laravel-dompdf
