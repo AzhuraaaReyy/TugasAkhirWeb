@@ -9,7 +9,6 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Kader/Dashboard";
 import Homepage from "./pages/homepage";
 import ManajemenBalita from "./pages/Kader/ManajemenBalita/ManajemenBalita";
-import CreateForm from "./pages/Kader/ManajemenBalita/Create";
 import UpdateFormBalita from "./pages/Kader/ManajemenBalita/Update";
 import DetailFormBalita from "./pages/Kader/ManajemenBalita/Detail";
 import Penimbangan from "./pages/Kader/ManajemenPenimbangan";
@@ -27,6 +26,8 @@ import RiwayatPemeriksaan from "./pages/OrangTua/Riwayat";
 import Deteksi from "./pages/OrangTua/Deteksi";
 import NotifikasiOrtu from "./pages/OrangTua/Notifikasi";
 import DetailDeteksi from "./pages/Kader/DetailDeteksi";
+import CreateFormOrangtua from "./pages/Kader/ManajemenBalita/CreateOrtu";
+import CreateFormBalita from "./pages/Kader/ManajemenBalita/Create";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -67,7 +68,8 @@ const App = () => {
       children: [
         { path: "dashboard", element: <Dashboard /> },
         { path: "manajemenbalita", element: <ManajemenBalita /> },
-        { path: "createmanajemenbalita", element: <CreateForm /> },
+        { path: "createmanajemenbalita", element: <CreateFormBalita /> },
+        { path: "createorangtuabalita", element: <CreateFormOrangtua /> },
         { path: "detailmanajemenbalita/:id", element: <DetailFormBalita /> },
         { path: "updatemanajemenbalita/:id", element: <UpdateFormBalita /> },
         { path: "manajemenpenimbangan", element: <Penimbangan /> },
@@ -78,7 +80,7 @@ const App = () => {
         { path: "riwayat", element: <Riwayat /> },
         { path: "laporan", element: <Laporan /> },
         { path: "notif", element: <Notifikasi /> },
-        { path: "detaildeteksi", element: <DetailDeteksi /> },
+        { path: "detaildeteksi/:id", element: <DetailDeteksi /> },
       ],
     },
 

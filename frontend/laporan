@@ -1,83 +1,165 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import MainLayouts from "../../layouts/MainLayouts";
-import { useEffect } from "react";
-import api from "@/services/api";
-import Pagination from "@/components/Pagination/pagination";
+
+const dummyData = [
+  {
+    id: 1,
+    nama: "Aisyah",
+    orangtua: "Budiyono Siregar",
+    jk: "Perempuan",
+    TTL: "Semarang,12-01-2021",
+    alamat: "Soka rt02/rw04",
+    Posyandu: "Posyandu Anggerek",
+    dusun: "Dusun 1",
+    umur: 24,
+    berat: 8.2,
+    tinggi: 78,
+    status: "Stunting",
+    tanggal: "2025-01-10",
+    tbu: 8.9,
+    bbu: 10,
+    tbbu: 12,
+  },
+  {
+    id: 2,
+    nama: "Rafi",
+    orangtua: "Angga Geobarac",
+    jk: "Laki-Laki",
+    TTL: "Ungaran,12-01-2021",
+    alamat: "Soka rt04/rw04",
+    Posyandu: "Posyandu Melati",
+    dusun: "Dusun 2",
+    umur: 30,
+    berat: 10.5,
+    tinggi: 85,
+    status: "Normal",
+    tanggal: "2025-01-15",
+    tbu: 8.9,
+    bbu: 10,
+    tbbu: 12,
+  },
+  {
+    id: 3,
+    nama: "Dina",
+    orangtua: "Ahmad Solikin",
+    jk: "Perempuan",
+    TTL: "Tembalang,12-01-2021",
+    alamat: "Banyumanik rt02/rw04",
+    Posyandu: "Posyandu Mawar",
+    dusun: "Dusun 1",
+    umur: 18,
+    berat: 7.9,
+    tinggi: 74,
+    status: "Stunting",
+    tanggal: "2025-01-18",
+    tbu: 8.9,
+    bbu: 10,
+    tbbu: 12,
+  },
+];
+
 export default function Laporan() {
-  const [data, setData] = useState([]);
+  const [filterTanggal, setFilterTanggal] = useState("");
+
+  // FILTER DATA
+  const filteredData = useMemo(() => {
+    if (!filterTanggal) return dummyData;
+    return dummyData.filter((item) => item.tanggal === filterTanggal);
+  }, [filterTanggal]);
+
+  // REKAP PER DUSUN
+
+  // EXPORT CSV (EXCEL)
+  const exportCSV = () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data untuk diexport");
+      return;
+    }
+
+    const headers = "Nama,Dusun,Umur,Berat,Tinggi,Status,Tanggal\n";
+
+    const rows = filteredData
+      .map(
+        (d) =>
+          `${d.nama},${d.dusun},${d.umur},${d.berat},${d.tinggi},${d.status},${d.tanggal}`,
+      )
+      .join("\n");
+
+    const csvContent = headers + rows;
+
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `laporan_${filterTanggal || "semua_data"}.csv`,
+    );
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  // EXPORT PDF
+  const exportPDF = () => {
+    const printContent = document.querySelector(".print-area").innerHTML;
+
+    const newWindow = window.open("", "", "width=900,height=700");
+
+    newWindow.document.write(`
+      <html>
+        <head>
+          <title>Laporan</title>
+          <style>
+            body { font-family: Arial; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            table, th, td { border: 1px solid #ddd; }
+            th, td { padding: 8px; text-align: left; }
+            h1, h2 { margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          ${printContent}
+        </body>
+      </html>
+    `);
+
+    newWindow.document.close();
+    newWindow.focus();
+    newWindow.print();
+    newWindow.close();
+  };
+
+  // PAGINATION
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const dataPerPage = 5;
 
-  const [search, setSearch] = useState("");
-  const [tanggal, setTanggal] = useState("");
-  const [loading, setLoading] = useState(false);
+  const indexOfLastData = currentPage * dataPerPage;
+  const indexOfFirstData = indexOfLastData - dataPerPage;
 
-  const [balita, setBalita] = useState([]);
-  const [penimbangan, setPenimbangan] = useState([]);
-  const [deteksi, setDeteksi] = useState([]);
+  const currentData = filteredData.slice(indexOfFirstData, indexOfLastData);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get("/laporan", {
-          params: {
-            page: currentPage,
-            search: search,
-            tanggal: tanggal,
-          },
-        });
+  const totalPages = Math.ceil(filteredData.length / dataPerPage);
 
-        const result = res.data.penimbangan;
-
-        setData(result.data);
-        setCurrentPage(result.current_page);
-        setTotalPages(result.last_page);
-        setBalita(res.data.balita.data);
-        setPenimbangan(res.data.penimbangan.data);
-        setDeteksi(res.data.deteksi.data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [currentPage, search, tanggal]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, tanggal]);
-
-  const statusWarnaTBU = {
-    "Sangat pendek (severely stunted)": "bg-red-600 text-white",
-    "Pendek (stunted)": "bg-yellow-400 text-white",
-    Normal: "bg-green-500 text-white",
-    Tinggi: "bg-blue-500 text-white",
-    default: "bg-gray-300 text-black",
-  };
-  const statusWarnaBBU = {
-    "Berat badan sangat kurang (severely underweight)": "bg-red-600 text-white",
-    "Berat badan kurang (underweight)": "bg-yellow-400 text-white",
-    "Berat badan normal": "bg-green-500 text-white",
-    "Risiko Berat badan lebih": "bg-blue-500 text-white",
-    default: "bg-gray-300 text-black",
-  };
-  const statusWarnaBBTB = {
-    "Gizi buruk (severely wasted)": "bg-red-600 text-white",
-    "Gizi kurang (wasted)": "bg-yellow-400 text-white",
-    "Gizi baik (normal)": "bg-green-500 text-white",
-    "Berisiko gizi lebih (possible risk of overweight)":
-      "bg-blue-300 text-white",
-    "Gizi lebih (overweight)": "bg-blue-500 text-white",
-    "Obesitas (obese)": "bg-purple-600 text-white",
-    default: "bg-gray-300 text-black",
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
   };
 
-  const baseStyle =
-    "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   return (
     <MainLayouts type="laporan">
@@ -89,22 +171,15 @@ export default function Laporan() {
             {/* FILTER */}
             <div className="mb-6 flex gap-4 items-center">
               <input
-                type="text"
-                placeholder="Cari nama balita..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
-              />
-              <input
                 type="date"
-                value={tanggal}
-                onChange={(e) => setTanggal(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                value={filterTanggal}
+                onChange={(e) => setFilterTanggal(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
               />
 
-              {tanggal && (
+              {filterTanggal && (
                 <button
-                  onClick={() => setTanggal("")}
+                  onClick={() => setFilterTanggal("")}
                   className="text-sm bg-gray-100 px-3 py-2 rounded-lg"
                 >
                   Reset Filter
@@ -112,14 +187,14 @@ export default function Laporan() {
               )}
 
               <button
-                // onClick={exportCSV}
+                onClick={exportCSV}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg"
               >
                 Export Excel
               </button>
 
               <button
-                //  onClick={exportPDF}
+                onClick={exportPDF}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg"
               >
                 Export PDF
@@ -145,23 +220,22 @@ export default function Laporan() {
                       <th className="px-4 py-3">Jenis Kelamin</th>
                       <th className="px-4 py-3">Tempat & Tanggal Lahir</th>
                       <th className="px-4 py-3">Alamat</th>
-                      <th className="px-4 py-3">Posyandu</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 text-center">
-                    {data.length > 0 ? (
-                      balita.map((item, index) => (
+                    {filteredData.length > 0 ? (
+                      currentData.map((item, index) => (
                         <tr
                           key={item.id}
                           className="hover:bg-gray-50 transition"
                         >
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {(currentPage - 1) * 10 + index + 1}
+                            {index + 1}
                           </td>
 
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.name}
+                            {item.nama}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.orangtua}
@@ -170,16 +244,10 @@ export default function Laporan() {
                             {item.jk}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.tmp_lahir},{" "}
-                            {new Date(item.tgl_lahir).toLocaleDateString(
-                              "id-ID",
-                            )}
+                            {item.TTL}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.alamat}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.posyandu}
                           </td>
                         </tr>
                       ))
@@ -202,20 +270,38 @@ export default function Laporan() {
                   Halaman {currentPage} dari {totalPages}
                 </p>
 
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(page) => setCurrentPage(page)}
-                />
+                <div className="flex gap-2 mr-5 ">
+                  <button
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      currentPage === 1
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-600 text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      currentPage === totalPages
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
               <h2 className="font-extrabold text-lg">
                 Laporan Data Penimbangan
               </h2>
-              <p className="text-gray-500 text-sm mb-5">
-                Data monitoring berat dan tinggi badan balita.
-              </p>
+              <p className="text-gray-500 text-sm mb-5">Data monitoring berat dan tinggi badan balita.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
@@ -224,44 +310,40 @@ export default function Laporan() {
                       <th className="px-4 py-3">Nama Balita</th>
                       <th className="px-4 py-3">Umur Balita</th>
                       <th className="px-4 py-3">Tanggal Penimbangan</th>
+                      <th className="px-4 py-3 text-center">Posyandu</th>
                       <th className="px-4 py-3">Berat Badan(kg)</th>
                       <th className="px-4 py-3">Tinggi Badan(cm)</th>
-                      <th className="px-4 py-3">Lingkar Lengan Atas(cm)</th>
-                      <th className="px-4 py-3">Lingkar Kepala(cm)</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 text-center">
-                    {data.length > 0 ? (
-                      penimbangan.map((item, index) => (
+                    {filteredData.length > 0 ? (
+                      currentData.map((item, index) => (
                         <tr
                           key={item.id}
                           className="hover:bg-gray-50 transition"
                         >
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {(currentPage - 1) * 10 + index + 1}
+                            {index + 1}
                           </td>
 
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.balita}
+                            {item.nama}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.umur} Bulan
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                            {item.tanggal}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.Posyandu}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.berat}kg
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.tinggi}cm
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.lingkar_lengan}cm
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.lingkar_kepala}cm
                           </td>
                         </tr>
                       ))
@@ -284,19 +366,38 @@ export default function Laporan() {
                   Halaman {currentPage} dari {totalPages}
                 </p>
 
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(page) => setCurrentPage(page)}
-                />
+                <div className="flex gap-2 mr-5 ">
+                  <button
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      currentPage === 1
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-600 text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      currentPage === totalPages
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
             <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
-              <h2 className="font-extrabold text-lg">Laporan Data Deteksi</h2>
-              <p className="text-gray-500 text-sm mb-5">
-                Hasil klasifikasi status gizi balita berdasarkan indikator
-                antropometri.
-              </p>
+              <h2 className="font-extrabold text-lg">
+                Laporan Data Deteksi
+              </h2>
+              <p className="text-gray-500 text-sm mb-5">Hasil klasifikasi status gizi balita berdasarkan indikator antropometri.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-200 text-center">
                 <table className="w-full text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
@@ -304,76 +405,50 @@ export default function Laporan() {
                       <th className="px-4 py-3">No</th>
                       <th className="px-4 py-3">Nama Balita</th>
                       <th className="px-4 py-3">Tanggal Deteksi</th>
+                      <th className="px-4 py-3">Berat Badan(kg)</th>
+                      <th className="px-4 py-3">Tinggi Badan(cm)</th>
                       <th className="px-4 py-3">Z-Score TB/U</th>
                       <th className="px-4 py-3">Z-Score BB/U</th>
                       <th className="px-4 py-3">Z-Score TB/BB</th>
-                      <th className="px-4 py-3 text-center">
-                        Status Stunting (TB / U)
-                      </th>
-                      <th className="px-4 py-3 text-center">
-                        Status Wasting (BB / TB){" "}
-                      </th>
-                      <th className="px-4 py-3 text-center">
-                        Status Underweight (BB / U){" "}
-                      </th>
+                      <th className="px-4 py-3 text-center">Status</th>
                     </tr>
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 ">
-                    {data.length > 0 ? (
-                      deteksi.map((item, index) => (
+                    {filteredData.length > 0 ? (
+                      currentData.map((item, index) => (
                         <tr
                           key={item.id}
                           className="hover:bg-gray-50 transition"
                         >
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {(currentPage - 1) * 10 + index + 1}
+                            {index + 1}
                           </td>
 
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.balitaname}
+                            {item.nama}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                            {item.tanggal}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.zscore_tb_u}
+                            {item.berat}kg
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.zscore_bb_u}
+                            {item.tinggi}cm
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.zscore_tb_bb}
+                            {item.tbu}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            <span
-                              className={`${baseStyle} ${
-                                statusWarnaTBU[item.status_tb_u] ||
-                                "bg-gray-300 text-black"
-                              }`}
-                            >
-                              {item.status_tb_u || "-"}
-                            </span>
+                            {item.bbu}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            <span
-                              className={`${baseStyle} ${
-                                statusWarnaBBTB[item.status_tb_bb] ||
-                                "bg-gray-300 text-black"
-                              }`}
-                            >
-                              {item.status_tb_bb || "-"}
-                            </span>
+                            {item.tbbu}
                           </td>
+
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            <span
-                              className={`${baseStyle} ${
-                                statusWarnaBBU[item.status_bb_u] ||
-                                "bg-gray-300 text-black"
-                              }`}
-                            >
-                              {item.status_bb_u || "-"}
-                            </span>
+                            {item.status}
                           </td>
                         </tr>
                       ))
@@ -396,11 +471,31 @@ export default function Laporan() {
                   Halaman {currentPage} dari {totalPages}
                 </p>
 
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(page) => setCurrentPage(page)}
-                />
+                <div className="flex gap-2 mr-5 ">
+                  <button
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      currentPage === 1
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-600 text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      currentPage === totalPages
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </div>

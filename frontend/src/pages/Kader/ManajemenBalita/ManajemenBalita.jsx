@@ -118,7 +118,14 @@ const ManajemenBalita = () => {
               ))}
             </select>
 
-            <div className="ml-auto">
+            {/* Wrapper tombol */}
+            <div className="ml-auto flex gap-2">
+              <Link
+                to="/kader/createorangtuabalita"
+                className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
+              >
+                Tambah OrangTua
+              </Link>
               <Link
                 to="/kader/createmanajemenbalita"
                 className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"

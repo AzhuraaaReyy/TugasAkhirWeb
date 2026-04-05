@@ -1,6 +1,6 @@
 import Card from "../../Elements/Card/Index";
 import { Icon } from "../../../assets/icons";
-const CardStatus = ({umur}) => {
+const CardStatus = ({ children }) => {
   return (
     <>
       <Card
@@ -13,14 +13,12 @@ const CardStatus = ({umur}) => {
             </div>
 
             {/* Title kecil */}
-            <p className="text-black font-semibold text-sm mb-1">
-              Status Gizi
-            </p>
+            <p className="text-black font-semibold text-sm mb-1">Status Gizi</p>
 
             {/* Nominal besar */}
-            <h2 className="text-2xl font-bold text-gray-800 mt-2">{umur}</h2>
-
-           
+            <h2 className="text-2xl font-bold text-gray-800 mt-2">
+              {children}
+            </h2>
           </div>
         }
       />

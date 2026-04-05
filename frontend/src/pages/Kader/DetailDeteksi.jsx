@@ -1,22 +1,96 @@
 import { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import MainLayouts from "../../layouts/MainLayouts";
-
+import api from "@/services/api";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 export default function DetailDeteksi() {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-
-  // Ambil hasil dari state router
-  const { hasil, metode } = location.state || {};
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({
+    name: "",
+    umur: "",
+    tgl_deteksi: "",
+    tinggi: "",
+    berat: "",
+    zscore_tbu: "",
+    zscore_bbu: "",
+    zscore_bbtb: "",
+    status_tbu: "",
+    status_bbu: "",
+    status_bbtb: "",
+    keterangan: "",
+    rekomendasi: "",
+  });
 
   useEffect(() => {
-    if (!hasil) {
-      // Jika user akses langsung tanpa data, redirect ke halaman deteksi
-      navigate("/kader/deteksidini");
-    }
-  }, [hasil, navigate]);
+    const fetchDetail = async () => {
+      try {
+        const res = await api.get(`/detaildeteksi/${id}`);
+        const data = res.data.data;
 
-  if (!hasil) return null;
+        setForm({
+          name: data.name || "",
+          umur: data.umur || "",
+          tgl_deteksi: data.tgl_deteksi?.slice(0, 10) || "",
+          berat: data.berat || "",
+          tinggi: data.tinggi || "",
+          zscore_tbu: data.zscore_tbu || "",
+          zscore_bbu: data.zscore_bbu || "",
+          zscore_bbtb: data.zscore_bbtb || "",
+          status_tbu: data.status_tbu || "",
+          status_bbu: data.status_bbu || "",
+          status_bbtb: data.status_bbtb || "",
+          keterangan: data.keterangan || "",
+          rekomendasi: data.rekomendasi || "",
+        });
+      } catch (err) {
+        console.error("Gagal ambil data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchDetail();
+  }, [id]);
+
+  //warna
+  const statusWarnaTBU = {
+    "Sangat pendek (severely stunted)": "bg-red-600 text-white",
+    "Pendek (stunted)": "bg-yellow-400 text-white",
+    Normal: "bg-green-500 text-white",
+    Tinggi: "bg-blue-500 text-white",
+    default: "bg-gray-300 text-black",
+  };
+  const statusWarnaBBU = {
+    "Berat badan sangat kurang (severely underweight)": "bg-red-600 text-white",
+    "Berat badan kurang (underweight)": "bg-yellow-400 text-white",
+    "Berat badan normal": "bg-green-500 text-white",
+    "Risiko Berat badan lebih": "bg-blue-500 text-white",
+    default: "bg-gray-300 text-black",
+  };
+  const statusWarnaBBTB = {
+    "Gizi buruk (severely wasted)": "bg-red-600 text-white",
+    "Gizi kurang (wasted)": "bg-yellow-400 text-white",
+    "Gizi baik (normal)": "bg-green-500 text-white",
+    "Berisiko gizi lebih (possible risk of overweight)":
+      "bg-blue-300 text-white",
+    "Gizi lebih (overweight)": "bg-blue-500 text-white",
+    "Obesitas (obese)": "bg-purple-600 text-white",
+    default: "bg-gray-300 text-black",
+  };
+
+  const baseStyle =
+    "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
+
+  if (loading) {
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+  }
 
   return (
     <MainLayouts type="deteksidini">
@@ -33,112 +107,87 @@ export default function DetailDeteksi() {
           {/* Info Balita */}
           <div className="grid md:grid-cols-5 gap-4 text-center">
             <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 shadow-lg">
-              <p className="font-bold">{hasil.name}</p>
+              <p className="font-bold">{form.name}</p>
               <p className="text-sm text-gray-600">Nama</p>
             </div>
             <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 shadow-lg">
-              <p className="font-bold">{hasil.umur} bulan</p>
+              <p className="font-bold">{form.umur} bulan</p>
               <p className="text-sm text-gray-600">Usia</p>
             </div>
             <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 shadow-lg">
-              <p className="font-bold">{hasil.tanggal_deteksi}</p>
+              <p className="font-bold">{form.tgl_deteksi}</p>
               <p className="text-sm text-gray-600">Tanggal Deteksi</p>
             </div>
             <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 shadow-lg">
-              <p className="font-bold">{hasil.tb} cm</p>
+              <p className="font-bold">{form.tinggi} cm</p>
               <p className="text-sm text-gray-600">Tinggi</p>
             </div>
             <div className="bg-emerald-200 p-4 rounded-xl border border-gray-400 shadow-lg">
-              <p className="font-bold">{hasil.bb} kg</p>
+              <p className="font-bold">{form.berat} kg</p>
               <p className="text-sm text-gray-600">Berat</p>
             </div>
           </div>
 
           {/* Z-Score dan Status */}
           <div className="grid md:grid-cols-3 gap-6 text-center mt-6">
-            {metode === "stunting" && (
-              <div className="bg-blue-100 p-6 rounded-2xl shadow-lg">
-                <p className="font-bold text-xl">{hasil.zscore_tbu}</p>
-                <p className="text-sm text-gray-500 mb-2">Z-Score TB/U</p>
-                <p
-                  className={`font-semibold mt-2 px-3 py-1 rounded-full inline-block ${hasil.status_tbu.warna}`}
-                >
-                  {hasil.status_tbu.status}
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  {hasil.status_tbu.keterangan}
-                </p>
-              </div>
-            )}
-            {metode === "wasting" && (
-              <div className="bg-orange-100 p-6 rounded-2xl shadow-lg">
-                <p className="font-bold text-xl">{hasil.zscore_bbtb}</p>
-                <p className="text-sm text-gray-500 mb-2">Z-Score TB/BB</p>
-                <p
-                  className={`font-semibold mt-2 px-3 py-1 rounded-full inline-block ${hasil.status_bb_tb.warna}`}
-                >
-                  {hasil.status_bb_tb.status}
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  {hasil.status_bb_tb.keterangan}
-                </p>
-              </div>
-            )}
-            {metode === "underweight" && (
-              <div className="bg-purple-100 p-6 rounded-2xl shadow-lg">
-                <p className="font-bold text-xl">{hasil.zscore_bbu}</p>
-                <p className="text-sm text-gray-500 mb-2">Z-Score BB/U</p>
-                <p
-                  className={`font-semibold mt-2 px-3 py-1 rounded-full inline-block ${hasil.status_bbu.warna}`}
-                >
-                  {hasil.status_bbu.status}
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  {hasil.status_bbu.keterangan}
-                </p>
-              </div>
-            )}
+            <div className="bg-blue-100 p-6 rounded-2xl shadow-lg">
+              <p className="font-bold text-xl">{form.zscore_tbu}</p>
+              <p className="text-sm text-gray-500 mb-2">Z-Score TB/U</p>
+              <p
+                className={`${baseStyle} ${
+                  statusWarnaTBU[form.status_tbu] || statusWarnaTBU.default
+                } inline-block`}
+              >
+                {form.status_tbu}
+              </p>
+            </div>
+
+            <div className="bg-orange-100 p-6 rounded-2xl shadow-lg">
+              <p className="font-bold text-xl">{form.zscore_bbtb}</p>
+              <p className="text-sm text-gray-500 mb-2">Z-Score TB/BB</p>
+              <p
+                className={`${baseStyle} ${
+                  statusWarnaBBTB[form.status_bbtb] || statusWarnaBBTB.default
+                } inline-block`}
+              >
+                {form.status_bbtb}
+              </p>
+            </div>
+
+            <div className="bg-purple-100 p-6 rounded-2xl shadow-lg">
+              <p className="font-bold text-xl">{form.zscore_bbu}</p>
+              <p className="text-sm text-gray-500 mb-2">Z-Score BB/U</p>
+              <p
+                className={`${baseStyle} ${
+                  statusWarnaBBU[form.status_bbu] || statusWarnaBBU.default
+                } inline-block`}
+              >
+                {form.status_bbu}
+              </p>
+            </div>
           </div>
 
           {/* Rekomendasi */}
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-3">Rekomendasi</h2>
-            <ul className="list-disc list-inside space-y-2">
-              {metode === "stunting" &&
-                hasil.rekomendasi_tbu.map((r, i) => (
-                  <li key={i}>
-                    <span
-                      className={`px-3 py-1 rounded-md ${hasil.status_tbu.warna} text-white`}
-                    >
-                      {r}
-                    </span>
-                  </li>
-                ))}
-              {metode === "wasting" &&
-                hasil.rekomendasi_bbtb.map((r, i) => (
-                  <li key={i}>
-                    <span
-                      className={`px-3 py-1 rounded-md ${hasil.status_bb_tb.warna} text-white`}
-                    >
-                      {r}
-                    </span>
-                  </li>
-                ))}
-              {metode === "underweight" &&
-                hasil.rekomendasi_bbu.map((r, i) => (
-                  <li key={i}>
-                    <span
-                      className={`px-3 py-1 rounded-md ${hasil.status_bbu.warna} text-white`}
-                    >
-                      {r}
-                    </span>
-                  </li>
-                ))}
-            </ul>
-            <div className="text-xs text-gray-400 italic mt-4">
-              *Hasil ini merupakan skrining awal dan tidak menggantikan
-              diagnosis medis.
+          {/* Keterangan dan Rekomendasi */}
+          <div className="mt-6 grid md:grid-cols-1 gap-6">
+            <div className="bg-emerald-100 p-6 rounded-2xl shadow-lg border border-gray-300">
+              <h3 className="font-extrabold text-gray-700 mb-2">
+                Keterangan :
+              </h3>
+              <p className="text-gray-600 italic">{form.keterangan || "-"}</p>
             </div>
+            <div className="bg-emerald-100 p-6 rounded-2xl shadow-lg border border-gray-300">
+              <h3 className="font-extrabold text-gray-700 mb-2">
+                Rekomendasi :
+              </h3>
+              <p className="text-gray-600 italic">{form.rekomendasi || "-"}</p>
+            </div>
+          </div>
+
+          {/* Catatan tambahan */}
+          <div className="text-xs text-gray-400 italic mt-4">
+            *Hasil ini merupakan skrining awal dan tidak menggantikan diagnosis
+            medis.
           </div>
 
           <div className="mt-6 text-center">

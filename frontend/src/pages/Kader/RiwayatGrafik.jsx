@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   LineChart,
   Line,
@@ -15,202 +15,105 @@ import CardTotalPenimbangan from "../../components/Fragments/Riwayat&Grafik/Card
 import CardBerat from "../../components/Fragments/Riwayat&Grafik/CardBerat";
 import CardTinggi from "../../components/Fragments/Riwayat&Grafik/CardTinggi";
 import CardStatus from "../../components/Fragments/Riwayat&Grafik/CardStatus";
-
+import api from "@/services/api";
+import EarlyWarning from "@/components/Fragments/Riwayat&Grafik/EarlyWarning";
+import { useEffect } from "react";
 const RiwayatdanGrafik = () => {
-  // =========================
-  // DATA BALITA (MULTIPLE)
-  // =========================
-  const balitaList = [
-    {
-      id: 1,
-      nama: "Aisyah",
-      tanggal_lahir: "2023-01-10",
-      jk: "Perempuan",
-      orang_tua: "Ibu Siti",
-      riwayat: [
-        {
-          tanggal: "2024-01-10",
-          berat: 7.5,
-          tinggi: 68,
-          status: "Normal",
-          petugas: "Budiyono",
-        },
-        {
-          tanggal: "2024-02-10",
-          berat: 7.8,
-          tinggi: 69,
-          status: "Stunting",
-          petugas: "Siti",
-        },
-        {
-          tanggal: "2024-03-10",
-          berat: 8.0,
-          tinggi: 70,
-          status: "Risiko",
-          petugas: "Budiyono",
-        },
-        {
-          tanggal: "2024-04-10",
-          berat: 8.1,
-          tinggi: 71,
-          status: "Normal",
-          petugas: "Siti",
-        },
-        {
-          tanggal: "2024-05-10",
-          berat: 8.2,
-          tinggi: 72,
-          status: "Normal",
-          petugas: "Ainun",
-        },
-        {
-          tanggal: "2024-06-10",
-          berat: 8.1,
-          tinggi: 72,
-          status: "Risiko",
-          petugas: "Budiyono",
-        },
-      ],
-    },
-    {
-      id: 2,
-      nama: "Rafi",
-      tanggal_lahir: "2022-05-15",
-      jk: "Laki-Laki",
-      orang_tua: "Bapak Andi",
-      riwayat: [
-        {
-          tanggal: "2024-01-15",
-          berat: 9.5,
-          tinggi: 75,
-          status: "Normal",
-          petugas: "Budiyono",
-        },
-        {
-          tanggal: "2024-02-15",
-          berat: 9.7,
-          tinggi: 76,
-          status: "Normal",
-          petugas: "Budiyono",
-        },
-        {
-          tanggal: "2024-03-15",
-          berat: 9.6,
-          tinggi: 76,
-          status: "Normal",
-          petugas: "Budiyono",
-        },
-        {
-          tanggal: "2024-04-15",
-          berat: 9.8,
-          tinggi: 77,
-          status: "Normal",
-          petugas: "Budiyono",
-        },
-      ],
-      status: "Stunting",
-      petugas: "Bagusyono",
-    },
-  ];
-
+  const [balitaList, setBalitaList] = useState([]);
+  const [balitaDetail, setBalitaDetail] = useState(null);
   const [selectedId, setSelectedId] = useState("");
-
-  const balita = balitaList.find((b) => b.id === parseInt(selectedId));
-
-  // =========================
-  // FUNCTION HITUNG USIA
-  // =========================
-  const hitungUsia = (lahir, tanggal) => {
-    const l = new Date(lahir);
-    const t = new Date(tanggal);
-    return (
-      (t.getFullYear() - l.getFullYear()) * 12 + (t.getMonth() - l.getMonth())
-    );
-  };
-
-  const dataWithUsia = useMemo(() => {
-    if (!balita) return [];
-
-    return balita.riwayat.map((item) => ({
-      ...item,
-      usia: hitungUsia(balita.tanggal_lahir, item.tanggal),
-    }));
-  }, [balita]);
-
-  const terakhir =
-    dataWithUsia.length > 0 ? dataWithUsia[dataWithUsia.length - 1] : null;
-
-  const totalRiwayat = dataWithUsia.length;
-
-  // =========================
-  // DETEKSI TREN OTOMATIS
-  // =========================
-  const alert = useMemo(() => {
-    if (dataWithUsia.length < 2) return null;
-
-    const last = dataWithUsia[dataWithUsia.length - 1];
-    const prev = dataWithUsia[dataWithUsia.length - 2];
-
-    if (last.berat < prev.berat) {
-      return "⚠ Berat badan menurun dibanding bulan sebelumnya";
-    }
-
-    if (last.tinggi === prev.tinggi) {
-      return "⚠ Tinggi badan tidak bertambah bulan ini";
-    }
-
-    return null;
-  }, [dataWithUsia]);
-
-  const [filterTanggal, setFilterTanggal] = useState("");
-
-  const filteredData = dataWithUsia.filter((item) => {
-    if (!filterTanggal) return true;
-    return item.tanggal === filterTanggal;
-  });
-
-  const getStatusGizi = (berat, tinggi) => {
-    // SIMULASI SEDERHANA (bukan standar WHO asli)
-
-    const bmi = berat / ((tinggi / 100) * (tinggi / 100));
-
-    if (bmi < 14) return { status: "Severely Stunting", color: "text-red-700" };
-    if (bmi < 15) return { status: "Stunting", color: "text-orange-600" };
-    if (bmi >= 15 && bmi <= 18)
-      return { status: "Normal", color: "text-green-600" };
-    if (bmi > 18 && bmi <= 20)
-      return { status: "Overweight", color: "text-yellow-600" };
-    if (bmi > 20) return { status: "Obesitas", color: "text-red-600" };
-
-    return { status: "Tidak Diketahui", color: "text-gray-500" };
-  };
-
-  const statusGizi = terakhir
-    ? getStatusGizi(terakhir.berat, terakhir.tinggi, terakhir.usia)
-    : null;
-
-  const statusStyle = {
-    Normal: "bg-green-100 text-green-700",
-    Risiko: "bg-orange-100 text-orange-600",
-    Stunting: "bg-red-100 text-red-700",
-  };
-
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const dataPerPage = 10;
+  const [dataWithUsia, setDataWithUsia] = useState([]);
+  const [filterTanggal, setFilterTanggal] = useState("");
+  const itemsPerPage = 10;
 
-  // ================= PAGINATION =================
+  //ambil balita
+  useEffect(() => {
+    const fetchBalita = async () => {
+      try {
+        const res = await api.get("/balitas"); // endpoint list
+        setBalitaList(res.data);
+      } catch (err) {
+        console.error("Error ambil balita:", err);
+      }
+    };
 
-  const totalPages = Math.ceil(filteredData.length / dataPerPage);
+    fetchBalita();
+  }, []);
 
-  const indexOfLastData = currentPage * dataPerPage;
-  const indexOfFirstData = indexOfLastData - dataPerPage;
+  //ambildata setelah pilih balita
+  useEffect(() => {
+    if (!selectedId) return;
 
-  const currentData = filteredData.slice(indexOfFirstData, indexOfLastData);
+    const fetchDetail = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/riwayat/${selectedId}`);
+        setBalitaDetail(res.data);
+      } catch (err) {
+        console.error("Error ambil detail:", err);
+        setBalitaDetail(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchDetail();
+  }, [selectedId]);
+  console.log(balitaDetail);
+  //data grafik
+  useEffect(() => {
+    if (!selectedId) return;
+
+    const fetchGrafik = async () => {
+      try {
+        const res = await api.get(`/grafik/${selectedId}`);
+        setDataWithUsia(res.data);
+      } catch (err) {
+        console.error("Error ambil grafik:", err);
+      }
+    };
+
+    fetchGrafik();
+  }, [selectedId]);
   const balitaOptions = balitaList.map((b) => ({
     value: b.id,
-    label: b.nama,
+    label: b.name,
   }));
+
+  const balita = balitaDetail;
+
+  const filteredData = (balitaDetail?.penimbangans || []).filter((item) => {
+    const tgl = item.tgl_penimbangan || "";
+    return !filterTanggal || tgl.startsWith(filterTanggal);
+  });
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+
+  const currentData = filteredData.slice(startIndex, endIndex);
+  //warna
+  const statusWarna = {
+    "Sangat pendek (severely stunted)": "bg-red-600 text-white",
+    "Pendek (stunted)": "bg-yellow-400 text-white",
+    Normal: "bg-green-500 text-white",
+    Tinggi: "bg-blue-500 text-white",
+    default: "bg-gray-300 text-black",
+  };
+  const baseStyle =
+    "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
+
+  if (loading)
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+
+    
   return (
     <MainLayouts type="riwayatdangrafik">
       <div className="min-h-screen bg-gray-100 p-8 space-y-8">
@@ -251,46 +154,42 @@ const RiwayatdanGrafik = () => {
             {/* ================= HEADER ================= */}
             <div className="bg-white rounded-3xl shadow-lg p-6 flex justify-between items-center">
               <div>
-                <h1 className="text-2xl font-bold">{balita.nama}</h1>
+                <h1 className="text-2xl font-bold">{balita.name}</h1>
                 <p className="text-gray-500">
-                  {balita.jk} • Orang Tua: {balita.orang_tua}
+                  {balita.jk} • Orang Tua: {balita.orang_tua || ""}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">Usia Saat Ini</p>
                 <p className="text-xl font-semibold">
-                  {hitungUsia(balita.tanggal_lahir, new Date().toISOString())}{" "}
+                  {balita.umur}
                   bulan
                 </p>
               </div>
             </div>
 
-            {/* ================= SUMMARY ================= */}
-            {terakhir && (
-              <div className="grid md:grid-cols-4 gap-6 ">
-                <CardTotalPenimbangan total={totalRiwayat} />
-                <CardBerat berat={`${terakhir.berat} kg`} />
-                <CardTinggi tinggi={`${terakhir.tinggi} cm`} />
-                <CardStatus
-                  umur={
-                    statusGizi ? (
-                      <span className={`font-extrabold ${statusGizi.color}`}>
-                        {statusGizi.status}
-                      </span>
-                    ) : (
-                      "-"
-                    )
-                  }
-                />
-              </div>
-            )}
+            <div className="grid md:grid-cols-4 gap-6 ">
+              <CardTotalPenimbangan total={balita.total_penimbangan} />
+              <CardBerat berat={`${balita.berat} kg`} />
+              <CardTinggi tinggi={`${balita.tinggi} cm`} />
+              <CardStatus>
+                <span
+                  className={`${baseStyle} ${
+                    statusWarna[balita.status_tbu] || statusWarna.default
+                  }`}
+                >
+                  {balita.status_tbu}
+                </span>
+              </CardStatus>
+            </div>
 
             {/* ================= ALERT ================= */}
-            {alert && (
-              <div className="bg-red-100 text-red-700 p-4 rounded-2xl font-medium">
-                {alert}
-              </div>
-            )}
+            <EarlyWarning
+              berat_sekarang={balita.berat_sekarang}
+              berat_sebelumnya={balita.berat_sebelumnya}
+              tinggi_sekarang={balita.tinggi_sekarang}
+              tinggi_sebelumnya={balita.tinggi_sebelumnya}
+            />
 
             {/* ================= GRAFIK ================= */}
             <div className="grid md:grid-cols-2 gap-8">
@@ -301,7 +200,7 @@ const RiwayatdanGrafik = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={dataWithUsia}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="usia" />
+                    <XAxis dataKey="umur" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
@@ -322,7 +221,7 @@ const RiwayatdanGrafik = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={dataWithUsia}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="usia" />
+                    <XAxis dataKey="umur" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
@@ -389,15 +288,19 @@ const RiwayatdanGrafik = () => {
                       currentData.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-50 transition">
                           <td className="px-4 py-3 text-gray-500">
-                            {indexOfFirstData + index + 1}
+                            {startIndex + index + 1}
                           </td>
 
                           <td className="px-4 py-3 text-gray-500">
-                            {item.tanggal}
+                            {item.tgl_penimbangan
+                              ? new Date(
+                                  item.tgl_penimbangan,
+                                ).toLocaleDateString("id-ID")
+                              : "-"}
                           </td>
 
                           <td className="px-4 py-3 text-gray-500">
-                            {item.usia} bulan
+                            {item.umur} bulan
                           </td>
 
                           <td className="px-4 py-3 text-gray-500">
@@ -407,17 +310,18 @@ const RiwayatdanGrafik = () => {
                           <td className="px-4 py-3 text-gray-500">
                             {item.tinggi} cm
                           </td>
-                          <td className="px-4 py-3 text-gray-500">
+                          <td className="px-4 py-3 text-center">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                statusStyle[item.status]
+                              className={`${baseStyle} ${
+                                statusWarna[balita.status_tbu] ||
+                                statusWarna.default
                               }`}
                             >
-                              {item.status}
+                              {balita.status_tbu}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-gray-500">
-                            {item.petugas}
+                            {item.user?.name || ""}
                           </td>
                         </tr>
                       ))
@@ -435,8 +339,8 @@ const RiwayatdanGrafik = () => {
                 </table>
                 <div className="flex justify-between items-center mt-6 p-6">
                   <p className="text-sm text-gray-500">
-                    Menampilkan {indexOfFirstData + 1} -{" "}
-                    {Math.min(indexOfLastData, filteredData.length)} dari{" "}
+                    Menampilkan {filteredData.length === 0 ? 0 : startIndex + 1}{" "}
+                    - {Math.min(endIndex, filteredData.length)} dari{" "}
                     {filteredData.length} data
                   </p>
 
