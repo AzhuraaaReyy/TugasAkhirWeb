@@ -14,15 +14,12 @@ return new class extends Migration
         Schema::create('notifikasis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pengirim_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('penerima_id')->constrained('users')->cascadeOnDelete();
 
             $table->string('judul');
             $table->text('pesan');
+            $table->string('tipe'); // contoh: jadwal, pengumuman
 
-            $table->enum('tipe', ['dashboard', 'email', 'whatsapp']);
-            $table->boolean('status_baca')->default(false);
-            $table->timestamp('waktu_kirim')->nullable();
-
+            $table->timestamp('tanggal')->nullable();
             $table->timestamps();
         });
     }

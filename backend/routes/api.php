@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\BalitaController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DetailDeteksiController;
 use App\Http\Controllers\DeteksiController;
 use App\Http\Controllers\LaporanController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
 use App\Http\Controllers\RegisterController;
@@ -29,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 
-    Route::middleware('role:kader')->group(function () {
+    Route::middleware('auth:sanctum', 'role:kader')->group(function () {
         Route::get('/kader/dashboard', function () {
             return response()->json([
                 'message' => 'Dashboard Kader',
@@ -64,6 +66,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/grafik/{id}', [RiwayatGrafikController::class, 'grafik']);
 
         Route::get('/laporan', [LaporanController::class, 'laporan']);
+
+        Route::post('/notifikasi', [NotifikasiController::class, 'store']);
+        Route::get('/notifikasi', [NotifikasiController::class, 'tampildata']);
+
+        Route::get('/orangtua', [NotifikasiController::class, 'getOrangTua']);
+
+        //chart
+        Route::get('/chart/stunting', [DeteksiController::class, 'chartStunting']);
     });
 
 

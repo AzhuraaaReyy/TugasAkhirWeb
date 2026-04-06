@@ -25,7 +25,6 @@ class DatabaseSeeder extends Seeder
             TestimoniSeeder::class,
             FAQSeeder::class,
             KaderPosyanduSeeder::class,
-            NotifikasiSeeder::class,
             EdukasiSeeder::class,
             BeritaSeeder::class,
             WhoBbUSeeder::class,

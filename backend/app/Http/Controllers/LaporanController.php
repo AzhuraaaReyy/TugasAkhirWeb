@@ -87,4 +87,11 @@ class LaporanController extends Controller
             'deteksi' => $deteksi,
         ]);
     }
+
+    public function laporanExcel (Request $request){
+
+    }
+    public function laporanPdf(Request $request){
+
+    }
 }

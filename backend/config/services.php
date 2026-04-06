@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'fonnte' => [
+        'token' => env('FONNTE_TOKEN'),
+        'url' => env('FONNTE_URL'),
+        'timeout' => env('FONNTE_TIMEOUT', 30),
+    ],
+
 ];

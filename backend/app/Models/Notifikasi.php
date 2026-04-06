@@ -9,16 +9,24 @@ class Notifikasi extends Model
     protected $table = 'notifikasis';
     protected $fillable = [
         'pengirim_id',
-        'penerima_id',
         'judul',
         'pesan',
         'tipe',
-        'status_baca',
-        'waktu_kirim',
+        'tanggal',
     ];
 
     protected $casts = [
         'status_baca' => 'boolean',
         'waktu_kirim' => 'datetime',
     ];
+
+    public function pengirim()
+    {
+        return $this->belongsTo(User::class, 'pengirim_id');
+    }
+
+    public function recipients()
+    {
+        return $this->hasMany(UserNotifikasi::class);
+    }
 }
