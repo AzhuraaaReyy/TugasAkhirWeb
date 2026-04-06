@@ -14,7 +14,7 @@ const TotalNotifikasiCard = ({ notif }) => {
 
             {/* Title kecil */}
             <p className="text-black font-semibold text-sm mb-1">
-              Berat Badan
+              Total Notifikasi
             </p>
 
             {/* Nominal besar */}

@@ -4,6 +4,8 @@ import MainLayouts from "../../layouts/MainLayouts";
 import { useEffect } from "react";
 import api from "@/services/api";
 import Pagination from "@/components/Pagination/pagination";
+import { exportExcel } from "@/utils/exportExcel";
+import { exportPDF } from "@/utils/exportPDF";
 export default function Laporan() {
   const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -11,7 +13,7 @@ export default function Laporan() {
 
   const [search, setSearch] = useState("");
   const [tanggal, setTanggal] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   const [balita, setBalita] = useState([]);
   const [penimbangan, setPenimbangan] = useState([]);
@@ -112,14 +114,14 @@ export default function Laporan() {
               )}
 
               <button
-                // onClick={exportCSV}
+                onClick={() => exportExcel(balita, penimbangan, deteksi)}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg"
               >
                 Export Excel
               </button>
 
               <button
-                //  onClick={exportPDF}
+                onClick={() => exportPDF(balita, penimbangan, deteksi)}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg"
               >
                 Export PDF

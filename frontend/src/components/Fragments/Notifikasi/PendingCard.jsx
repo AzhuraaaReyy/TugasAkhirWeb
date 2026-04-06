@@ -13,15 +13,14 @@ const PendingCard = ({ pending }) => {
             </div>
 
             {/* Title kecil */}
-            <p className="text-black font-semibold text-sm mb-1">
-              Berat Badan
-            </p>
+            <p className="text-black font-semibold text-sm mb-1">Pending</p>
 
             {/* Nominal besar */}
-            <h2 className="text-2xl font-bold text-gray-800 mt-2 ">{pending}</h2>
+            <h2 className="text-2xl font-bold text-gray-800 mt-2 ">
+              {pending}
+            </h2>
 
             {/* Change */}
-          
           </div>
         }
       />

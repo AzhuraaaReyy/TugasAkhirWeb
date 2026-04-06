@@ -3,19 +3,58 @@ import MainLayouts from "../../layouts/MainLayouts";
 import TerkirimCard from "../../components/Fragments/Notifikasi/TerkirimCard";
 import TotalNotifikasiCard from "../../components/Fragments/Notifikasi/TotalNotifikasiCard";
 import PendingCard from "../../components/Fragments/Notifikasi/PendingCard";
-
+import api from "@/services/api";
+import { useEffect } from "react";
 export default function Notifikasi() {
   const [notifikasiList, setNotifikasiList] = useState([]);
-
+  const [listOrangTua, setListOrangTua] = useState([]);
   const [form, setForm] = useState({
     judul: "",
     tipe: "",
     metode: "",
-    pesan: "",
+    target: "",
+    user_id: "",
     tanggal: "",
+    pesan: "",
+    status_kirim: "",
+    status_baca: "",
   });
-
+  useEffect(() => {
+    api.get("/orangtua").then((res) => {
+      setListOrangTua(res.data);
+    });
+  }, []);
   const [editingId, setEditingId] = useState(null);
+
+  // FETCH DATA (DIBUAT FUNCTION BIAR BISA DIPANGGIL ULANG)
+  const fetchNotifikasi = async () => {
+    try {
+      const res = await api.get("/notifikasi");
+      console.log(res.data);
+
+      const data = res.data.map((item) => ({
+        id: item.id,
+        judul: item.judul || "-",
+        tipe: item.tipe || "-",
+        metode: item.metode || "-",
+        tanggal: item.tanggal || "-",
+        status_kirim: item.status_kirim || "-",
+        status_baca: item.status_baca || "-",
+      }));
+
+      setNotifikasiList(data);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchNotifikasi();
+    };
+
+    loadData();
+  }, []);
 
   // HANDLE INPUT
   const handleChange = (e) => {
@@ -25,58 +64,63 @@ export default function Notifikasi() {
     });
   };
 
-  // TAMBAH / EDIT NOTIFIKASI
-  const handleSubmit = (e) => {
+  // SUBMIT
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.judul || !form.tipe || !form.metode || !form.pesan) {
-      alert("Harap isi semua field");
-      return;
-    }
+    try {
+      await api.post("/notifikasi", form);
 
-    if (editingId) {
-      setNotifikasiList(
-        notifikasiList.map((item) =>
-          item.id === editingId ? { ...form, id: editingId } : item,
-        ),
-      );
+      alert("Notifikasi berhasil dikirim");
+
+      setForm({
+        judul: "",
+        tipe: "",
+        metode: "",
+        pesan: "",
+        tanggal: "",
+        email: "",
+        phone: "",
+      });
+
       setEditingId(null);
-    } else {
-      const newNotif = {
-        ...form,
-        id: Date.now(),
-        status: "Terkirim",
-      };
 
-      setNotifikasiList([...notifikasiList, newNotif]);
+      // 🔥 REFRESH DATA
+      fetchNotifikasi();
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Gagal kirim notifikasi");
     }
-
-    setForm({
-      judul: "",
-      tipe: "",
-      metode: "",
-      pesan: "",
-      tanggal: "",
-    });
   };
 
-  // EDIT
+  // EDIT (FIX mapping)
   const handleEdit = (item) => {
-    setForm(item);
+    setForm({
+      judul: item.judul,
+      tipe: item.tipe,
+      metode: item.metode,
+      pesan: "",
+      tanggal: item.tanggal,
+      email: "",
+      phone: "",
+    });
+
     setEditingId(item.id);
   };
 
-  // HAPUS
+  // HAPUS (sementara FE saja)
   const handleDelete = (id) => {
     if (confirm("Hapus notifikasi ini?")) {
       setNotifikasiList(notifikasiList.filter((n) => n.id !== id));
     }
   };
 
-  // STATISTIK
+  // 🔥 STATISTIK (FIX STATUS)
   const totalNotif = notifikasiList.length;
-  const terkirim = notifikasiList.filter((n) => n.status === "Terkirim").length;
-  const pending = notifikasiList.filter((n) => n.status === "Pending").length;
+
+  const terkirim = notifikasiList.filter((n) => n.status === "terkirim").length;
+
+  const pending = notifikasiList.filter((n) => n.status === "gagal").length;
 
   return (
     <MainLayouts type="notifikasi">
@@ -96,9 +140,7 @@ export default function Notifikasi() {
 
           {/* FORM BUAT NOTIFIKASI */}
           <div className="bg-white shadow-lg rounded-2xl p-6 mb-10 border border-gray-200 border-2">
-            <h2 className="text-lg font-extrabold mb-6">
-              {editingId ? "Edit Notifikasi" : "Buat Notifikasi"}
-            </h2>
+            <h2 className="text-lg font-extrabold mb-6">Buat Notifikasi</h2>
 
             <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
               {/* JUDUL */}
@@ -140,52 +182,61 @@ export default function Notifikasi() {
               {/* METODE */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Target Pengiriman
+                  Metode Pengiriman
                 </label>
-
                 <select
                   name="metode"
                   value={form.metode}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
-                  <option value="">Pilih Metode Pengiriman</option>
-                  <option value="email">Email Orang Tua</option>
-                  <option value="whatsapp">Nomor WhatsApp Orang Tua</option>
+                  <option value="">Pilih Metode</option>
+                  <option value="email">Email</option>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="dashboard">Dashboard</option>
                 </select>
-
-                {form.metode === "email" && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Orang Tua
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="Masukkan email orang tua"
-                      className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                )}
-
-                {form.metode === "whatsapp" && (
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nomor WhatsApp Orang Tua
-                    </label>
-                    <input
-                      type="text"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="Contoh: 081234567890"
-                      className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                )}
               </div>
+
+              {/* TARGET */}
+              {form.metode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Target Penerima
+                  </label>
+                  <select
+                    name="target"
+                    value={form.target}
+                    onChange={handleChange}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">Pilih Target</option>
+                    <option value="semua">Semua Orang Tua</option>
+                    <option value="tertentu">Orang Tua Tertentu</option>
+                  </select>
+                </div>
+              )}
+
+              {/* PILIH ORANG TUA */}
+              {form.target === "tertentu" && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Orang Tua
+                  </label>
+                  <select
+                    name="user_id"
+                    value={form.user_id}
+                    onChange={handleChange}
+                    className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  >
+                    <option value="">Pilih Orang Tua</option>
+                    {listOrangTua.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({item.email || item.no_telp})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* TANGGAL */}
               <div>
@@ -216,32 +267,14 @@ export default function Notifikasi() {
                 />
               </div>
 
+              {/* BUTTON */}
               <div className="md:col-span-2 flex gap-3">
                 <button
                   type="submit"
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
                 >
-                  {editingId ? "Update Notifikasi" : "Kirim Notifikasi"}
+                  Kirim Notifikasi
                 </button>
-
-                {editingId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(null);
-                      setForm({
-                        judul: "",
-                        tipe: "",
-                        metode: "",
-                        pesan: "",
-                        tanggal: "",
-                      });
-                    }}
-                    className="bg-gray-400 text-white px-6 py-2 rounded-lg"
-                  >
-                    Batal
-                  </button>
-                )}
               </div>
             </form>
           </div>
@@ -254,6 +287,7 @@ export default function Notifikasi() {
               <table className="w-full text-sm text-left border-collapse">
                 <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
                   <tr className=" text-center">
+                    <th className="px-4 py-3">NO</th>
                     <th className="px-4 py-3">Judul</th>
                     <th className="px-4 py-3">Jenis</th>
                     <th className="px-4 py-3">Metode</th>
@@ -265,19 +299,35 @@ export default function Notifikasi() {
 
                 <tbody className="divide-y divide-gray-200 text-center">
                   {notifikasiList.length > 0 ? (
-                    notifikasiList.map((item) => (
+                    notifikasiList.map((item, index) => (
                       <tr key={item.id} className="hover:bg-gray-50 transition">
-                        <td className="py-3">{item.judul}</td>
-                        <td>{item.tipe}</td>
-                        <td>{item.metode}</td>
-                        <td>{item.tanggal}</td>
+                        {/* Judul Notifikasi */}
+                        <td className="px-4 py-3 text-gray-500">{index + 1}</td>
+                        <td className="py-3">{item.judul || "-"}</td>
 
+                        {/* Tipe Notifikasi */}
+                        <td>{item.tipe || "-"}</td>
+
+                        {/* Metode Pengiriman */}
+                        <td>{item.metode || "-"}</td>
+
+                        {/* Tanggal */}
+                        <td>{item.tanggal || "-"}</td>
+
+                        {/* Status Kirim */}
                         <td>
-                          <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-                            {item.status}
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs ${
+                              item.status_kirim === "terkirim"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {item.status_kirim || "-"}
                           </span>
                         </td>
 
+                        {/* Aksi Edit / Hapus */}
                         <td className="flex gap-2 justify-center py-2">
                           <button
                             onClick={() => handleEdit(item)}

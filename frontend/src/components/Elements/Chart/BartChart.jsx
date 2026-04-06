@@ -48,8 +48,6 @@ const Barchart = () => {
 
   return (
     <div className="bg-white border border-emerald-500   rounded-3xl  p-6">
-     
-
       <BarChart
         height={400}
         dataset={comparedData}
