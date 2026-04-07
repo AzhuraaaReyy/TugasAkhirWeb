@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthSocialiteController;
 use App\Http\Controllers\BalitaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DetailDeteksiController;

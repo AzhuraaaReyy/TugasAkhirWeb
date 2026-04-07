@@ -16,9 +16,12 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('no_telp')->unique();
+            $table->string('no_telp');
             $table->enum('role', ['admin', 'kader', 'orangtua']);
             $table->string('alamat');
+            $table->string('google_id')->nullable();
+            $table->string('google_token')->nullable();
+            $table->string('google_refresh_token')->nullable();
             $table->timestamps();
             $table->rememberToken();
         });

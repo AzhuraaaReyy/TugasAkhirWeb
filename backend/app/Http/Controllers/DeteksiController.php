@@ -41,6 +41,8 @@ class DeteksiController extends Controller
                 'tinggi' => $b->penimbanganTerakhir?->tinggi ?? "",
                 'umur' => $b->penimbanganTerakhir?->umur ?? "",
                 'tgl_penimbangan' => $b->penimbanganTerakhir?->tgl_penimbangan ?? "",
+                "lingkar_kepala" => $b->penimbanganTerakhir?->lingkar_kepala ?? "",
+                "lingkar_lengan" => $b->penimbanganTerakhir?->lingkar_lengan ?? ""
             ];
         }));
     }
@@ -50,28 +52,33 @@ class DeteksiController extends Controller
         $request->validate([
             'balita_id' => 'required|exists:balitas,id',
             'tgl_deteksi' => 'required',
+            'berat' => 'required|numeric',
+            'tinggi' => 'required|numeric',
+            'umur' => 'required|numeric',
+            'lingkar_kepala' => 'required|numeric',
+            'lingkar_lengan' => 'required|numeric',
         ]);
 
-        $balita = Balita::with('penimbanganTerakhir')->find($request->balita_id);
+        $balita = Balita::with(['penimbanganTerakhir', 'user'])->find($request->balita_id);
 
         if (!$balita || !$balita->penimbanganTerakhir) {
             return response()->json(['message' => 'Data penimbangan tidak ditemukan'], 404);
         }
-        $penimbangan = $balita->penimbanganTerakhir;
-
-        $sudahDeteksi = Deteksi::where('balita_id', $penimbangan->id)->exists();
-
-        if ($sudahDeteksi) {
-            return response()->json([
-                'message' => 'Penimbangan ini sudah pernah dideteksi.'
-            ], 400);
-        }
-
+        $penimbangan = Penimbangan::create([
+            'balita_id' => $balita->id,
+            'tgl_penimbangan' => $request->tgl_deteksi,
+            'berat' => $request->berat,
+            'tinggi' => $request->tinggi,
+            'umur' => $request->umur,
+            'user_id' => $balita->user_id,
+            'lingkar_kepala' => $request->lingkar_kepala,
+            'lingkar_lengan' => $request->lingkar_lengan
+        ]);
 
         $jk = strtoupper(substr($balita->jk, 0, 1)); // L / P
-        $bb = $balita->penimbanganTerakhir->berat;
-        $tb = $balita->penimbanganTerakhir->tinggi;
-        $umur =  $balita->penimbanganTerakhir->umur;
+        $bb = $request->berat;
+        $tb = $request->tinggi;
+        $umur = $request->umur;
 
         $z_bbu = $this->hitungZScoreBBU($umur, $jk, $bb);
         $z_tbu = $this->hitungZScoreTBU($umur, $jk, $tb);
@@ -83,7 +90,7 @@ class DeteksiController extends Controller
 
         //create
         $deteksi = Deteksi::create([
-            'balita_id' => $penimbangan->id,
+            'balita_id' => $balita->id,
             'tgl_deteksi' => $request->tgl_deteksi,
             'zscore_tb_u' => round($z_tbu, 2),
             'zscore_bb_u' => round($z_bbu, 2),
@@ -101,6 +108,9 @@ class DeteksiController extends Controller
             'umur' => $umur,
             'bb' => $bb,
             'tb' => $tb,
+            'lingkar_kepala' => $penimbangan->lingkar_kepala,
+            'lingkar_lengan' => $penimbangan->lingkar_lengan,
+
             'zscore_bbu' => round($z_bbu, 2),
             'zscore_tbu' => round($z_tbu, 2),
             'zscore_bbtb' => round($z_bbtb, 2),
