@@ -16,7 +16,7 @@ const FormLogin = () => {
   const navigate = useNavigate();
 */
   }
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const navigate = useNavigate();
   const {
     register,
@@ -38,7 +38,7 @@ const FormLogin = () => {
       });
       return;
     }
-
+    setUser(res.user);
     const role = res.user.role;
 
     if (role === "admin") {
@@ -51,7 +51,7 @@ const FormLogin = () => {
   };
   const handleGoogleLogin = () => {
     // redirect ke backend OAuth endpoint
-    window.location.href = "http://localhost:5000/auth/google";
+    window.location.href = "http://127.0.0.1:8000/auth/google/redirect";
   };
 
   return (

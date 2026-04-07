@@ -28,6 +28,7 @@ import NotifikasiOrtu from "./pages/OrangTua/Notifikasi";
 import DetailDeteksi from "./pages/Kader/DetailDeteksi";
 import CreateFormOrangtua from "./pages/Kader/ManajemenBalita/CreateOrtu";
 import CreateFormBalita from "./pages/Kader/ManajemenBalita/Create";
+import AuthCallback from "./pages/Callback";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -56,6 +57,7 @@ const App = () => {
       path: "/register",
       element: <Register />,
     },
+    { path: "/auth/callback", element: <AuthCallback /> },
 
     //kader posyandu
     {

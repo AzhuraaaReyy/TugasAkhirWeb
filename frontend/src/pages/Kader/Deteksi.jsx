@@ -24,6 +24,8 @@ export default function DeteksiDini() {
     berat: "",
     tinggi: "",
     tgl_deteksi: "",
+    lingkar_kepala: "",
+    lingkar_lengan: "",
   });
 
   const [metode, setMetode] = useState(""); // stunting, wasting, underweight
@@ -40,6 +42,8 @@ export default function DeteksiDini() {
       umur: balita.umur,
       berat: balita.berat || "",
       tinggi: balita.tinggi || "",
+      lingkar_kepala: balita.lingkar_kepala || "",
+      lingkar_lengan: balita.lingkar_lengan || "",
     });
   };
   const [detailForm, setDetailForm] = useState({
@@ -53,6 +57,11 @@ export default function DeteksiDini() {
       const res = await api.post("/deteksi", {
         balita_id: form.balita_id,
         tgl_deteksi: form.tgl_deteksi,
+        berat: form.berat,
+        tinggi: form.tinggi,
+        umur: form.umur,
+        lingkar_kepala: form.lingkar_kepala,
+        lingkar_lengan: form.lingkar_lengan,
       });
 
       const data = res.data;
@@ -178,8 +187,7 @@ export default function DeteksiDini() {
   const endIndex = startIndex + itemsPerPage;
 
   const currentData = filteredData.slice(startIndex, endIndex);
-  
-  
+
   //warna
   const statusWarna = {
     "Sangat pendek (severely stunted)": "bg-red-600 text-white",
@@ -282,87 +290,70 @@ export default function DeteksiDini() {
                 />
               </div>
 
-              {/* INPUT SESUAI METODE */}
-              {metode === "stunting" && (
-                <>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Umur (bulan)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.umur}
-                      className="w-full mt-1 border rounded-xl px-4 py-2"
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Tinggi Badan (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.tinggi}
-                      className="w-full mt-1 border rounded-xl px-4 py-2"
-                      readOnly
-                    />
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="text-sm text-gray-600">Umur (bulan)</label>
+                <input
+                  type="number"
+                  value={form.umur}
+                  onChange={(e) => setForm({ ...form, umur: e.target.value })}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">
+                  Tinggi Badan (cm)
+                </label>
+                <input
+                  type="number"
+                  value={form.tinggi}
+                  onChange={(e) => setForm({ ...form, tinggi: e.target.value })}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
+              </div>
 
-              {metode === "wasting" && (
-                <>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Berat Badan (kg)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.berat}
-                      className="w-full mt-1 border rounded-xl px-4 py-2"
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Tinggi Badan (cm)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.tinggi}
-                      className="w-full mt-1 border rounded-xl px-4 py-2"
-                      readOnly
-                    />
-                  </div>
-                </>
-              )}
-
-              {metode === "underweight" && (
-                <>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Umur (bulan)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.umur}
-                      className="w-full mt-1 border rounded-xl px-4 py-2"
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Berat Badan (kg)
-                    </label>
-                    <input
-                      type="number"
-                      value={form.berat}
-                      className="w-full mt-1 border rounded-xl px-4 py-2"
-                      readOnly
-                    />
-                  </div>
-                </>
-              )}
+              <div>
+                <label className="text-sm text-gray-600">
+                  Berat Badan (kg)
+                </label>
+                <input
+                  type="number"
+                  value={form.berat}
+                  onChange={(e) => setForm({ ...form, berat: e.target.value })}
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">
+                  Lingkar Kepala (cm)
+                </label>
+                <input
+                  type="number"
+                  value={form.lingkar_kepala}
+                  onChange={(e) =>
+                    setForm({ ...form, lingkar_kepala: e.target.value })
+                  }
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">
+                  Lingkar Lengan (cm)
+                </label>
+                <input
+                  type="number"
+                  value={form.lingkar_lengan}
+                  onChange={(e) =>
+                    setForm({ ...form, lingkar_lengan: e.target.value })
+                  }
+                  className="w-full mt-1 border rounded-xl px-4 py-2"
+                  required
+                />
+              </div>
 
               <div className="md:col-span-2">
                 <button className="w-full bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 transition">

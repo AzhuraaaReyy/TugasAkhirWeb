@@ -48,7 +48,7 @@ const Sidebar = ({ open }) => {
           <img
             src="https://i.pravatar.cc/100"
             alt="profile"
-            className="w-11 h-11 rounded-full ring-2 ring-indigo-500"
+            className="w-11 h-11 object-cover rounded-full ring-2 ring-indigo-500"
           />
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-slate-900 rounded-full"></span>
         </div>
@@ -56,7 +56,7 @@ const Sidebar = ({ open }) => {
         {open && (
           <div className="flex flex-col leading-tight">
             <span className="font-semibold text-lg">
-              {user.email || "User"}
+              {user.name || "User"}
             </span>
             <span className="text-sm text-slate-400 capitalize">
               {user.role} Posyandu

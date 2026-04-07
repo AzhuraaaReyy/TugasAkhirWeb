@@ -8,6 +8,12 @@ export const kaderMenu = [
     label: "Dashboard",
   },
   {
+    id: "deteksidini",
+    link: "/kader/deteksidini",
+    icon: <Icon.DeteksiDini />,
+    label: "Deteksi Dini",
+  },
+  {
     id: "manajemenbalita",
     link: "/kader/manajemenbalita",
     icon: <Icon.Manajemen />,
@@ -19,12 +25,7 @@ export const kaderMenu = [
     icon: <Icon.InputPenimbangan />,
     label: "Manajemen Penimbangan",
   },
-  {
-    id: "deteksidini",
-    link: "/kader/deteksidini",
-    icon: <Icon.DeteksiDini />,
-    label: "Deteksi Dini",
-  },
+
   {
     id: "riwayat",
     link: "/kader/riwayat",
