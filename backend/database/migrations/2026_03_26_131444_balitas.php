@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('balitas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('posyandu_id')->constrained('posyandus')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->foreignId('posyandu_id')->nullable()->constrained('posyandus')->cascadeOnDelete()->nullable();
             $table->string('name');
             $table->enum('jk', ['L', 'P']);
-            $table->date('tgl_lahir');
-            $table->string('tmp_lahir');
-            $table->string('alamat');
+            $table->date('tgl_lahir')->nullable();
+            $table->string('tmp_lahir')->nullable();
+            $table->string('alamat')->nullable();
             $table->timestamps();
         });
     }

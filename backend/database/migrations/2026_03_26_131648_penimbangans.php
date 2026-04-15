@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('penimbangans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('balita_id')->constrained('balitas')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->integer('umur');
             $table->date('tgl_penimbangan');
             $table->float('berat');

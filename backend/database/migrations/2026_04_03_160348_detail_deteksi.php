@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('detaildeteksis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('deteksi_id')->constrained('deteksis')->cascadeOnDelete();
-            $table->string('keterangan');
-            $table->string('rekomendasi');
+            $table->text('keterangan');
+            $table->text('rekomendasi');
             $table->timestamps();
         });
     }

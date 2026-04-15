@@ -10,7 +10,7 @@ class Penimbangan extends Model
 
     protected $fillable = [
         'balita_id',
-        'user_id',
+        
         'umur',
         'tgl_penimbangan',
         'berat',

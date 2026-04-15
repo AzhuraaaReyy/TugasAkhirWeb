@@ -17,7 +17,6 @@ class PenimbanganSeeder extends Seeder
         $penimbangan = [
             [
                 'balita_id' => 1,
-                'user_id' => 1,
                 'umur' => 24, // bulan
                 'tgl_penimbangan' => Carbon::now(),
                 'berat' => 10.5,
@@ -29,7 +28,7 @@ class PenimbanganSeeder extends Seeder
             ],
             [
                 'balita_id' => 2,
-                'user_id' => 2,
+               
                 'umur' => 18,
                 'tgl_penimbangan' => Carbon::now()->subDays(7),
                 'berat' => 9.2,

@@ -60,8 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/deteksi/delete/{id}', [DeteksiController::class, 'destroy']);
         Route::get('/deteksi', [DeteksiController::class, 'index']);
 
-        Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
-        Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
+
 
         Route::get('/riwayat/{id}', [RiwayatGrafikController::class, 'ambildatabalita']);
         Route::get('/grafik/{id}', [RiwayatGrafikController::class, 'grafik']);
@@ -75,6 +74,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         //chart
         Route::get('/chart/stunting', [DeteksiController::class, 'chartStunting']);
+
+        Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
+        Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
     });
 
 

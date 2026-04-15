@@ -13,72 +13,69 @@ class DeteksiController extends Controller
 {
     public function index()
     {
-        $deteksi = Deteksi::with('balita.penimbanganTerakhir')->get();
+        //ambil data terbaru saja
+        $deteksi = Deteksi::with('balita')
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MAX(id)')
+                    ->from('deteksis')
+                    ->groupBy('balita_id');
+            })
+            ->get();
         $data = $deteksi->map(function ($deteksi) {
             return [
                 'id' => $deteksi->id,
                 'name' => $deteksi->balita?->name,
-                'umur' => $deteksi->balita?->penimbanganTerakhir?->umur,
-                'berat' => $deteksi->balita?->penimbanganTerakhir?->berat,
-                'tinggi' => $deteksi->balita?->penimbanganTerakhir?->tinggi,
+                'umur' => $deteksi->umur,
+                'berat' => $deteksi->berat,
+                'tinggi' => $deteksi->tinggi,
                 'status_tb_u' => $deteksi->status_tb_u,
+                'tgl_deteksi' => $deteksi->tgl_deteksi,
             ];
         });
         return response()->json($data);
     }
 
-    public function ambildatabalita()
-    {
-        $balita = Balita::with('penimbanganTerakhir')->get();
-
-        return response()->json($balita->map(function ($b) {
-            return [
-                'id' => $b->id,
-                'name' => $b->name,
-                'jk' => $b->jk === 'L' ? 'Laki-Laki' : 'Perempuan',
-                'tanggal_lahir' => $b->tgl_lahir,
-                'berat' => $b->penimbanganTerakhir?->berat ?? "",
-                'tinggi' => $b->penimbanganTerakhir?->tinggi ?? "",
-                'umur' => $b->penimbanganTerakhir?->umur ?? "",
-                'tgl_penimbangan' => $b->penimbanganTerakhir?->tgl_penimbangan ?? "",
-                "lingkar_kepala" => $b->penimbanganTerakhir?->lingkar_kepala ?? "",
-                "lingkar_lengan" => $b->penimbanganTerakhir?->lingkar_lengan ?? ""
-            ];
-        }));
-    }
-
     public function deteksi(Request $request)
     {
         $request->validate([
-            'balita_id' => 'required|exists:balitas,id',
-            'tgl_deteksi' => 'required',
+            'name' => 'required',
+            'tgl_deteksi' => 'required|date|after_or_equal:tgl_lahir',
             'berat' => 'required|numeric',
             'tinggi' => 'required|numeric',
-            'umur' => 'required|numeric',
-            'lingkar_kepala' => 'required|numeric',
-            'lingkar_lengan' => 'required|numeric',
+            'jk' => 'required|in:L,P',
+            'tgl_lahir' => 'required|date',
+            'umur' => 'nullable|integer|min:0',
         ]);
 
-        $balita = Balita::with(['penimbanganTerakhir', 'user'])->find($request->balita_id);
+        $balita = Balita::where('name', $request->name)
+            ->where('tgl_lahir', $request->tgl_lahir)
+            ->first();
 
-        if (!$balita || !$balita->penimbanganTerakhir) {
-            return response()->json(['message' => 'Data penimbangan tidak ditemukan'], 404);
+        if (!$balita) {
+            $balita = Balita::create([
+                'name' => $request->name,
+                'jk' => $request->jk,
+                'tgl_lahir' => $request->tgl_lahir,
+            ]);
         }
-        $penimbangan = Penimbangan::create([
-            'balita_id' => $balita->id,
-            'tgl_penimbangan' => $request->tgl_deteksi,
-            'berat' => $request->berat,
-            'tinggi' => $request->tinggi,
-            'umur' => $request->umur,
-            'user_id' => $balita->user_id,
-            'lingkar_kepala' => $request->lingkar_kepala,
-            'lingkar_lengan' => $request->lingkar_lengan
-        ]);
+        //hitung umur
+        $umur = $request->umur;
+        if (is_null($umur)) {
+            $umur = $this->hitungUmur($request->tgl_lahir, $request->tgl_deteksi);
+        }
 
-        $jk = strtoupper(substr($balita->jk, 0, 1)); // L / P
+        $umurAsli = $this->hitungUmur($request->tgl_lahir, $request->tgl_deteksi);
+
+        $warning = null;
+
+        if (!is_null($request->umur) && abs($request->umur - $umurAsli) > 1) {
+            $warning = 'Umur tidak sesuai dengan tanggal lahir';
+        }
+
+        $jk = $balita->jk;
         $bb = $request->berat;
         $tb = $request->tinggi;
-        $umur = $request->umur;
+
 
         $z_bbu = $this->hitungZScoreBBU($umur, $jk, $bb);
         $z_tbu = $this->hitungZScoreTBU($umur, $jk, $tb);
@@ -91,26 +88,27 @@ class DeteksiController extends Controller
         //create
         $deteksi = Deteksi::create([
             'balita_id' => $balita->id,
-            'tgl_deteksi' => $request->tgl_deteksi,
+            'tgl_deteksi' => Carbon::parse($request->tgl_deteksi)->format('Y-m-d'),
+            'berat' => $request->berat,
+            'tinggi' => $request->tinggi,
+            'umur' => $umur,
             'zscore_tb_u' => round($z_tbu, 2),
             'zscore_bb_u' => round($z_bbu, 2),
             'zscore_tb_bb' => round($z_bbtb, 2),
             'status_tb_u' => $status_tbu,
             'status_bb_u' => $status_bbu,
             'status_tb_bb' => $status_bbtb,
+            'warning' => $warning,
 
         ]);
         return response()->json([
             'id' => $deteksi->id,
             'balita_id' => $balita->id,
             'name' => $balita->name,
-            'tgl_deteksi' => $request->tgl_deteksi,
+            'tgl_deteksi' => Carbon::parse($request->tgl_deteksi)->format('Y-m-d'),
             'umur' => $umur,
             'bb' => $bb,
             'tb' => $tb,
-            'lingkar_kepala' => $penimbangan->lingkar_kepala,
-            'lingkar_lengan' => $penimbangan->lingkar_lengan,
-
             'zscore_bbu' => round($z_bbu, 2),
             'zscore_tbu' => round($z_tbu, 2),
             'zscore_bbtb' => round($z_bbtb, 2),
@@ -120,8 +118,10 @@ class DeteksiController extends Controller
             'rekomendasi_bbu' => $this->rekomendasiBBU($this->deteksiBBU($z_bbu)),
             'rekomendasi_tbu' => $this->rekomendasiTBU($this->deteksiTBU($z_tbu)),
             'rekomendasi_bbtb' => $this->rekomendasiBBTB($this->deteksiBBTB($z_bbtb)),
+
         ]);
     }
+
     public function destroy($id)
     {
         $deteksi = Deteksi::findOrFail($id);
@@ -164,6 +164,12 @@ class DeteksiController extends Controller
 
 
 
+    private function hitungUmur($tgl_lahir, $tgl_deteksi)
+    {
+        return Carbon::parse($tgl_lahir)
+            ->diffInMonths(Carbon::parse($tgl_deteksi));
+    }
+
 
     private function formatStatusBBU($z)
     {
@@ -201,7 +207,8 @@ class DeteksiController extends Controller
         if ($z < -3) return "Berat badan sangat kurang (severely underweight)";
         if ($z >= -3 && $z < -2) return "Berat badan kurang (underweight)";
         if ($z >= -2 && $z <= 2) return "Berat badan normal";
-        if ($z > 2) return "Risiko Berat badan lebih";
+        if ($z > 2) return "Risiko berat badan lebih";
+        return "-";
     }
 
     private function deteksiTBU($z)
@@ -210,6 +217,7 @@ class DeteksiController extends Controller
         if ($z >= -3 && $z < -2) return "Pendek (stunted)";
         if ($z >= -2 && $z <= 3) return "Normal";
         if ($z > 3) return "Tinggi";
+        return "-";
     }
 
     private function deteksiBBTB($z)
@@ -220,6 +228,7 @@ class DeteksiController extends Controller
         if ($z > 1 && $z <= 2) return "Berisiko gizi lebih (possible risk of overweight)";
         if ($z > 2 && $z <= 3) return "Gizi lebih (overweight)";
         if ($z > 3) return "Obesitas (obese)";
+        return "-";
     }
 
 
@@ -229,7 +238,7 @@ class DeteksiController extends Controller
             "Berat badan sangat kurang (severely underweight)" => "bg-red-600 text-white px-3 py-1 rounded-full text-sm font-semibold",
             "Berat badan kurang (underweight)" => "bg-yellow-400 text-white px-3 py-1 rounded-full text-sm font-semibold",
             "Berat badan normal" => "bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
-            "Risiko Berat badan lebih" => "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
+            "Risiko berat badan lebih" => "bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold",
             default => "bg-gray-300 text-black px-3 py-1 rounded-full text-sm font-semibold",
         };
     }
@@ -265,7 +274,7 @@ class DeteksiController extends Controller
             "Berat badan sangat kurang (severely underweight)" => "Berat badan sangat rendah dibandingkan umur, menunjukkan kemungkinan kekurangan gizi berat",
             "Berat badan kurang (underweight)" => "Berat badan kurang dibandingkan umur, mengindikasikan adanya masalah gizi",
             "Berat badan normal" => "Berat badan sesuai dengan umur",
-            "Risiko Berat badan lebih" => "Berat badan cenderung melebihi standar umur dan berisiko menjadi gizi lebih",
+            "Risiko berat badan lebih" => "Berat badan cenderung melebihi standar umur dan berisiko menjadi gizi lebih",
             default => "-",
         };
     }

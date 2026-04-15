@@ -20,12 +20,21 @@ class AuthSocialiteController extends Controller
         try {
             $socialUser = Socialite::driver('google')->user();
 
-            $user = User::where('google_id', $socialUser->id)
-                ->orWhere('email', $socialUser->email)
-                ->first();
+
+            $user = User::where('email', $socialUser->email)->first();
+
+            if ($user) {
 
 
-            if (!$user) {
+                if (!$user->google_id) {
+                    $user->update([
+                        'google_id' => $socialUser->id,
+                        'google_token' => $socialUser->token,
+                        'google_refresh_token' => $socialUser->refreshToken,
+                    ]);
+                }
+            } else {
+
                 $user = User::create([
                     'name' => $socialUser->name,
                     'email' => $socialUser->email,
@@ -34,18 +43,16 @@ class AuthSocialiteController extends Controller
                     'google_token' => $socialUser->token,
                     'google_refresh_token' => $socialUser->refreshToken,
                     'no_telp' => '-',
-                    'role' => 'orangtua',
+                    'role' => 'orangtua', // default role
                     'alamat' => '-',
                 ]);
             }
 
-            // 🔑 generate token Sanctum
+            // 🔑 token Sanctum
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            // 🚀 redirect sesuai role
             return redirect("http://localhost:5173/auth/callback?token=$token&role=$user->role");
         } catch (\Exception $e) {
-            dd($e->getMessage());
             return redirect("http://localhost:5173/login?error=google_login_failed");
         }
     }

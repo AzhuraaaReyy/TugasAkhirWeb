@@ -3,13 +3,42 @@
 namespace App\Http\Controllers;
 
 use App\Models\Balita;
+use App\Models\Deteksi;
 use Illuminate\Http\Request;
 
 class BalitaController extends Controller
 {
     public function index()
     {
-        $balitas = Balita::with(['user', 'posyandu'])->orderBy('id', 'asc') 
+        //ambil data deteksi yang berelasi dengan balita
+        $deteksis = Deteksi::with('balita')
+            ->orderBy('tgl_deteksi', 'desc')
+            ->get();
+
+        //ambil data terbaru saja
+        $deteksiTerbaru = $deteksis
+            ->groupBy('balita_id')
+            ->map(function ($items) {
+                return $items->first(); // karena sudah di sort desc
+            });
+
+        //menghitung stunting dan tidak stunting
+        $stunting = $deteksiTerbaru->filter(function ($item) {
+            $status = strtolower($item->status_tb_u ?? '');
+
+            return str_contains($status, 'sangat pendek') ||
+                str_contains($status, 'pendek');
+        })->count();
+
+        $tidakStunting = $deteksiTerbaru->filter(function ($item) {
+            $status = strtolower($item->status_tb_u ?? '');
+
+            return str_contains($status, 'normal') ||
+                str_contains($status, 'tinggi');
+        })->count();
+
+        //ambil data balita
+        $balitas = Balita::with(['user', 'posyandu'])->orderBy('id', 'asc')
             ->get();
 
 
@@ -23,10 +52,19 @@ class BalitaController extends Controller
                 'tmp_lahir' => $balita->tmp_lahir,
                 'alamat' => $balita->alamat,
                 'posyandu' => $balita->posyandu?->nama_posyandu,
+                'status_tb_u' => $deteksi->status_tb_u ?? '-',
+                'status_bb_u' => $deteksi->status_bb_u ?? '-',
+                'tgl_deteksi_terakhir' => $deteksi->tgl_deteksi ?? null,
             ];
         });
+        $totalBalita = Balita::count();
 
-        return response()->json($data);
+        return response()->json([
+            'data' => $data,
+            'total_balita' => $totalBalita,
+            'stunting' => $stunting,
+            'tidak_stunting' => $tidakStunting
+        ]);
     }
 
     public function store(Request $request)

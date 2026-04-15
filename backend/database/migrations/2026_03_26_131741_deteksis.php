@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('balita_id')->constrained('balitas')->cascadeOnDelete();
             $table->date('tgl_deteksi');
+            $table->float('berat');
+            $table->float('tinggi');
+            $table->integer('umur');
             $table->decimal('zscore_tb_u');
             $table->float('zscore_bb_u');
             $table->float('zscore_tb_bb');
