@@ -1,67 +1,45 @@
 import { useState, useEffect } from "react";
 import MainLayouts from "../../layouts/MainLayouts";
-import Select from "react-select";
 import api from "@/services/api";
-import { Navigate, NavLink } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-import Pagination from "@/components/Pagination/pagination";
+
 export default function DeteksiDini() {
-  const [balitaList, setBalitaList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState("");
   const [data, setData] = useState([]);
-  const [search, setSearch] = useState("");
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   const [form, setForm] = useState({
+    name: "",
+    jk: "",
     balita_id: "",
-    umur: "",
+    tgl_lahir: "",
     berat: "",
     tinggi: "",
     tgl_deteksi: "",
-    lingkar_kepala: "",
-    lingkar_lengan: "",
+    umur: "",
   });
 
   const [metode, setMetode] = useState(""); // stunting, wasting, underweight
   const [hasil, setHasil] = useState(null);
 
   // Auto-fill saat pilih balita
-  const handleChangeBalita = (selected) => {
-    const balita = balitaList.find((b) => b.id === selected.value);
-    if (!balita) return;
 
-    setForm({
-      ...form,
-      balita_id: balita.id,
-      umur: balita.umur,
-      berat: balita.berat || "",
-      tinggi: balita.tinggi || "",
-      lingkar_kepala: balita.lingkar_kepala || "",
-      lingkar_lengan: balita.lingkar_lengan || "",
-    });
-  };
   const [detailForm, setDetailForm] = useState({
+    umur: "",
     keterangan: "",
     rekomendasi: "",
   });
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const res = await api.post("/deteksi", {
+        name: form.name,
+        jk: form.jk,
         balita_id: form.balita_id,
         tgl_deteksi: form.tgl_deteksi,
         berat: form.berat,
         tinggi: form.tinggi,
-        umur: form.umur,
-        lingkar_kepala: form.lingkar_kepala,
-        lingkar_lengan: form.lingkar_lengan,
+        tgl_lahir: form.tgl_lahir,
       });
 
       const data = res.data;
@@ -97,108 +75,102 @@ export default function DeteksiDini() {
       });
     } catch (error) {
       const message = error.response?.data?.message || "Terjadi kesalahan";
-
       setErrorMsg(message);
     } finally {
       setLoading(false);
     }
   };
+  const fetchData = async () => {
+    try {
+      const res = await api.get("/deteksi"); // endpoint index
+      setData(res.data.data || res.data || []);
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const handleSubmitDetail = async (e) => {
     e.preventDefault();
+
     if (!hasil?.id) {
       alert("Lakukan deteksi terlebih dahulu!");
       return;
     }
 
+    setLoading(true);
+
     try {
       await api.post("/detaildeteksi/store", {
         deteksi_id: hasil.id,
-        keterangan: detailForm.keterangan,
-        rekomendasi: detailForm.rekomendasi,
+        keterangan: detailForm.keterangan || null,
+        rekomendasi: detailForm.rekomendasi || null,
       });
-      alert("Deteksi berhasil disimpan!");
-      navigate("/kader/detaildeteksi");
+
+    
+      await fetchData();
+
+    
+      setDetailForm({
+        keterangan: "",
+        rekomendasi: "",
+      });
+
+    
+      setHasil(null);
+
+     
+      alert("Data berhasil disimpan!");
     } catch (error) {
       const message = error.response?.data?.message || "Terjadi kesalahan";
-
       setErrorMsg(message);
+    } finally {
+      setLoading(false);
     }
   };
+
   useEffect(() => {
-    const fetchBalita = async () => {
-      try {
-        const res = await api.get("/ambilbalita");
-        setBalitaList(res.data || []);
-      } catch (err) {
-        console.error(err.response?.data || err.message);
-      } finally {
-        setLoading(false);
+    if (form.tgl_lahir && form.tgl_deteksi) {
+      const lahir = new Date(form.tgl_lahir);
+      const deteksi = new Date(form.tgl_deteksi);
+
+      // 🔥 VALIDASI: deteksi tidak boleh sebelum lahir
+      if (deteksi < lahir) {
+        setForm((prev) => ({
+          ...prev,
+          umur: 0,
+        }));
+        return;
       }
-    };
-    fetchBalita();
-  }, []);
 
-  const balitaOptions = balitaList.map((b) => ({
-    value: b.id,
-    label: b.name,
-  }));
+      let umur =
+        (deteksi.getFullYear() - lahir.getFullYear()) * 12 +
+        (deteksi.getMonth() - lahir.getMonth());
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Yakin ingin menghapus data?")) return;
+      // 🔥 Koreksi jika tanggal deteksi < tanggal lahir (hari)
+      if (deteksi.getDate() < lahir.getDate()) {
+        umur -= 1;
+      }
 
-    try {
-      await api.delete(`/deteksi/delete/${id}`);
-      setData((prev) => prev.filter((item) => item.id !== id));
-      alert("Data berhasil dihapus");
-    } catch (error) {
-      console.error(error);
-      alert("Gagal menghapus data");
+      setForm((prev) => ({
+        ...prev,
+        umur: Number(umur),
+      }));
     }
-  };
+  }, [form.tgl_lahir, form.tgl_deteksi]);
 
   //detail
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.get("/deteksi"); // endpoint index
-        setData(res.data.data || res.data || []);
-      } catch (error) {
-        console.error(error.response?.data || error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchData();
-  }, []);
-
-  //filter
-  const filteredData = data.filter((item) => {
-    const nama = item.name || "";
-
-    const matchSearch = nama.toLowerCase().includes(search.toLowerCase());
-
-    return matchSearch;
-  });
-
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-
-  const currentData = filteredData.slice(startIndex, endIndex);
-
-  //warna
-  const statusWarna = {
-    "Sangat pendek (severely stunted)": "bg-red-600 text-white",
-    "Pendek (stunted)": "bg-yellow-400 text-white",
-    Normal: "bg-green-500 text-white",
-    Tinggi: "bg-blue-500 text-white",
-    default: "bg-gray-300 text-black",
+  const handleChange = (e) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
-
-  const baseStyle =
-    "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
 
   if (loading)
     return (
@@ -229,31 +201,14 @@ export default function DeteksiDini() {
             <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
               {/* PILIH BALITA */}
               <div>
-                <label className="text-sm text-gray-600">Pilih Balita</label>
-                <Select
-                  options={balitaOptions}
-                  placeholder="Cari Balita..."
-                  noOptionsMessage={() => "Balita tidak ditemukan"}
-                  onChange={handleChangeBalita}
-                  formatOptionLabel={(data) => (
-                    <div className="font-medium text-gray-800">
-                      {data.label}
-                    </div>
-                  )}
-                  filterOption={(option, inputValue) =>
-                    option.label
-                      .toLowerCase()
-                      .includes(inputValue.toLowerCase())
-                  }
-                  unstyled
-                  classNames={{
-                    control: () =>
-                      "w-full mt-1 border rounded-xl px-2 py-1 bg-emerald-50",
-                    menu: () => "border mt-1 rounded-xl shadow-md bg-white",
-                    menuList: () => "max-h-40 overflow-y-auto",
-                    option: ({ isFocused, isSelected }) =>
-                      `px-4 py-2 cursor-pointer ${isSelected ? "bg-emerald-500 text-white" : isFocused ? "bg-emerald-100" : ""}`,
-                  }}
+                <label className="text-sm text-gray-600">Nama Balita</label>
+                <input
+                  type="text"
+                  name="name"
+                  onChange={handleChange}
+                  placeholder="Contoh: Aisyah Putri"
+                  className="w-full h-12 border border-gray-700 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none "
+                  required
                 />
               </div>
 
@@ -274,18 +229,39 @@ export default function DeteksiDini() {
                   <option value="underweight">Underweight (BB/U)</option>
                 </select>
               </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Jenis Kelamin
+                </label>
+                <select
+                  name="jk"
+                  onChange={handleChange}
+                  required
+                  className="w-full h-12 border border-gray-700 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                >
+                  <option value="">Pilih Jenis Kelamin</option>
+                  <option value="L">Laki-Laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Tanggal Lahir</label>
+                <input
+                  type="date"
+                  name="tgl_lahir"
+                  className="w-full mt-1 border rounded-xl px-4 py-2 text-sm text-gray-600"
+                  onChange={handleChange}
+                  required
+                />
+              </div>
               {/* TANGGAL PENIMBANGAN */}
               <div>
                 <label className="text-sm text-gray-600">Tanggal Deteksi</label>
                 <input
                   type="date"
                   name="tgl_deteksi"
-                  value={form.tgl_deteksi}
                   className="w-full mt-1 border rounded-xl px-4 py-2 text-sm text-gray-600"
-                  onChange={(e) =>
-                    setForm({ ...form, tgl_deteksi: e.target.value })
-                  }
+                  onChange={handleChange}
                   required
                 />
               </div>
@@ -294,11 +270,12 @@ export default function DeteksiDini() {
                 <label className="text-sm text-gray-600">Umur (bulan)</label>
                 <input
                   type="number"
-                  value={form.umur}
-                  onChange={(e) => setForm({ ...form, umur: e.target.value })}
+                  value={Math.floor(form.umur)}
+                  name="umur"
+                  onChange={handleChange}
+                  placeholder="Masukkan umur balita"
                   className="w-full mt-1 border rounded-xl px-4 py-2"
                   required
-                  readOnly
                 />
               </div>
               <div>
@@ -307,8 +284,9 @@ export default function DeteksiDini() {
                 </label>
                 <input
                   type="number"
-                  value={form.tinggi}
-                  onChange={(e) => setForm({ ...form, tinggi: e.target.value })}
+                  name="tinggi"
+                  onChange={handleChange}
+                  placeholder="Masukkan tinggi balita"
                   className="w-full mt-1 border rounded-xl px-4 py-2"
                   required
                 />
@@ -320,36 +298,9 @@ export default function DeteksiDini() {
                 </label>
                 <input
                   type="number"
-                  value={form.berat}
-                  onChange={(e) => setForm({ ...form, berat: e.target.value })}
-                  className="w-full mt-1 border rounded-xl px-4 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">
-                  Lingkar Kepala (cm)
-                </label>
-                <input
-                  type="number"
-                  value={form.lingkar_kepala}
-                  onChange={(e) =>
-                    setForm({ ...form, lingkar_kepala: e.target.value })
-                  }
-                  className="w-full mt-1 border rounded-xl px-4 py-2"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-600">
-                  Lingkar Lengan (cm)
-                </label>
-                <input
-                  type="number"
-                  value={form.lingkar_lengan}
-                  onChange={(e) =>
-                    setForm({ ...form, lingkar_lengan: e.target.value })
-                  }
+                  name="berat"
+                  placeholder="Masukkan berat balita"
+                  onChange={handleChange}
                   className="w-full mt-1 border rounded-xl px-4 py-2"
                   required
                 />
@@ -432,7 +383,7 @@ export default function DeteksiDini() {
                   </>
                 )}
               </div>
-              <div className="text-xs text-gray-400 italic">
+              <div className="text-xs text-gray-400 italic text-center">
                 *Hasil ini merupakan skrining awal dan tidak menggantikan
                 diagnosis medis.
               </div>
@@ -454,7 +405,6 @@ export default function DeteksiDini() {
                       placeholder="Contoh: Balita mengalami risiko stunting ringan..."
                       className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 outline-none transition text-sm"
                       value={detailForm.keterangan}
-                      required
                       rows={3}
                       onChange={(e) =>
                         setDetailForm({
@@ -474,7 +424,6 @@ export default function DeteksiDini() {
                       placeholder="Contoh: Tingkatkan asupan gizi, rutin posyandu..."
                       className="w-full p-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 outline-none transition text-sm"
                       value={detailForm.rekomendasi}
-                      required
                       rows={3}
                       onChange={(e) =>
                         setDetailForm({
@@ -501,106 +450,8 @@ export default function DeteksiDini() {
                   </div>
                 </div>
               </form>
-              <NavLink to="/kader/detaildeteksi">
-                <button>Lihat Detail Deteksi</button>
-              </NavLink>
             </div>
           )}
-        </div>
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h1 className="text-2xl font-bold tracking-tight  text-gray-800">
-            Detail Deteksi
-          </h1>
-          <p className="text-sm text-gray-500 mt-1 mb-5">
-            Lakukan skrining awal untuk mendeteksi risiko stunting berdasarkan
-            data pertumbuhan balita.
-          </p>
-          <div className="bg-gray-50 rounded-xl p-4 flex flex-wrap items-center gap-4 mb-6">
-            <input
-              type="text"
-              placeholder="Cari nama balita..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
-            />
-          </div>
-          {/* FORM INPUT */}
-          <div className="bg-white rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-sm text-left border-collapse">
-                <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
-                  <tr>
-                    <th className="px-4 py-3">No</th>
-                    <th className="px-4 py-3">Nama Balita</th>
-                    <th className="px-4 py-3">Umur</th>
-                    <th className="px-4 py-3">Tinggi</th>
-                    <th className="px-4 py-3">Berat</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 text-center">
-                  {filteredData.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="py-6 text-gray-400">
-                        Data tidak ditemukan
-                      </td>
-                    </tr>
-                  ) : (
-                    currentData.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition">
-                        <td className="px-4 py-3 text-gray-500">{index + 1}</td>
-                        <td className="px-4 py-3 text-gray-500">
-                          {item.name || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">
-                          {item.umur || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">
-                          {item.tinggi || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500">
-                          {item.berat || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span
-                            className={`${baseStyle} ${
-                              statusWarna[item.status_tb_u] ||
-                              "bg-gray-300 text-black"
-                            }`}
-                          >
-                            {item.status_tb_u || "-"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="flex justify-center gap-3">
-                            <Link
-                              to={`/kader/detaildeteksi/${item.id}`}
-                              className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"
-                            >
-                              <FaEye size={14} />
-                            </Link>
-
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              className="text-red-600 hover:bg-red-100 p-2 rounded-lg"
-                            >
-                              <FaTrash size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
         </div>
       </div>
     </MainLayouts>

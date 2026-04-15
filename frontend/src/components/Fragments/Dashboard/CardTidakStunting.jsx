@@ -1,6 +1,6 @@
 import Card from "../../Elements/Card/Index";
 import { Icon } from "../../../assets/icons";
-const CardTidakStunting = () => {
+const CardTidakStunting = ({ total }) => {
   return (
     <>
       <Card
@@ -16,7 +16,7 @@ const CardTidakStunting = () => {
             <p className="text-black text-sm mb-1 font-semibold ">Tidak Stunting</p>
 
             {/* Nominal besar */}
-            <h2 className="text-2xl font-bold text-gray-800">12</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{ total }</h2>
 
            
           </div>

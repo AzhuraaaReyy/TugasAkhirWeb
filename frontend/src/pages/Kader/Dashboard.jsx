@@ -6,13 +6,45 @@ import CardTotal from "../../components/Fragments/Dashboard/CardTotal";
 import MainLayouts from "../../layouts/MainLayouts";
 import CardStunting from "../../components/Fragments/Dashboard/CardStunting";
 import CardTidakStunting from "../../components/Fragments/Dashboard/CardTidakStunting";
-import CardSeverely from "../../components/Fragments/Dashboard/CardSeverely";
+import { useEffect, useState } from "react";
 import Content from "../../components/Fragments/Dashboard/ContentGambar";
 import ContentMap from "../../components/Fragments/Dashboard/ContentMap";
-import Contentaktifitas from "../../components/Fragments/Dashboard/Contentaktifitas";
+import api from "@/services/api";
 import Status from "../../components/Elements/Chart/StatusChart";
 
 const Dashboard = () => {
+  const [summary, setSummary] = useState({
+    total_balita: 0,
+    stunting: 0,
+    tidak_stunting: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/balitas"); // endpoint kamu
+
+        setSummary({
+          total_balita: res.data.total_balita,
+          stunting: res.data.stunting,
+          tidak_stunting: res.data.tidak_stunting,
+        });
+      } catch (error) {
+        console.error("Gagal fetch dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+  if (loading) {
+    return (
+      <MainLayouts>
+        <div className="p-6">Loading data...</div>
+      </MainLayouts>
+    );
+  }
   return (
     <MainLayouts type="dashboard">
       <div className="px-6 py-8 bg-slate-100 min-h-screen">
@@ -28,11 +60,10 @@ const Dashboard = () => {
           </div>
 
           {/* ================= CARD TOTAL ================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
-            <CardTotal />
-            <CardTidakStunting />
-            <CardStunting />
-            <CardSeverely />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
+            <CardTotal total={summary.total_balita} />
+            <CardTidakStunting total={summary.tidak_stunting} />
+            <CardStunting total={summary.stunting} />
           </div>
 
           {/* ================= CHART SECTION ================= */}
@@ -43,7 +74,7 @@ const Dashboard = () => {
                 Monitoring Pertumbuhan Balita
               </h2>
               <p className="text-gray-500 text-sm  mb-6">
-               Status Gizi Tahun Ini
+                Status Gizi Tahun Ini
               </p>
 
               <LineChart />
@@ -63,7 +94,7 @@ const Dashboard = () => {
                 Monitoring Pertumbuhan Balita
               </h2>
               <p className="text-gray-500 text-sm  mb-6">
-                 Status Gizi Tahun Lalu vs Tahun Ini
+                Status Gizi Tahun Lalu vs Tahun Ini
               </p>
 
               <Barchart />
@@ -80,7 +111,7 @@ const Dashboard = () => {
                 Monitoring Pertumbuhan Balita
               </h2>
               <p className="text-gray-500 text-sm font-bold mb-6">
-                 Grafik Status Gizi Dalam %
+                Grafik Status Gizi Dalam %
               </p>
 
               <Status />

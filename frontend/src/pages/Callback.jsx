@@ -49,6 +49,4 @@ export default function AuthCallback() {
 
     handleLogin();
   }, []);
-
-  return <div>Loading login Google...</div>;
 }
