@@ -6,6 +6,7 @@ use App\Models\DetailDeteksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Deteksi;
+use Carbon\Carbon;
 
 class DetailDeteksiController extends Controller
 {
@@ -69,7 +70,7 @@ class DetailDeteksiController extends Controller
                 'tgl_lahir' => $detail->balita?->tgl_lahir,
 
                 // data pengukuran
-                'tgl_deteksi' => \Carbon\Carbon::parse($detail->tgl_deteksi)->format('Y-m-d'),
+                'tgl_deteksi' => Carbon::parse($detail->tgl_deteksi)->format('Y-m-d'),
                 'umur' => $detail->umur,
                 'berat' => $detail->berat,
                 'tinggi' => $detail->tinggi,

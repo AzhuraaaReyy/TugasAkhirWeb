@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Balita;
 use App\Models\Deteksi;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class BalitaController extends Controller
 {
@@ -58,12 +59,15 @@ class BalitaController extends Controller
             ];
         });
         $totalBalita = Balita::count();
-
+        $lastUpdate = Carbon::parse(Deteksi::max('updated_at'))
+            ->timezone('Asia/Jakarta')
+            ->toDateTimeString();
         return response()->json([
             'data' => $data,
             'total_balita' => $totalBalita,
             'stunting' => $stunting,
-            'tidak_stunting' => $tidakStunting
+            'tidak_stunting' => $tidakStunting,
+            'last_update' => $lastUpdate
         ]);
     }
 
@@ -139,4 +143,6 @@ class BalitaController extends Controller
             'message' => 'Data balita berhasil dihapus'
         ]);
     }
+
+    
 }

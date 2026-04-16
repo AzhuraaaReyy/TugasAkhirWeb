@@ -73,8 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orangtua', [NotifikasiController::class, 'getOrangTua']);
 
         //chart
-        Route::get('/chart/stunting', [DeteksiController::class, 'chartStunting']);
-
+        Route::get('/grafikstunting', [DashboardController::class, 'grafikStunting']);
+        Route::get('/grafiktahunan', [DashboardController::class, 'grafikPerbandinganTahunan']);
+        Route::get('/grafikpersen', [DashboardController::class, 'grafikPieStatus']);
+        Route::get('/dashboardnotif', [DashboardController::class, 'index']);
+        Route::get('/mapposyandu', [DashboardController::class, 'mapping']);
         Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
         Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
     });
