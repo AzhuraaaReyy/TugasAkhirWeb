@@ -241,7 +241,9 @@ export default function Notifikasi() {
               {/* TANGGAL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tanggal Kirim
+                  {form.tipe === "Jadwal Posyandu"
+                    ? "Tanggal Posyandu"
+                    : "Tanggal Kirim"}
                 </label>
                 <input
                   type="date"

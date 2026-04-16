@@ -1,29 +1,24 @@
 import { LineChart } from "@mui/x-charts/LineChart";
 import { useState, useMemo } from "react";
+import { useEffect } from "react";
+import api from "@/services/api";
 
-const rawData = [
-  { month: "Jan", posyandu: "Melati", stunting: 5, tidakStunting: 45 },
-  { month: "Jan", posyandu: "Anggrek", stunting: 10, tidakStunting: 60 },
-
-  { month: "Feb", posyandu: "Melati", stunting: 4, tidakStunting: 48 },
-  { month: "Feb", posyandu: "Anggrek", stunting: 9, tidakStunting: 62 },
-
-  { month: "Mar", posyandu: "Melati", stunting: 3, tidakStunting: 50 },
-  { month: "Mar", posyandu: "Anggrek", stunting: 8, tidakStunting: 65 },
-
-  { month: "Apr", posyandu: "Melati", stunting: 3, tidakStunting: 52 },
-  { month: "Apr", posyandu: "Anggrek", stunting: 7, tidakStunting: 68 },
-
-  { month: "Mei", posyandu: "Melati", stunting: 2, tidakStunting: 55 },
-  { month: "Mei", posyandu: "Anggrek", stunting: 6, tidakStunting: 70 },
-
-  { month: "Jun", posyandu: "Melati", stunting: 2, tidakStunting: 58 },
-  { month: "Jun", posyandu: "Anggrek", stunting: 5, tidakStunting: 72 },
-];
 const Linechart = () => {
   const [selectedPosyandu, setSelectedPosyandu] = useState("Semua");
+  const [rawData, setRawData] = useState([]);
 
-  // 🔹 Data Mentah (Simulasi Database)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await api.get("/grafikstunting");
+        setRawData(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // 🔹 Data Setelah Difilter
   const filteredData = useMemo(() => {
@@ -47,7 +42,7 @@ const Linechart = () => {
     }
 
     return rawData.filter((item) => item.posyandu === selectedPosyandu);
-  }, [selectedPosyandu]);
+  }, [selectedPosyandu, rawData]);
 
   return (
     <div className="bg-white rounded-3xl ">
@@ -96,18 +91,19 @@ const Linechart = () => {
               dataKey: "stunting",
               label: "Anak Stunting",
               curve: "natural",
-              showMark: false,
+              showMark: true,
               area: true,
               color: "#2006cd",
-              className: "font-bold"
+              valueFormatter: (v) => `${v} anak`,
             },
             {
               dataKey: "tidakStunting",
               label: "Tidak Stunting",
               curve: "natural",
-              showMark: false,
+              showMark: true,
               area: true,
               color: "#00cf8a",
+              valueFormatter: (v) => `${v} anak`,
             },
           ]}
           grid={{ horizontal: true, vertical: false }}
@@ -122,8 +118,15 @@ const Linechart = () => {
                 fontWeight: 500,
               },
             },
+            tooltip: {
+              trigger: "axis", // tampil semua data di bulan yg sama
+            },
           }}
           sx={{
+            "& .MuiMarkElement-root": {
+              strokeWidth: 2,
+              r: 4, // ukuran titik
+            },
             "& .MuiChartsAxis-line": {
               stroke: "#e2e8f0",
             },

@@ -1,4 +1,3 @@
-import Card from "../../components/Elements/Card/Index";
 import Barchart from "../../components/Elements/Chart/BartChart";
 import LineChart from "../../components/Elements/Chart/LineChart";
 import { Icon } from "../../assets/icons";
@@ -11,14 +10,37 @@ import Content from "../../components/Fragments/Dashboard/ContentGambar";
 import ContentMap from "../../components/Fragments/Dashboard/ContentMap";
 import api from "@/services/api";
 import Status from "../../components/Elements/Chart/StatusChart";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+import "dayjs/locale/id";
+
+dayjs.extend(relativeTime);
+dayjs.locale("id");
 
 const Dashboard = () => {
+  const [lastUpdate, setLastUpdate] = useState(null);
+
+  const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
     total_balita: 0,
     stunting: 0,
     tidak_stunting: 0,
   });
-  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await api.get("/balitas");
+      setLastUpdate(res.data.last_update);
+    };
+
+    fetchData();
+
+    const interval = setInterval(fetchData, 10000); // tiap 10 detik
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -82,7 +104,9 @@ const Dashboard = () => {
               <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
                 <Icon.Waktu className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-400">
-                  Campaign sent 2 days ago
+                  {lastUpdate
+                    ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+                    : "Memuat..."}
                 </span>
               </div>
             </div>
@@ -102,7 +126,9 @@ const Dashboard = () => {
               <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
                 <Icon.Waktu className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-400">
-                  Campaign sent 2 days ago
+                  {lastUpdate
+                    ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+                    : "Memuat..."}
                 </span>
               </div>
             </div>
@@ -119,7 +145,9 @@ const Dashboard = () => {
               <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
                 <Icon.Waktu className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-400">
-                  Campaign sent 2 days ago
+                  {lastUpdate
+                    ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+                    : "Memuat..."}
                 </span>
               </div>
             </div>
