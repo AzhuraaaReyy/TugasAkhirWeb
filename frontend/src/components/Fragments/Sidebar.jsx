@@ -2,6 +2,7 @@ import { Navigate, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { kaderMenu, orangTuaMenu, adminMenu } from "../Menu";
 import { useNavigate } from "react-router-dom";
+import gustimg from "../../assets/images/Guest.jpg";
 const Sidebar = ({ open }) => {
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ const Sidebar = ({ open }) => {
       >
         <div className="relative">
           <img
-            src="https://i.pravatar.cc/100"
+            src={gustimg}
             alt="profile"
             className="w-11 h-11 object-cover rounded-full ring-2 ring-indigo-500"
           />

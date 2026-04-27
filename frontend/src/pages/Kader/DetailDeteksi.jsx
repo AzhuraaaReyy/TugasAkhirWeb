@@ -9,6 +9,7 @@ import CardTinggi from "../../components/Fragments/Riwayat&Grafik/CardTinggi";
 import CardStatus from "../../components/Fragments/Riwayat&Grafik/CardStatus";
 import { useState } from "react";
 import EarlyWarning from "@/components/Fragments/Riwayat&Grafik/EarlyWarning";
+import { Atom } from "react-loading-indicators";
 import {
   LineChart,
   Line,
@@ -22,7 +23,7 @@ import {
 export default function DetailDeteksi() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [dataWithUsia, setDataWithUsia] = useState([]); 
+  const [dataWithUsia, setDataWithUsia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
@@ -132,9 +133,9 @@ export default function DetailDeteksi() {
 
   if (loading) {
     return (
-      <MainLayouts>
-        <div className="p-6">Loading data...</div>
-      </MainLayouts>
+      <div className="flex justify-center items-center h-screen">
+        <Atom color="#32cd32" size="medium" text="Memuat Data..." />
+      </div>
     );
   }
 

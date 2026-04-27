@@ -12,7 +12,7 @@ import api from "@/services/api";
 import Status from "../../components/Elements/Chart/StatusChart";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-
+import { Atom } from "react-loading-indicators";
 import "dayjs/locale/id";
 
 dayjs.extend(relativeTime);
@@ -62,9 +62,9 @@ const Dashboard = () => {
   }, []);
   if (loading) {
     return (
-      <MainLayouts>
-        <div className="p-6">Loading data...</div>
-      </MainLayouts>
+      <div className="flex justify-center items-center h-screen">
+        <Atom color="#32cd32" size="medium" text="Memuat Data..." />
+      </div>
     );
   }
   return (

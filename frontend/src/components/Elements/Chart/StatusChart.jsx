@@ -8,13 +8,15 @@ import {
 } from "recharts";
 import { useState, useEffect } from "react";
 import api from "@/services/api";
+import { OrbitProgress } from "react-loading-indicators";
 
 const StatusChart = () => {
   const [data, setData] = useState([]);
-
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true); // mulai loading
         const res = await api.get("/grafikpersen");
 
         const normal = res.data.normal ?? 0;
@@ -44,6 +46,8 @@ const StatusChart = () => {
         setData(formatted);
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false); // selesai loading
       }
     };
 
@@ -52,45 +56,52 @@ const StatusChart = () => {
 
   const COLORS = ["#10B981", "#EF4444"];
 
-  // ❗ Loading state
-  if (!data.length) {
-    return <div className="text-center p-6">Memuat data...</div>;
-  }
-
   return (
     <div className="bg-white rounded-2xl border border-emerald-500 p-6 w-full">
       {/* Chart */}
       <div className="w-full h-80">
-        <ResponsiveContainer>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={70}
-              outerRadius={110}
-              paddingAngle={4}
-              dataKey="value"
-            >
-              {data.map((entry, index) => (
-                <Cell key={index} fill={COLORS[index]} />
-              ))}
-            </Pie>
-
-            <Tooltip
-              formatter={(value, name, props) =>
-                `${props.payload.jumlah} anak (${value}%)`
-              }
-              contentStyle={{
-                borderRadius: "12px",
-                border: "none",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
-              }}
+        {loading ? (
+          <div className="flex justify-center items-center h-[350px]">
+            <OrbitProgress
+              dense
+              color="#32cd32"
+              size="medium"
+              text=""
+              textColor=""
             />
+          </div>
+        ) : (
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={70}
+                outerRadius={110}
+                paddingAngle={4}
+                dataKey="value"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={index} fill={COLORS[index]} />
+                ))}
+              </Pie>
 
-            <Legend verticalAlign="bottom" iconType="circle" />
-          </PieChart>
-        </ResponsiveContainer>
+              <Tooltip
+                formatter={(value, name, props) =>
+                  `${props.payload.jumlah} anak (${value}%)`
+                }
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "none",
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.1)",
+                }}
+              />
+
+              <Legend verticalAlign="bottom" iconType="circle" />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Summary */}
