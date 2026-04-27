@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('status_tb_u');
             $table->string('status_bb_u');
             $table->string('status_tb_bb');
+            $table->enum('metode', ['stunting', 'wasting', 'underweight']);
             $table->timestamps();
         });
     }

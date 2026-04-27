@@ -1,0 +1,579 @@
+{
+    "version": "1.1",
+    "updated_at": "2026-04-27",
+    "schema": {
+        "id": "Identifier unik per entri (snake_case)",
+        "kategori": "Stunting | MPASI | Gizi | Sanitasi | Posyandu",
+        "pertanyaan": "Pertanyaan utama yang dijawab",
+        "jawaban": "Jawaban lengkap dari sumber resmi",
+        "tags": "Kata kunci pencarian per entri",
+        "aliases": "Variasi cara user mungkin mengetik pertanyaan ini",
+        "kondisi": "stunting | wasting | underweight | semua",
+        "relations": "Relasi semantik ke konsep lain (untuk knowledge graph)",
+        "related_questions": "Pertanyaan terkait yang relevan (untuk follow-up)",
+        "weight": "Skor prioritas 1-10 (10 = paling fundamental)"
+    },
+    "items": [
+        {
+            "id": "stunting_definisi",
+            "kategori": "Stunting",
+            "pertanyaan": "Apa itu stunting?",
+            "jawaban": "Stunting adalah kondisi gagal tumbuh pada anak berusia dibawah lima tahun (balita) akibat kekurangan asupan gizi kronis dan infeksi berulang terutama pada periode 1.000 Hari Pertama Kehidupan (HPK), yaitu dari janin hingga anak berusia 23 bulan. Stunting ditentukan oleh indeks antropometri yang menggunakan data panjang badan berdasarkan umur (PB/U) untuk anak usia dibawah 2 tahun dan menggunakan data tinggi badan berdasarkan umur (TB/U) untuk anak usia 2 tahun ke atas. Dalam laporan Riskesdas, kondisi stunting merupakan gabungan antara anak dengan status gizi “pendek” dan “sangat pendek",
+            "tags": [
+                "stunting",
+                "definisi",
+                "pengertian",
+                "1000hpk",
+                "balita",
+                "antropometri"
+            ],
+            "aliases": [
+                "definisi stunting",
+                "arti stunting",
+                "pengertian stunting",
+                "stunting itu apa"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "diukur_dengan",
+                    "target": "tb_per_u",
+                    "weight": 0.95
+                },
+                {
+                    "type": "diukur_dengan",
+                    "target": "pb_per_u",
+                    "weight": 0.95
+                },
+                { "type": "terjadi_pada", "target": "1000hpk", "weight": 0.9 }
+            ],
+            "related_questions": [
+                "Apa penyebab stunting?",
+                "Apa gejala stunting?",
+                "Bagaimana ciri ciri stunting?"
+            ],
+            "weight": 10
+        },
+        {
+            "id": "stunting_pencegahan",
+            "kategori": "Stunting",
+            "pertanyaan": "Bagaimana cara mencegah stunting?",
+            "jawaban": "Stunting dapat dicegah atau dikoreksi jika dilakukan sebelum atau selama periode emas. Karenanya berbagai intervensi penting dilakukan sejak dini, mulai dari mempersiapkan kondisi gizi dan kesehatan calon ibu hingga memastikan kesehatan yang baik dan gizi yang cukup terutama pada 1000 Hari Pertama Kehidupan, yaitu sejak anak berada dalam kandungan hingga usia 2 tahun.",
+            "tags": [
+                "pencegahan",
+                "stunting",
+                "1000hpk",
+                "intervensi",
+                "ibu_hamil",
+                "periode_emas"
+            ],
+            "aliases": [
+                "pencegahan stunting",
+                "mencegah stunting",
+                "cara mencegah stunting",
+                "tips mencegah stunting",
+                "agar tidak stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "dicegah_oleh",
+                    "target": "protein_hewani",
+                    "weight": 0.9
+                },
+                { "type": "dicegah_oleh", "target": "sanitasi", "weight": 0.7 },
+                { "type": "dipantau_via", "target": "posyandu", "weight": 0.8 },
+                {
+                    "type": "diintervensi_dengan",
+                    "target": "mpasi",
+                    "weight": 0.85
+                }
+            ],
+            "related_questions": [
+                "Apa penyebab stunting?",
+                "Menu MPASI apa yang bagus untuk anak stunting?",
+                "Kenapa harus rutin ke Posyandu?"
+            ],
+            "weight": 10
+        },
+        {
+            "id": "stunting_penyebab",
+            "kategori": "Stunting",
+            "pertanyaan": "Apa penyebab stunting?",
+            "jawaban": "Ada dua kelompok faktor resiko/penyebab stunting sebagai indikasi masalah gizi kronis:Penyebab langsung: yaitu kurangnya asupan makanan bergizi dan infeksi berulang dalam jangka waktu tertentu (kronis).Penyebab tidak langsung: terdiri dari berbagai faktor yang mempengaruhi terjadinya penyebab langsung dari stunting akibat masalah gizi kronis. Faktor-faktor tersebut antara lain terkait masalah akses terhadap makanan bergizi, pola asuh yang kurang optimal, kurangnya akses terhadap layanan kesehatan, praktik hygiene, atau masalah kesehatan lingkungan yang mempengaruhi akses ke air bersih dan sanitasi (lingkungan). Penyebab tidak langsung ini dipengaruhi oleh berbagai faktor lain yang mendasar seperti faktor ekonomi, perdagangan, urbanisasi, globalisasi, sistem pangan, jaminan sosial, sistem kesehatan, pembangunan pertanian, dan/atau pemberdayaan perempuan.",
+            "tags": [
+                "penyebab",
+                "faktor",
+                "stunting",
+                "gizi_kronis",
+                "infeksi",
+                "pola_asuh"
+            ],
+            "aliases": [
+                "penyebab stunting",
+                "faktor stunting",
+                "kenapa anak stunting",
+                "asal stunting",
+                "akar masalah stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "disebabkan_oleh",
+                    "target": "gizi_kronis",
+                    "weight": 0.95
+                },
+                {
+                    "type": "disebabkan_oleh",
+                    "target": "infeksi_berulang",
+                    "weight": 0.9
+                },
+                {
+                    "type": "disebabkan_oleh",
+                    "target": "sanitasi_buruk",
+                    "weight": 0.7
+                },
+                {
+                    "type": "disebabkan_oleh",
+                    "target": "pola_asuh",
+                    "weight": 0.7
+                }
+            ],
+            "related_questions": [
+                "Apa itu stunting?",
+                "Bagaimana cara mencegah stunting?",
+                "Kenapa sanitasi mempengaruhi stunting?"
+            ],
+            "weight": 10
+        },
+        {
+            "id": "stunting_dampak",
+            "kategori": "Stunting",
+            "pertanyaan": "Apa dampak stunting?",
+            "jawaban": "Selain gangguan pertumbuhan yang diindikasikan oleh stunting, biasanya anak juga dapat mengalami gangguan perkembangan akibat masalah gizi kronis, baik gangguan pada perkembangan kognitif, motorik, ataupun sistem kekebalan tubuh. Gangguan perkembangan inilah yang kemudian dapat menyebabkan anak mengalami kesulitan belajar atau mudah terserang penyakit. Kondisi kurang gizi kronis yang tidak dicegah atau terlambat dikoreksi dapat meningkatkan resiko terkena penyakit tidak menular (PTM) di usia lebih lanjut (seperti diabetes, penyakit jantung, kanker, stroke, dan lain-lain) pada level individu dan menurunkan angka produktivitas sumber daya manusia pada level populasi.",
+            "tags": [
+                "dampak",
+                "akibat",
+                "stunting",
+                "kognitif",
+                "motorik",
+                "ptm",
+                "perkembangan"
+            ],
+            "aliases": [
+                "dampak stunting",
+                "akibat stunting",
+                "efek stunting",
+                "konsekuensi stunting",
+                "bahaya stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "menyebabkan",
+                    "target": "gangguan_kognitif",
+                    "weight": 0.9
+                },
+                {
+                    "type": "menyebabkan",
+                    "target": "gangguan_motorik",
+                    "weight": 0.85
+                },
+                {
+                    "type": "meningkatkan_risiko",
+                    "target": "ptm",
+                    "weight": 0.8
+                }
+            ],
+            "related_questions": [
+                "Apa itu stunting?",
+                "Mengapa stunting menjadi perhatian utama?",
+                "Bagaimana cara mengobati stunting?"
+            ],
+            "weight": 9
+        },
+        {
+            "id": "stunting_gejala",
+            "kategori": "Stunting",
+            "pertanyaan": "Apa gejala stunting?",
+            "jawaban": "Gejala utama stunting adalah tinggi badan anak yang lebih pendek dibandingkan dengan anak seusianya. Selain itu, beberapa gejala lain yang mungkin muncul antara lain: -)Pertumbuhan melambat, -)Berat badan tidak sesuai dengan usia, -)Perkembangan motorik terlambat, -)Lebih rentan terhadap penyakit infeksi, -)Kemampuan kognitif yang kurang optimal. Penting untuk memantau pertumbuhan anak secara berkala melalui pengukuran tinggi badan dan berat badan di fasilitas kesehatan terdekat.",
+            "tags": [
+                "gejala",
+                "tanda",
+                "stunting",
+                "pertumbuhan_lambat",
+                "tinggi_badan"
+            ],
+            "aliases": [
+                "gejala stunting",
+                "tanda tanda stunting",
+                "indikator stunting",
+                "tanda awal stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "ditandai_dengan",
+                    "target": "tinggi_pendek",
+                    "weight": 0.95
+                },
+                {
+                    "type": "ditandai_dengan",
+                    "target": "pertumbuhan_lambat",
+                    "weight": 0.9
+                },
+                { "type": "dipantau_via", "target": "posyandu", "weight": 0.75 }
+            ],
+            "related_questions": [
+                "Bagaimana ciri ciri stunting?",
+                "Bagaimana cara mendiagnosis stunting?",
+                "Apa itu stunting?"
+            ],
+            "weight": 9
+        },
+        {
+            "id": "stunting_urgensi",
+            "kategori": "Stunting",
+            "pertanyaan": "Mengapa stunting menjadi perhatian utama?",
+            "jawaban": "Stunting bukan hanya masalah tinggi badan anak yang tidak sesuai dengan usianya. Lebih dari itu, stunting adalah indikator adanya masalah serius dalam perkembangan otak dan kesehatan anak secara keseluruhan. Anak yang mengalami stunting berisiko mengalami kesulitan belajar, rentan terhadap penyakit, dan memiliki produktivitas yang rendah di masa depan. Stunting masih menjadi masalah kesehatan masyarakat yang signifikan. Prevalensi stunting yang tinggi dapat menghambat pembangunan sumber daya manusia yang berkualitas.",
+            "tags": [
+                "urgensi",
+                "stunting",
+                "kesehatan_masyarakat",
+                "sdm",
+                "prevalensi",
+                "perhatian",
+                "utama"
+            ],
+            "aliases": [
+                "pentingnya stunting",
+                "kenapa stunting penting",
+                "urgensi stunting",
+                "stunting masalah serius"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "berdampak_pada", "target": "sdm", "weight": 0.85 },
+                {
+                    "type": "berdampak_pada",
+                    "target": "gangguan_kognitif",
+                    "weight": 0.9
+                }
+            ],
+            "related_questions": [
+                "Apa dampak stunting?",
+                "Apa itu stunting?",
+                "Bagaimana cara mencegah stunting?"
+            ],
+            "weight": 10
+        },
+        {
+            "id": "stunting_diagnosis",
+            "kategori": "Stunting",
+            "pertanyaan": "Bagaimana cara mendiagnosis stunting?",
+            "jawaban": "Diagnosis stunting dilakukan dengan mengukur tinggi badan anak dan membandingkannya dengan standar pertumbuhan anak WHO. Jika tinggi badan anak berada di bawah -2 SD dari median standar, maka anak tersebut didiagnosis stunting. Selain itu, dokter juga akan melakukan pemeriksaan fisik dan menanyakan riwayat kesehatan anak serta asupan gizinya.",
+            "tags": [
+                "diagnosis",
+                "pengukuran",
+                "tinggi_badan",
+                "stunting",
+                "who",
+                "z_score",
+                "sd"
+            ],
+            "aliases": [
+                "cara mendiagnosis stunting",
+                "diagnosis stunting",
+                "cara deteksi stunting",
+                "menentukan stunting",
+                "cara tahu anak stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "diukur_dengan",
+                    "target": "tb_per_u",
+                    "weight": 0.95
+                },
+                {
+                    "type": "menggunakan_standar",
+                    "target": "who_growth_standard",
+                    "weight": 0.95
+                },
+                { "type": "dilakukan_di", "target": "posyandu", "weight": 0.7 }
+            ],
+            "related_questions": [
+                "Apa gejala stunting?",
+                "Bagaimana ciri ciri stunting?",
+                "Kenapa harus rutin ke Posyandu?"
+            ],
+            "weight": 9
+        },
+        {
+            "id": "stunting_pengobatan",
+            "kategori": "Stunting",
+            "pertanyaan": "Bagaimana cara mengobati stunting?",
+            "jawaban": "Pengobatan stunting berfokus pada perbaikan gizi dan penanganan infeksi yang mungkin terjadi. Beberapa langkah pengobatan antara lain: pemberian makanan tambahan (PMT) bergizi seimbang, suplementasi zat gizi mikro seperti zat besi, vitamin A, dan zinc, pemberian obat cacing jika diperlukan, penanganan infeksi, serta konseling gizi untuk keluarga. Penanganan stunting membutuhkan pendekatan komprehensif dan berkelanjutan.",
+
+            "tags": [
+                "stunting",
+                "pengobatan",
+                "mengobati",
+                "cara mengobati",
+                "terapi",
+                "penanganan"
+            ],
+
+            "aliases": [
+                "obat stunting",
+                "cara mengatasi stunting",
+                "cara mengobati stunting",
+                "menangani stunting",
+                "penyembuhan stunting",
+                "treatment stunting"
+            ],
+
+            "kondisi": "stunting",
+
+            "relations": [
+                {
+                    "type": "diatasi_dengan",
+                    "target": "pmt",
+                    "weight": 0.9
+                },
+                {
+                    "type": "diatasi_dengan",
+                    "target": "suplementasi_mikro",
+                    "weight": 0.85
+                },
+                {
+                    "type": "diatasi_dengan",
+                    "target": "konseling_gizi",
+                    "weight": 0.8
+                }
+            ],
+
+            "related_questions": [
+                "cara mencegah stunting",
+                "menu MPASI untuk stunting",
+                "pentingnya protein hewani untuk anak"
+            ],
+
+            "weight": 6
+        },
+        {
+            "id": "stunting_ciri",
+            "kategori": "Stunting",
+            "pertanyaan": "Bagaimana ciri ciri stunting?",
+            "jawaban": "Ciri-ciri umum stunting pada anak dapat terlihat dari perawakan anak yang kerdil saat mencapai usia 2 tahun, atau lebih pendek daripada anak-anak seusianya dengan jenis kelamin yang sama.Selain pendek atau kerdil, anak yang mengalami stunting juga terlihat kurus. Walaupun terlihat pendek dan kurus, tubuh anak tetap proporsional. Namun perlu diingat, tidak semua anak yang pendek disebut stunting.Selain mengalami gangguan pertumbuhan, berikut adalah beberapa ciri-ciri stunting pada anak: a.)Mengalami penurunan tingkat kecerdasan, gangguan berbicara, dan kesulitan dalam belajar, b.)Memiliki sistem kekebalan tubuh yang rendah, sehingga lebih mudah sakit, terutama akibat penyakit infeksi, c.)Berisiko mengalami penyakit diabetes, hipertensi, dan obesitas ketika dewasa nanti",
+            "tags": ["ciri", "tanda_fisik", "stunting", "perawakan", "kerdil"],
+            "aliases": [
+                "ciri ciri stunting",
+                "ciri stunting",
+                "ciri anak stunting",
+                "tanda fisik stunting",
+                "bentuk fisik anak stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "ditandai_dengan",
+                    "target": "tinggi_pendek",
+                    "weight": 0.95
+                },
+                {
+                    "type": "ditandai_dengan",
+                    "target": "berat_kurang",
+                    "weight": 0.7
+                }
+            ],
+            "related_questions": [
+                "Apa gejala stunting?",
+                "Bagaimana cara mendiagnosis stunting?",
+                "Apa dampak stunting?"
+            ],
+            "weight": 8
+        },
+        {
+            "id": "mpasi_menu_stunting",
+            "kategori": "MPASI",
+            "pertanyaan": "Menu MPASI apa yang bagus untuk anak stunting?",
+            "jawaban": "Prioritaskan menu MPASI dengan protein hewani tinggi: telur (1 butir/hari), ikan (50g/hari), hati ayam, atau daging cincang. Tambahkan lemak sehat dari minyak kelapa atau alpukat. Berikan 3x makan utama + 2x camilan bergizi setiap hari.",
+            "tags": [
+                "mpasi",
+                "menu",
+                "makanan",
+                "gizi",
+                "protein_hewani",
+                "telur",
+                "ikan"
+            ],
+            "aliases": [
+                "menu mpasi stunting",
+                "makanan untuk anak stunting",
+                "menu untuk balita stunting",
+                "rekomendasi mpasi stunting",
+                "mpasi anti stunting"
+            ],
+            "kondisi": "stunting",
+            "relations": [
+                {
+                    "type": "mengandung",
+                    "target": "protein_hewani",
+                    "weight": 0.9
+                },
+                { "type": "mengatasi", "target": "stunting", "weight": 0.8 },
+                { "type": "termasuk", "target": "telur", "weight": 0.85 },
+                { "type": "termasuk", "target": "ikan", "weight": 0.85 }
+            ],
+            "related_questions": [
+                "Kenapa protein hewani penting untuk anak?",
+                "Susu apa yang bagus untuk anak stunting?",
+                "Bagaimana cara mengobati stunting?"
+            ],
+            "weight": 9
+        },
+        {
+            "id": "gizi_protein_hewani",
+            "kategori": "Gizi",
+            "pertanyaan": "Kenapa protein hewani penting untuk anak?",
+            "jawaban": "Protein hewani sangat penting karena mengandung asam amino esensial lengkap yang dibutuhkan untuk pertumbuhan jaringan, tulang, dan otak anak. Sumber terbaiknya adalah telur, ikan, daging, dan hati ayam.",
+            "tags": [
+                "protein_hewani",
+                "protein",
+                "gizi",
+                "nutrisi",
+                "asam_amino",
+                "pertumbuhan"
+            ],
+            "aliases": [
+                "pentingnya protein hewani",
+                "manfaat protein hewani",
+                "fungsi protein hewani",
+                "kenapa harus protein hewani",
+                "protein dari hewan"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "terkandung_di", "target": "telur", "weight": 0.9 },
+                { "type": "terkandung_di", "target": "ikan", "weight": 0.95 },
+                {
+                    "type": "terkandung_di",
+                    "target": "hati_ayam",
+                    "weight": 0.85
+                },
+                { "type": "mencegah", "target": "stunting", "weight": 0.9 }
+            ],
+            "related_questions": [
+                "Menu MPASI apa yang bagus untuk anak stunting?",
+                "Susu apa yang bagus untuk anak stunting?",
+                "Bagaimana cara mencegah stunting?"
+            ],
+            "weight": 9
+        },
+        {
+            "id": "gizi_susu_stunting",
+            "kategori": "Gizi",
+            "pertanyaan": "Susu apa yang bagus untuk anak stunting?",
+            "jawaban": "ASI tetap utama hingga 2 tahun. Untuk pelengkap setelah 1 tahun, pilih susu UHT/full-cream tinggi protein dan kalsium. Hindari susu kental manis karena kandungan gula tinggi. Konsultasikan dulu dengan bidan/dokter sebelum memberi susu formula khusus.",
+            "tags": ["susu", "asi", "uht", "full_cream", "kalsium", "stunting"],
+            "aliases": [
+                "susu untuk stunting",
+                "susu balita stunting",
+                "rekomendasi susu",
+                "susu yang bagus",
+                "minum susu untuk stunting"
+            ],
+            "kondisi": "stunting",
+            "relations": [
+                {
+                    "type": "mengandung",
+                    "target": "protein_hewani",
+                    "weight": 0.7
+                },
+                { "type": "mengandung", "target": "kalsium", "weight": 0.9 },
+                { "type": "alternatif_dari", "target": "asi", "weight": 0.6 }
+            ],
+            "related_questions": [
+                "Kenapa protein hewani penting untuk anak?",
+                "Menu MPASI apa yang bagus untuk anak stunting?",
+                "Bagaimana cara mengobati stunting?"
+            ],
+            "weight": 7
+        },
+        {
+            "id": "sanitasi_dampak_stunting",
+            "kategori": "Sanitasi",
+            "pertanyaan": "Kenapa sanitasi mempengaruhi stunting?",
+            "jawaban": "Sanitasi buruk menyebabkan diare berulang dan infeksi usus, yang membuat nutrisi tidak terserap optimal walaupun anak makan cukup. Pastikan: cuci tangan dengan sabun, gunakan air bersih untuk masak, masak air hingga mendidih.",
+            "tags": [
+                "sanitasi",
+                "kebersihan",
+                "cuci_tangan",
+                "diare",
+                "infeksi_usus",
+                "air_bersih"
+            ],
+            "aliases": [
+                "hubungan sanitasi stunting",
+                "kebersihan dan stunting",
+                "sanitasi buruk",
+                "kenapa harus jaga kebersihan",
+                "pengaruh sanitasi"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "mencegah", "target": "stunting", "weight": 0.7 },
+                { "type": "mencegah", "target": "diare", "weight": 0.9 },
+                { "type": "mencegah", "target": "infeksi_usus", "weight": 0.85 }
+            ],
+            "related_questions": [
+                "Apa penyebab stunting?",
+                "Kenapa harus rutin ke Posyandu?",
+                "Bagaimana cara mencegah stunting?"
+            ],
+            "weight": 7
+        },
+        {
+            "id": "posyandu_pentingnya",
+            "kategori": "Posyandu",
+            "pertanyaan": "Kenapa harus rutin ke Posyandu?",
+            "jawaban": "Posyandu adalah pos pemantauan pertumbuhan anak setiap bulan. Di sana berat & tinggi badan diukur, dibandingkan dengan standar WHO, dan kader memberi konsultasi gizi. Deteksi dini stunting sangat efektif lewat Posyandu rutin.",
+            "tags": [
+                "posyandu",
+                "pemantauan",
+                "pertumbuhan",
+                "kontrol",
+                "kader",
+                "deteksi_dini"
+            ],
+            "aliases": [
+                "manfaat posyandu",
+                "pentingnya posyandu",
+                "fungsi posyandu",
+                "kenapa ke posyandu",
+                "untuk apa posyandu"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "memantau", "target": "stunting", "weight": 0.85 },
+                {
+                    "type": "menggunakan_standar",
+                    "target": "who_growth_standard",
+                    "weight": 0.9
+                },
+                {
+                    "type": "menyediakan",
+                    "target": "konseling_gizi",
+                    "weight": 0.8
+                }
+            ],
+            "related_questions": [
+                "Bagaimana cara mendiagnosis stunting?",
+                "Bagaimana cara mencegah stunting?",
+                "Kenapa sanitasi mempengaruhi stunting?"
+            ],
+            "weight": 8
+        }
+    ]
+}

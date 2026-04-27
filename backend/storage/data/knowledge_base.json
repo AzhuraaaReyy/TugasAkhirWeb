@@ -1,0 +1,101 @@
+{
+    "version": "1.0",
+    "updated_at": "2026-04-25",
+    "items": [
+        {
+            "kategori": "Stunting",
+            "pertanyaan": "Apa itu stunting?",
+            "jawaban": "Stunting adalah gangguan pertumbuhan pada anak akibat kekurangan gizi kronis, ditandai dengan tinggi badan di bawah standar usianya (z-score < -2 SD menurut WHO). Kondisi ini mempengaruhi perkembangan fisik dan kognitif anak dalam jangka panjang.",
+            "tags": ["stunting", "definisi", "pengertian"],
+            "aliases": ["gangguan pertumbuhan", "pertumbuhan terhambat"],
+            "kondisi": "semua",
+            "relations": [
+                {
+                    "type": "dicegah_oleh",
+                    "target": "protein_hewani",
+                    "weight": 0.9
+                },
+                { "type": "dicegah_oleh", "target": "sanitasi", "weight": 0.7 },
+                { "type": "dipantau_via", "target": "posyandu", "weight": 0.8 },
+                { "type": "diatasi_dengan", "target": "mpasi", "weight": 0.85 }
+            ],
+            "related_questions": [
+                "Bagaimana cara mencegah stunting?",
+                "Apa penyebab stunting?"
+            ],
+            "weight": 10
+        },
+        {
+            "kategori": "MPASI",
+            "pertanyaan": "Menu MPASI apa yang bagus untuk anak stunting?",
+            "jawaban": "Prioritaskan menu MPASI dengan protein hewani tinggi: telur (1 butir/hari), ikan (50g/hari), hati ayam, atau daging cincang. Tambahkan lemak sehat dari minyak kelapa atau alpukat. Berikan 3x makan utama + 2x camilan bergizi setiap hari.",
+            "tags": ["mpasi", "menu", "makanan", "gizi"],
+            "aliases": ["makanan pendamping asi", "menu makan bayi"],
+            "kondisi": "stunting",
+            "relations": [
+                {
+                    "type": "mengandung",
+                    "target": "protein_hewani",
+                    "weight": 0.9
+                },
+                { "type": "mengatasi", "target": "stunting", "weight": 0.8 }
+            ],
+            "weight": 9
+        },
+        {
+            "kategori": "Gizi",
+            "pertanyaan": "Kenapa protein hewani penting untuk anak?",
+            "jawaban": "Protein hewani sangat penting karena mengandung asam amino esensial lengkap yang dibutuhkan untuk pertumbuhan jaringan, tulang, dan otak anak. Sumber terbaiknya adalah telur, ikan, daging, dan hati ayam.",
+            "tags": ["protein_hewani", "protein", "gizi", "nutrisi"],
+            "aliases": ["protein dari hewan", "animal protein"],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "terkandung_di", "target": "telur", "weight": 0.9 },
+                { "type": "terkandung_di", "target": "ikan", "weight": 0.95 },
+                { "type": "mencegah", "target": "stunting", "weight": 0.9 }
+            ],
+            "weight": 8
+        },
+        {
+            "kategori": "Gizi",
+            "pertanyaan": "Susu apa yang bagus untuk anak stunting?",
+            "jawaban": "ASI tetap utama hingga 2 tahun. Untuk pelengkap setelah 1 tahun, pilih susu UHT/full-cream tinggi protein dan kalsium. Hindari susu kental manis karena kandungan gula tinggi. Konsultasikan dulu dengan bidan/dokter sebelum memberi susu formula khusus.",
+            "tags": ["susu", "asi", "minum"],
+            "aliases": ["susu formula", "asi eksklusif", "milk"],
+            "kondisi": "stunting",
+            "relations": [
+                {
+                    "type": "mengandung",
+                    "target": "protein_hewani",
+                    "weight": 0.7
+                }
+            ],
+            "weight": 8
+        },
+        {
+            "kategori": "Sanitasi",
+            "pertanyaan": "Kenapa sanitasi mempengaruhi stunting?",
+            "jawaban": "Sanitasi buruk menyebabkan diare berulang dan infeksi usus, yang membuat nutrisi tidak terserap optimal walaupun anak makan cukup. Pastikan: cuci tangan dengan sabun, gunakan air bersih untuk masak, masak air hingga mendidih.",
+            "tags": ["sanitasi", "kebersihan", "cuci_tangan", "diare"],
+            "aliases": ["kesehatan lingkungan", "higienitas"],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "mencegah", "target": "stunting", "weight": 0.7 },
+                { "type": "mencegah", "target": "diare", "weight": 0.9 }
+            ],
+            "weight": 6
+        },
+        {
+            "kategori": "Sanitasi",
+            "pertanyaan": "Kenapa harus rutin ke Posyandu?",
+            "jawaban": "Posyandu adalah pos pemantauan pertumbuhan anak setiap bulan. Di sana berat & tinggi badan diukur, dibandingkan dengan standar WHO, dan kader memberi konsultasi gizi. Deteksi dini stunting sangat efektif lewat Posyandu rutin.",
+            "tags": ["posyandu", "kontrol", "pemantauan"],
+            "aliases": ["pos pelayanan terpadu"],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "memantau", "target": "stunting", "weight": 0.85 }
+            ],
+            "weight": 7
+        }
+    ]
+}

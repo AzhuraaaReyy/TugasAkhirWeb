@@ -11,6 +11,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
+use App\Http\Controllers\QnAController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\RiwayatGrafikController;
 
@@ -80,6 +81,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/mapposyandu', [DashboardController::class, 'mapping']);
         Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
         Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
+
+
+
+        Route::post('/ask', [QnAController::class, 'ask']);
+        Route::get('/guided/{status}', [QnAController::class, 'guided']);
     });
 
 

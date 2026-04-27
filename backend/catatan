@@ -2,3 +2,10 @@ downlaod pdf dan excel
 
 excel = composer require maatwebsite/excel
 pdf = composer require barryvdh/laravel-dompdf
+
+
+1. Intent Detection (Lebih Pintar dari str_contains)
+Masalah str_contains sekarang: hanya cari 1 kata, tidak ada prioritas, tidak ada bobot. Solusinya: Intent Classifier berbasis scoring.
+
+2. Context Memory & Conversation State
+Sekarang chatbotmu "amnesia" — setiap request lupa percakapan sebelumnya. Kita bikin session-based context memory.

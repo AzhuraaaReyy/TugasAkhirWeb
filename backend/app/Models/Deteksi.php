@@ -21,6 +21,7 @@ class Deteksi extends Model
         'status_tb_u',
         'status_bb_u',
         'status_tb_bb',
+        'metode',
     ];
 
     protected $casts = [

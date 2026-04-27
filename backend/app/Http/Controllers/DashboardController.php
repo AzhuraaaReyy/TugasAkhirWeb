@@ -254,8 +254,6 @@ class DashboardController extends Controller
                 $isBerisiko = false;
 
                 foreach ($balita->deteksis as $deteksi) {
-
-                    // 🔴 STUNTING
                     if (
                         $deteksi->zscore_tb_u < -3 ||
                         $deteksi->zscore_bb_u < -3 ||
@@ -264,7 +262,7 @@ class DashboardController extends Controller
                         $isStunting = true;
                     }
 
-                    // 🟠 BERISIKO
+
                     if (
                         (
                             ($deteksi->zscore_tb_u >= -3 && $deteksi->zscore_tb_u < -2) ||

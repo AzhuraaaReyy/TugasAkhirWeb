@@ -45,6 +45,7 @@ class DeteksiController extends Controller
             'jk' => 'required|in:L,P',
             'tgl_lahir' => 'required|date',
             'umur' => 'nullable|integer|min:0',
+            'metode' => 'required|in:stunting,wasting,underweight',
         ]);
 
         $balita = Balita::where('name', $request->name)
@@ -98,6 +99,7 @@ class DeteksiController extends Controller
             'status_tb_u' => $status_tbu,
             'status_bb_u' => $status_bbu,
             'status_tb_bb' => $status_bbtb,
+            'metode' => $request->metode,
             'warning' => $warning,
 
         ]);
@@ -271,10 +273,22 @@ class DeteksiController extends Controller
     private function keteranganBBU($status)
     {
         return match ($status) {
-            "Berat badan sangat kurang (severely underweight)" => "Berat badan sangat rendah dibandingkan umur, menunjukkan kemungkinan kekurangan gizi berat",
-            "Berat badan kurang (underweight)" => "Berat badan kurang dibandingkan umur, mengindikasikan adanya masalah gizi",
-            "Berat badan normal" => "Berat badan sesuai dengan umur",
-            "Risiko berat badan lebih" => "Berat badan cenderung melebihi standar umur dan berisiko menjadi gizi lebih",
+            "Berat badan sangat kurang (severely underweight)" =>
+            "
+            berat badan anak sangat rendah dibandingkan standar usianya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan kemungkinan kekurangan gizi berat dan perlu penanganan segera.",
+
+            "Berat badan kurang (underweight)" =>
+            "
+            berat badan anak berada di bawah standar usianya (z-score antara -3 SD hingga -2 SD). Hal ini mengindikasikan adanya masalah gizi yang perlu diperhatikan.",
+
+            "Berat badan normal" =>
+            "
+            berat badan anak berada dalam rentang normal sesuai standar WHO (z-score antara -2 SD hingga +1 SD), menunjukkan kondisi gizi yang baik.",
+
+            "Risiko berat badan lebih" =>
+            "
+            berat badan anak berada di atas standar usianya (z-score > +1 SD), sehingga berisiko mengalami kelebihan berat badan jika tidak dikontrol.",
+
             default => "-",
         };
     }
@@ -282,10 +296,18 @@ class DeteksiController extends Controller
     private function keteranganTBU($status)
     {
         return match ($status) {
-            "Sangat pendek (severely stunted)" => "Tinggi badan sangat rendah dibandingkan umur, menunjukkan kemungkinan kekurangan gizi kronis",
-            "Pendek (stunted)" => "Tinggi badan kurang dibandingkan umur, mengindikasikan risiko stunting",
-            "Normal" => "Tinggi badan sesuai dengan umur",
-            "Tinggi" => "Tinggi badan lebih tinggi dibandingkan rata-rata umur",
+            "Sangat pendek (severely stunted)" =>
+            "tinggi badan anak sangat rendah dibandingkan standar usianya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan stunting berat akibat kekurangan gizi kronis dalam jangka panjang.",
+
+            "Pendek (stunted)" =>
+            "tinggi badan anak berada di bawah standar usianya (z-score antara -3 SD hingga -2 SD). Anak terindikasi stunting yang menandakan adanya gangguan pertumbuhan kronis.",
+
+            "Normal" =>
+            "tinggi badan anak berada dalam rentang normal sesuai standar WHO (z-score antara -2 SD hingga +3 SD), menunjukkan pertumbuhan yang baik.",
+
+            "Tinggi" =>
+            "tinggi badan anak berada di atas rata-rata usianya (z-score > +3 SD), namun masih perlu dipantau agar tetap proporsional.",
+
             default => "-",
         };
     }
@@ -293,12 +315,24 @@ class DeteksiController extends Controller
     private function keteranganBBTB($status)
     {
         return match ($status) {
-            "Gizi buruk (severely wasted)" => "Berat badan sangat rendah dibandingkan tinggi badan (gizi buruk akut)",
-            "Gizi kurang (wasted)" => "Berat badan kurang dibandingkan tinggi badan",
-            "Gizi baik (normal)" => "Berat badan sesuai dengan tinggi badan",
-            "Berisiko gizi lebih (possible risk of overweight)" => "Berat badan mulai melebihi proporsi ideal terhadap tinggi badan",
-            "Gizi lebih (overweight)" => "Berat badan lebih dibandingkan tinggi badan",
-            "Obesitas (obese)" => "Berat badan sangat berlebih dibandingkan tinggi badan (obesitas)",
+            "Gizi buruk (severely wasted)" =>
+            "berat badan anak sangat rendah dibandingkan tinggi badannya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan gizi buruk akut yang memerlukan penanganan segera.",
+
+            "Gizi kurang (wasted)" =>
+            "berat badan anak berada di bawah standar tinggi badannya (z-score antara -3 SD hingga -2 SD), menandakan adanya kekurangan gizi akut.",
+
+            "Gizi baik (normal)" =>
+            "berat badan anak proporsional dengan tinggi badannya (z-score antara -2 SD hingga +1 SD), menunjukkan kondisi gizi yang baik.",
+
+            "Berisiko gizi lebih (possible risk of overweight)" =>
+            " berat badan anak mulai melebihi proporsi ideal terhadap tinggi badan (z-score > +1 SD), sehingga berisiko mengalami kelebihan berat badan.",
+
+            "Gizi lebih (overweight)" =>
+            "berat badan anak lebih tinggi dibandingkan standar tinggi badannya (z-score > +2 SD), menunjukkan kondisi gizi lebih.",
+
+            "Obesitas (obese)" =>
+            "berat badan anak sangat berlebih dibandingkan tinggi badannya (z-score > +3 SD), termasuk dalam kategori obesitas dan perlu perhatian khusus.",
+
             default => "-",
         };
     }
