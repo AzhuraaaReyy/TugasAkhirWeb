@@ -52,6 +52,7 @@ class ChatbotEngine
                 'grafik_analisis' => $this->handleGrafikAnalysis($deteksi),
                 'tanya_hasil' => $this->handleHasilTerakhir($deteksi),
                 'tanya_riwayat' => $this->handleRiwayatPertumbuhan($deteksi),
+                'tanya_perkembangan' => $this->handlePerkembanganAnak($deteksi),
                 default => null,
             };
         }
@@ -1131,7 +1132,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             ];
         }
 
-        $message = "📊 Riwayat Pertumbuhan Anak\n";
+        $message = " Riwayat Pertumbuhan Anak\n";
         $message .= "Berikut data pengukuran dari waktu ke waktu:\n\n";
 
         $message .= "```\n";
@@ -1159,7 +1160,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
         $message .= "```";
 
-        $message .= "\n\n💡 Keterangan:\n";
+        $message .= "\n\n Keterangan:\n";
         $message .= "- TB = Tinggi Badan\n";
         $message .= "- BB = Berat Badan\n";
         $message .= "- TB/U = Tinggi menurut umur (stunting)\n";
@@ -1188,5 +1189,308 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 ],
             ],
         ];
+    }
+
+    private function handlePerkembanganAnak($deteksi): array
+    {
+        $perkembangan = $deteksi->balita->deteksis()
+            ->orderBy('tgl_deteksi', 'asc')
+            ->get();
+
+        // ======================
+        // VALIDASI MINIMAL DATA
+        // ======================
+        if ($perkembangan->count() < 2) {
+            return [
+                'status'  => 'success',
+                'tren'    => null,
+                'message' => 'Data pemeriksaan anak masih belum cukup untuk melihat perkembangan. Silakan lakukan pemeriksaan secara rutin terlebih dahulu.',
+                'type'    => 'perkembangan',
+                'topic'   => 'riwayat_perkembangan',
+            ];
+        }
+
+        // ======================
+        // AMBIL DATA TERAKHIR
+        // ======================
+        $last = $perkembangan->last();
+        $prev = $perkembangan->slice(-2, 1)->first();
+
+        // ======================
+        // DATA FISIK
+        // ======================
+        $bb_last = (float) $last->berat;
+        $bb_prev = (float) $prev->berat;
+
+        $tb_last = (float) $last->tinggi;
+        $tb_prev = (float) $prev->tinggi;
+
+        $selisih_bb = round($bb_last - $bb_prev, 2);
+        $selisih_tb = round($tb_last - $tb_prev, 2);
+
+        // ======================
+        // Z-SCORE DARI DB
+        // ======================
+        $z_tbu_last  = isset($last->zscore_tb_u)  ? (float) $last->zscore_tb_u  : null;
+        $z_bbu_last  = isset($last->zscore_bb_u)  ? (float) $last->zscore_bb_u  : null;
+        $z_bbtb_last = isset($last->zscore_tb_bb) ? (float) $last->zscore_tb_bb : null;
+
+        $z_tbu_prev  = isset($prev->zscore_tb_u)  ? (float) $prev->zscore_tb_u  : null;
+        $z_bbu_prev  = isset($prev->zscore_bb_u)  ? (float) $prev->zscore_bb_u  : null;
+        $z_bbtb_prev = isset($prev->zscore_tb_bb) ? (float) $prev->zscore_tb_bb : null;
+
+        // ======================
+        // STATUS DARI DB
+        // ======================
+        $status_tbu  = $last->status_tb_u  ?? '-';
+        $status_bbu  = $last->status_bb_u  ?? '-';
+        $status_bbtb = $last->status_tb_bb ?? '-';
+
+        // ======================
+        // PILIH METODE
+        // ======================
+        $metode = strtolower((string) ($last->metode ?? ''));
+
+        $metodeMap = [
+            'stunting'    => ['z' => $z_tbu_last,  'z_prev' => $z_tbu_prev,  'status' => $status_tbu,  'label' => 'TB/U (Stunting)'],
+            'tb_u'        => ['z' => $z_tbu_last,  'z_prev' => $z_tbu_prev,  'status' => $status_tbu,  'label' => 'TB/U (Stunting)'],
+            'underweight' => ['z' => $z_bbu_last,  'z_prev' => $z_bbu_prev,  'status' => $status_bbu,  'label' => 'BB/U (Underweight)'],
+            'bb_u'        => ['z' => $z_bbu_last,  'z_prev' => $z_bbu_prev,  'status' => $status_bbu,  'label' => 'BB/U (Underweight)'],
+            'wasting'     => ['z' => $z_bbtb_last, 'z_prev' => $z_bbtb_prev, 'status' => $status_bbtb, 'label' => 'BB/TB (Wasting)'],
+            'tb_bb'       => ['z' => $z_bbtb_last, 'z_prev' => $z_bbtb_prev, 'status' => $status_bbtb, 'label' => 'BB/TB (Wasting)'],
+        ];
+
+        $picked      = $metodeMap[$metode] ?? null;
+        $zscore      = $picked['z']      ?? null;
+        $zscore_prev = $picked['z_prev'] ?? null;
+        $status      = $picked['status'] ?? '-';
+        $label       = $picked['label']  ?? 'Tidak diketahui';
+
+        $isBBTB = in_array($metode, ['wasting', 'tb_bb'], true);
+
+        // ======================
+        // HITUNG TREN Z-SCORE
+        // ======================
+        $selisih_z = null;
+
+        if ($zscore !== null && $zscore_prev !== null) {
+            $selisih_z = round($zscore - $zscore_prev, 2);
+            $threshold = 0.3;
+
+            if ($isBBTB) {
+                $delta_abs = abs($zscore) - abs($zscore_prev);
+                if ($delta_abs <= -$threshold)      $tren = 'membaik';
+                elseif ($delta_abs >=  $threshold)  $tren = 'memburuk';
+                else                                $tren = 'stagnan';
+            } else {
+                if ($selisih_z >=  $threshold)      $tren = 'membaik';
+                elseif ($selisih_z <= -$threshold)  $tren = 'memburuk';
+                else                                $tren = 'stagnan';
+            }
+        } else {
+            // fallback ke fisik
+            if ($selisih_bb > 0 && $selisih_tb > 0)        $tren = 'membaik';
+            elseif ($selisih_bb < 0 && $selisih_tb < 0)    $tren = 'memburuk';
+            elseif ($selisih_bb == 0 && $selisih_tb == 0)  $tren = 'stagnan';
+            else                                           $tren = 'campuran';
+        }
+
+        // ======================
+        // CEK ABNORMAL
+        // ======================
+        $isAbnormal = false;
+
+        if ($zscore !== null) {
+            $isAbnormal = $isBBTB
+                ? ($zscore < -2 || $zscore > 2)
+                : ($zscore < -2);
+        }
+
+        // ======================
+        // FORMAT FISIK
+        // ======================
+        $bb_text = $selisih_bb > 0
+            ? "naik {$selisih_bb} kg (dari {$bb_prev} kg menjadi {$bb_last} kg)"
+            : ($selisih_bb < 0
+                ? "turun " . abs($selisih_bb) . " kg (dari {$bb_prev} kg menjadi {$bb_last} kg)"
+                : "tidak berubah ({$bb_last} kg)");
+
+        $tb_text = $selisih_tb > 0
+            ? "bertambah {$selisih_tb} cm (dari {$tb_prev} cm menjadi {$tb_last} cm)"
+            : ($selisih_tb < 0
+                ? "berkurang " . abs($selisih_tb) . " cm (dari {$tb_prev} cm menjadi {$tb_last} cm)"
+                : "tidak berubah ({$tb_last} cm)");
+
+        $z_text      = $zscore      !== null ? number_format($zscore, 2)      : '-';
+        $z_text_prev = $zscore_prev !== null ? number_format($zscore_prev, 2) : null;
+
+        // ======================
+        // PERUBAHAN Z
+        // ======================
+        $z_change_text = '';
+        if ($selisih_z !== null && $z_text_prev !== null) {
+            if ($selisih_z > 0) {
+                $z_change_text = "Z-Score naik dari {$z_text_prev} menjadi {$z_text}.";
+            } elseif ($selisih_z < 0) {
+                $z_change_text = "Z-Score turun dari {$z_text_prev} menjadi {$z_text}.";
+            } else {
+                $z_change_text = "Z-Score tetap di {$z_text}.";
+            }
+        }
+
+        // ======================
+        // HEADLINE (INTENT FRIENDLY)
+        // ======================
+        switch ($tren) {
+            case 'membaik':
+                $headline = "Perkembangan anak menunjukkan peningkatan yang baik.";
+                break;
+            case 'stagnan':
+                $headline = "Perkembangan anak cenderung stabil (belum ada peningkatan signifikan).";
+                break;
+            case 'memburuk':
+                $headline = "Perkembangan anak menunjukkan penurunan.";
+                break;
+            default:
+                $headline = "Perkembangan anak menunjukkan kondisi yang bervariasi.";
+                break;
+        }
+
+        // ======================
+        // INTERPRETASI
+        // ======================
+        // ======================
+        // 🔥 INTERPRETASI DETAIL
+        // ======================
+        if ($zscore === null) {
+            $interpretasi = "Data Z-Score belum lengkap untuk menentukan kondisi gizi anak.";
+        } else {
+
+            // ======================
+            // 🔥 BB/TB (WASTING)
+            // ======================
+            if ($isBBTB) {
+
+                $status = $this->deteksiBBTB($zscore);
+
+                if ($zscore < -3) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, kondisi ini menunjukkan anak mengalami kekurangan gizi akut yang berat dan perlu penanganan segera.";
+                } elseif ($zscore < -2) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak mengalami kekurangan gizi akut, sehingga perlu peningkatan asupan makanan bergizi.";
+                } elseif ($zscore <= 1) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, berat badan anak sudah sesuai dengan tinggi badan.";
+                } elseif ($zscore <= 2) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak mulai berisiko mengalami kelebihan berat badan, perlu pengaturan pola makan.";
+                } elseif ($zscore <= 3) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak sudah mengalami kelebihan berat badan.";
+                } else {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak mengalami obesitas, perlu perhatian khusus pada pola makan dan aktivitas.";
+                }
+
+                // ======================
+                // 🔥 TB/U (STUNTING)
+                // ======================
+            } elseif (in_array($metode, ['stunting', 'tb_u'])) {
+
+                $status = $this->deteksiTBU($zscore);
+
+                if ($zscore < -3) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, ini menunjukkan kondisi stunting berat yang perlu perhatian serius.";
+                } elseif ($zscore < -2) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak mengalami stunting, perlu perbaikan gizi dalam jangka panjang.";
+                } elseif ($zscore <= 3) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, tinggi badan anak sesuai dengan usianya.";
+                } else {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak memiliki tinggi badan di atas rata-rata.";
+                }
+
+                // ======================
+                // 🔥 BB/U (UNDERWEIGHT)
+                // ======================
+            } elseif (in_array($metode, ['underweight', 'bb_u'])) {
+
+                $status = $this->deteksiBBU($zscore);
+
+                if ($zscore < -3) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, kondisi ini menunjukkan anak sangat kekurangan berat badan dan perlu intervensi segera.";
+                } elseif ($zscore < -2) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak mengalami kekurangan berat badan, perlu peningkatan asupan gizi.";
+                } elseif ($zscore <= 2) {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, berat badan anak sesuai dengan usia.";
+                } else {
+                    $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak berisiko mengalami berat badan berlebih.";
+                }
+            } else {
+
+                $interpretasi = $isAbnormal
+                    ? "Kondisi gizi anak masih perlu perhatian."
+                    : "Kondisi pertumbuhan anak berada dalam batas normal.";
+            }
+        }
+
+        // ======================
+        // SARAN
+        // ======================
+        if ($tren === 'membaik' && !$isAbnormal) {
+            $saran = "Pertahankan pola makan bergizi seimbang dan pemeriksaan rutin.";
+        } elseif ($tren === 'membaik') {
+            $saran = "Perbaikan sudah terlihat, namun perlu konsistensi perbaikan gizi.";
+        } elseif ($tren === 'stagnan') {
+            $saran = "Perlu peningkatan kualitas asupan gizi dan pemantauan rutin.";
+        } else {
+            $saran = "Segera lakukan intervensi gizi dan konsultasi tenaga kesehatan.";
+        }
+
+        // ======================
+        // FINAL MESSAGE
+        // ======================
+        $message = trim(
+            "{$headline}\n"
+                . "Berat badan {$bb_text} dan tinggi badan {$tb_text}.\n"
+                . "Berdasarkan {$label}, status anak adalah {$status} (Z-Score {$z_text}).\n"
+                . ($z_change_text ? "{$z_change_text}\n" : "")
+                . "{$interpretasi}\n"
+                . "{$saran}"
+        );
+
+        return [
+            'status' => 'success',
+            'tren'   => $tren,
+            'zscore' => $zscore,
+            'status_gizi' => $status,
+            'message' => $message,
+            'type'    => 'perkembangan',
+            'topic'   => 'riwayat_perkembangan',
+        ];
+    }
+
+
+    private function deteksiBBU($z)
+    {
+        if ($z < -3) return "Berat badan sangat kurang (severely underweight)";
+        if ($z >= -3 && $z < -2) return "Berat badan kurang (underweight)";
+        if ($z >= -2 && $z <= 2) return "Berat badan normal";
+        if ($z > 2) return "Risiko berat badan lebih";
+        return "-";
+    }
+
+    private function deteksiTBU($z)
+    {
+        if ($z < -3) return "Sangat pendek (severely stunted)";
+        if ($z >= -3 && $z < -2) return "Pendek (stunted)";
+        if ($z >= -2 && $z <= 3) return "Normal";
+        if ($z > 3) return "Tinggi";
+        return "-";
+    }
+
+    private function deteksiBBTB($z)
+    {
+        if ($z < -3) return "Gizi buruk (severely wasted)";
+        if ($z >= -3 && $z < -2) return "Gizi kurang (wasted)";
+        if ($z >= -2 && $z <= 1) return "Gizi baik (normal)";
+        if ($z > 1 && $z <= 2) return "Berisiko gizi lebih (possible risk of overweight)";
+        if ($z > 2 && $z <= 3) return "Gizi lebih (overweight)";
+        if ($z > 3) return "Obesitas (obese)";
+        return "-";
     }
 }
