@@ -555,6 +555,18 @@ export default function DeteksiDini() {
                                     {c.data.message}
                                   </Typewriter>
                                 )}
+                              {c.data?.type === "monitoring" &&
+                                c.data?.message && (
+                                  <Typewriter speed={15}>
+                                    {c.data.message}
+                                  </Typewriter>
+                                )}
+                              {c.data?.type === "riwayat" &&
+                                c.data?.message && (
+                                  <Typewriter speed={15}>
+                                    {c.data.message}
+                                  </Typewriter>
+                                )}
 
                               {/* KNOWLEDGE BASE */}
                               {c.data?.type === "knowledge_base" && (
