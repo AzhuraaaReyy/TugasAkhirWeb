@@ -142,15 +142,15 @@ export default function DeteksiDini() {
               ? `\n Untuk membantu memperbaiki kondisi ini, Bunda dapat melakukan beberapa langkah berikut:\n${rekomendasi.map((r) => "  • " + r).join("\n")}\n`
               : ""
           }\nSilakan pilih pertanyaan di bawah, atau ketik pertanyaan Bunda sendiri! `,
-          // 🔥 BARU: suggested questions awal
+         
           suggested_questions: [
             {
-              label: "🔍 Bagaimana kondisi anak saya?",
+              label: "Bagaimana kondisi anak saya?",
               type: "ask",
               question: "Bagaimana kondisi anak saya?",
             },
             {
-              label: "📊 Tampilkan grafik pertumbuhan anak",
+              label: "Tampilkan grafik pertumbuhan anak",
               type: "ask",
               question: "tampilkan grafik",
             },
@@ -562,6 +562,12 @@ export default function DeteksiDini() {
                                   </Typewriter>
                                 )}
                               {c.data?.type === "riwayat" &&
+                                c.data?.message && (
+                                  <Typewriter speed={15}>
+                                    {c.data.message}
+                                  </Typewriter>
+                                )}
+                              {c.data?.type === "perkembangan" &&
                                 c.data?.message && (
                                   <Typewriter speed={15}>
                                     {c.data.message}

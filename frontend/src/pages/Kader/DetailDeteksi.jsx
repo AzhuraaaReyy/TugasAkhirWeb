@@ -247,7 +247,92 @@ export default function DetailDeteksi() {
               </span>
             </CardStatus>
           </div>
+          <div className="bg-white rounded-2xl shadow p-6 mt-6 border">
+            <h3 className="text-lg font-bold mb-4 text-gray-700 text-center">
+              Indikator Status Gizi
+            </h3>
 
+            <div className="grid md:grid-cols-3 gap-6 text-sm">
+              {/* TB/U */}
+              <div>
+                <h4 className="font-semibold mb-2 text-gray-600">
+                  Tinggi Badan / Umur (TB/U)
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-red-500"></span>
+                    Sangat Pendek
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-yellow-400"></span>
+                    Pendek
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-green-500"></span>
+                    Normal
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-blue-500"></span>
+                    Tinggi
+                  </span>
+                </div>
+              </div>
+
+              {/* BB/U */}
+              <div>
+                <h4 className="font-semibold mb-2 text-gray-600">
+                  Berat Badan / Umur (BB/U)
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-red-500"></span>
+                    Sangat Kurang
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-yellow-400"></span>
+                    Kurang
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-green-500"></span>
+                    Normal
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-blue-500"></span>
+                    Risiko Lebih
+                  </span>
+                </div>
+              </div>
+
+              {/* BB/TB */}
+              <div>
+                <h4 className="font-semibold mb-2 text-gray-600">
+                  Berat Badan / Tinggi Badan (BB/TB)
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-red-500"></span>
+                    Gizi Buruk
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-yellow-400"></span>
+                    Gizi Kurang
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-green-500"></span>
+                    Gizi Baik
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-blue-500"></span>
+                    Gizi Lebih
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-purple-500"></span>
+                    Obesitas
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
           {/* ================= GRAFIK ================= */}
           <div className="grid md:grid-cols-2 gap-8">
             <div className="bg-white rounded-3xl shadow-lg p-6">
@@ -616,6 +701,7 @@ export default function DetailDeteksi() {
               </div>
             </div>
           </div>
+
           {/* ================= ALERT ================= */}
           <EarlyWarning
             berat_sekarang={form.berat_sekarang}
@@ -666,7 +752,79 @@ export default function DetailDeteksi() {
               </p>
             </div>
           </div>
+          <div className="bg-white rounded-3xl shadow-lg p-6 mt-6 border">
+            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+              Edukasi Status Gizi Anak
+            </h2>
 
+            <div className="grid md:grid-cols-3 gap-6 text-sm">
+              {/* STUNTING */}
+              <div className="bg-blue-50 p-4 rounded-xl border">
+                <h3 className="font-bold text-blue-700 mb-2">
+                  📏 Stunting (TB/U)
+                </h3>
+                <p className="text-gray-700 mb-2">
+                  Stunting adalah kondisi anak memiliki tinggi badan lebih
+                  pendek dari standar usianya akibat kekurangan gizi kronis
+                  dalam jangka waktu lama.
+                </p>
+
+                <ul className="list-disc pl-4 text-gray-600 space-y-1">
+                  <li>Penyebab: kekurangan gizi, infeksi berulang</li>
+                  <li>Dampak: gangguan perkembangan otak & fisik</li>
+                  <li>Pencegahan: gizi seimbang & pemantauan rutin</li>
+                </ul>
+
+                <div className="mt-2 text-xs text-gray-500">
+                  Normal: ≥ -2 SD | Stunting: &lt; -2 SD
+                </div>
+              </div>
+
+              {/* WASTING */}
+              <div className="bg-orange-50 p-4 rounded-xl border">
+                <h3 className="font-bold text-orange-700 mb-2">
+                  ⚖️ Wasting (BB/TB)
+                </h3>
+                <p className="text-gray-700 mb-2">
+                  Wasting adalah kondisi berat badan anak terlalu rendah
+                  dibandingkan tinggi badannya, biasanya terjadi karena
+                  kekurangan gizi akut.
+                </p>
+
+                <ul className="list-disc pl-4 text-gray-600 space-y-1">
+                  <li>Penyebab: kurang makan mendadak, sakit</li>
+                  <li>Dampak: tubuh lemah & risiko infeksi tinggi</li>
+                  <li>Perlu penanganan cepat</li>
+                </ul>
+
+                <div className="mt-2 text-xs text-gray-500">
+                  Normal: ≥ -2 SD | Wasting: &lt; -2 SD
+                </div>
+              </div>
+
+              {/* UNDERWEIGHT */}
+              <div className="bg-purple-50 p-4 rounded-xl border">
+                <h3 className="font-bold text-purple-700 mb-2">
+                  ⚖️ Underweight (BB/U)
+                </h3>
+                <p className="text-gray-700 mb-2">
+                  Underweight adalah kondisi berat badan anak lebih rendah dari
+                  standar usianya, bisa disebabkan oleh gizi kurang atau riwayat
+                  penyakit.
+                </p>
+
+                <ul className="list-disc pl-4 text-gray-600 space-y-1">
+                  <li>Penyebab: asupan kurang, infeksi</li>
+                  <li>Dampak: pertumbuhan tidak optimal</li>
+                  <li>Perlu evaluasi pola makan & kesehatan</li>
+                </ul>
+
+                <div className="mt-2 text-xs text-gray-500">
+                  Normal: ≥ -2 SD | Kurang: &lt; -2 SD
+                </div>
+              </div>
+            </div>
+          </div>
           {/* Rekomendasi */}
           {/* Keterangan dan Rekomendasi */}
           <div className="mt-6 grid md:grid-cols-1 gap-6">
