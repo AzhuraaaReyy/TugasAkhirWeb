@@ -9,3 +9,6 @@ Masalah str_contains sekarang: hanya cari 1 kata, tidak ada prioritas, tidak ada
 
 2. Context Memory & Conversation State
 Sekarang chatbotmu "amnesia" — setiap request lupa percakapan sebelumnya. Kita bikin session-based context memory.
+
+https://claude.ai/chat/29addfff-63cf-49f8-8995-7567fd0950d0
+https://chatgpt.com/c/69e9f05e-e524-839b-a16a-1a54a162568e

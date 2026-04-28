@@ -20,7 +20,7 @@ class IntentClassifier
         'tanya_solusi' => [
             'patterns' => [
                 'apa yang harus' => 10,
-                
+
                 'solusi' => 8,
                 'cara mengatasi' => 9,
                 'rekomendasi' => 7,
@@ -29,7 +29,7 @@ class IntentClassifier
             ],
             'required_any' => ['harus', 'solusi', 'cara', 'atasi', 'lakukan', 'tindakan', 'rekomendasi'],
         ],
-        
+
         'tanya_makanan' => [
             'patterns' => [
                 'menu mpasi' => 10,
@@ -141,6 +141,43 @@ class IntentClassifier
                 'faktor',
                 'penyebabnya',
                 'kenapa anak bisa stunting',
+            ],
+        ],
+        'tanya_hasil' => [
+            'patterns' => [
+                'pengukuran terakhir' => 10,
+                'hasil pengukuran' => 9,
+                'pengukuran anak terakhir' => 10,
+                'hasil terakhir anak' => 10,
+                'data terakhir anak' => 9,
+                'hasil pemeriksaan terakhir' => 9,
+            ],
+
+            'required_any' => [
+                'hasil',
+                'pengukuran',
+                'terakhir',
+                'data terakhir',
+            ],
+        ],
+        'tanya_riwayat' => [
+            'patterns' => [
+                'riwayat' => 10,
+                'riwayat pertumbuhan' => 10,
+                'perkembangan' => 9,
+                'perkembangan anak' => 10,
+                'perkembangan anak saya' => 10,
+                'data pertumbuhan' => 9,
+                'histori pengukuran' => 9,
+                'pengukuran dari waktu ke waktu' => 10,
+            ],
+
+            'required_any' => [
+                'riwayat',
+                'perkembangan',
+                'pengukuran',
+                'history',
+                'grafik',
             ],
         ],
     ];

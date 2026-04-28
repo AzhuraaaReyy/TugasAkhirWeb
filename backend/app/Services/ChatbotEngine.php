@@ -50,6 +50,8 @@ class ChatbotEngine
                 'sapaan'          => $this->handleSapaan($text, $session),
                 'grafik'          => $this->handleGrafik($deteksi),
                 'grafik_analisis' => $this->handleGrafikAnalysis($deteksi),
+                'tanya_hasil' => $this->handleHasilTerakhir($deteksi),
+                'tanya_riwayat' => $this->handleRiwayatPertumbuhan($deteksi),
                 default => null,
             };
         }
@@ -98,7 +100,7 @@ class ChatbotEngine
                 $status = $deteksi->status_tb_u;
                 $zscore = $deteksi->zscore_tb_u;
                 $penjelasan = $this->keteranganTBU($status);
-                $saran = $this->narasiTBU($status, $zscore);
+                $saran = $this->narasiTBU($status);
                 $keteranganWHO = $this->keteranganWHOByMetode($metode);
                 break;
 
@@ -106,7 +108,7 @@ class ChatbotEngine
                 $status = $deteksi->status_tb_bb;
                 $zscore = $deteksi->zscore_tb_bb;
                 $penjelasan = $this->keteranganBBTB($status);
-                $saran = $this->narasiBBTB($status, $zscore);
+                $saran = $this->narasiBBTB($status);
                 $keteranganWHO = $this->keteranganWHOByMetode($metode);
                 break;
 
@@ -114,7 +116,7 @@ class ChatbotEngine
                 $status = $deteksi->status_bb_u;
                 $zscore = $deteksi->zscore_bb_u;
                 $penjelasan = $this->keteranganBBU($status);
-                $saran = $this->narasiBBU($status, $zscore);
+                $saran = $this->narasiBBU($status);
                 $keteranganWHO = $this->keteranganWHOByMetode($metode);
                 break;
 
@@ -885,7 +887,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             default => "-",
         };
     }
-    private function narasiBBU($status, $zscore)
+    private function narasiBBU($status)
     {
         return match ($status) {
 
@@ -904,7 +906,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             default => "-",
         };
     }
-    private function narasiBBTB($status, $zscore)
+    private function narasiBBTB($status)
     {
         return match ($status) {
 
@@ -1032,5 +1034,159 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         }
 
         return null;
+    }
+    private function handleHasilTerakhir($deteksi): array
+    {
+        // ambil data terakhir dari relasi balita (history pengukuran)
+        $lastData = $deteksi;
+
+        // format tanggal
+        $tanggal = \Carbon\Carbon::parse($lastData->tgl_deteksi)
+            ->format('d-m-Y');
+
+        // ambil metode
+        $metode = $deteksi->metode ?? 'stunting';
+
+        // ambil status & zscore sesuai metode
+        switch ($metode) {
+            case 'stunting':
+                $status = $lastData->status_tb_u;
+                $zscore = $lastData->zscore_tb_u;
+                $penjelasan = $this->keteranganTBU($status);
+                break;
+
+            case 'wasting':
+                $status = $lastData->status_tb_bb;
+                $zscore = $lastData->zscore_tb_bb;
+                $penjelasan = $this->keteranganBBU($status);
+                break;
+
+            case 'underweight':
+                $status = $lastData->status_bb_u;
+                $zscore = $lastData->zscore_bb_u;
+                $penjelasan = $this->keteranganBBTB($status);
+                break;
+
+            default:
+                $status = '-';
+                $zscore = '-';
+                $penjelasan = '-';
+                break;
+        }
+
+        // message utama
+        $message  = " Baik bunda, dari data yang diperoleh berikut data hasil pengukuran terakhir anak bunda:\n\n";
+        $message .= "-) Tanggal pengukuran: {$tanggal}\n";
+        $message .= "-) Tinggi badan: {$lastData->tinggi} cm\n";
+        $message .= "-) Berat badan: {$lastData->berat} kg\n";
+        $message .= "-) Status gizi: {$status}\n";
+        $message .= "-) Z-Score: {$zscore}\n\n";
+        $message .= "-) Kesimpulan: {$penjelasan}\n\n";
+
+
+
+
+        return [
+            'status' => 'success',
+            'type'   => 'monitoring',
+            'topic'  => 'hasil_terakhir',
+
+            'message' => $message,
+
+            'data' => [
+                'tanggal' => $tanggal,
+                'tinggi'  => $lastData->tinggi,
+                'berat'   => $lastData->berat,
+                'status'  => $status,
+                'zscore'  => $zscore,
+                'penjelasan' => $penjelasan
+            ],
+
+            'suggested_questions' => [
+                [
+                    'label' => 'Apakah ini berbahaya?',
+                    'type' => 'ask',
+                    'question' => 'Apakah kondisi ini berbahaya?'
+                ],
+                [
+                    'label' => 'Apa yang harus dilakukan?',
+                    'type' => 'ask',
+                    'question' => 'Apa solusi untuk kondisi ini?'
+                ],
+            ],
+        ];
+    }
+    private function handleRiwayatPertumbuhan($deteksi): array
+    {
+        $riwayat = $deteksi->balita->deteksis()
+            ->orderBy('tgl_deteksi', 'asc')
+            ->get();
+
+        if ($riwayat->isEmpty()) {
+            return [
+                'status' => 'error',
+                'type' => 'riwayat',
+                'topic' => 'riwayat_pertumbuhan',
+                'message' => "Data riwayat pengukuran belum tersedia.",
+            ];
+        }
+
+        $message = "📊 Riwayat Pertumbuhan Anak\n";
+        $message .= "Berikut data pengukuran dari waktu ke waktu:\n\n";
+
+        $message .= "```\n";
+        $message .= str_pad("Tanggal", 12)
+            . str_pad("TB(cm)", 10)
+            . str_pad("BB(kg)", 10)
+            . str_pad("TB/U", 20)
+            . str_pad("BB/TB", 20)
+            . str_pad("BB/U", 20) . "\n";
+
+        $message .= str_repeat("-", 92) . "\n";
+
+        foreach ($riwayat as $item) {
+
+            $tgl = \Carbon\Carbon::parse($item->tgl_deteksi)
+                ->format('d-m-Y');
+
+            $message .= str_pad($tgl, 12)
+                . str_pad($item->tinggi, 10)
+                . str_pad($item->berat, 10)
+                . str_pad($item->status_tb_u, 20)
+                . str_pad($item->status_tb_bb, 20)
+                . str_pad($item->status_bb_u, 20) . "\n";
+        }
+
+        $message .= "```";
+
+        $message .= "\n\n💡 Keterangan:\n";
+        $message .= "- TB = Tinggi Badan\n";
+        $message .= "- BB = Berat Badan\n";
+        $message .= "- TB/U = Tinggi menurut umur (stunting)\n";
+        $message .= "- BB/TB = Berat menurut tinggi (wasting)\n";
+        $message .= "- BB/U = Berat menurut umur\n";
+
+        return [
+            'status' => 'success',
+            'type' => 'riwayat',
+            'topic' => 'riwayat_pertumbuhan',
+
+            'message' => $message,
+
+            'data' => $riwayat,
+
+            'suggested_questions' => [
+                [
+                    'label' => 'Apakah semua indikator normal?',
+                    'type' => 'ask',
+                    'question' => 'Apakah semua status gizi anak saya normal?'
+                ],
+                [
+                    'label' => 'Bagaimana tren pertumbuhannya?',
+                    'type' => 'ask',
+                    'question' => 'Bagaimana tren pertumbuhan anak saya?'
+                ],
+            ],
+        ];
     }
 }
