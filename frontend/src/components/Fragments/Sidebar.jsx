@@ -2,7 +2,7 @@ import { Navigate, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { kaderMenu, orangTuaMenu, adminMenu } from "../Menu";
 import { useNavigate } from "react-router-dom";
-import gustimg from "../../assets/images/Guest.jpg";
+
 const Sidebar = ({ open }) => {
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
@@ -29,14 +29,15 @@ const Sidebar = ({ open }) => {
     <aside
       className={`fixed left-0 top-0 h-screen z-40 transition-all duration-300
       ${open ? "w-64" : "w-20"}
-      bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950
+      bg-gray-50
       text-white shadow-2xl flex flex-col`}
     >
       {/* ===== Logo ===== */}
-      <div className="h-16 flex items-center justify-center border-b border-white/10">
-        <h1 className="font-bold tracking-wide text-xl text-indigo-400">
-          {open ? "StuntingCare" : "SC"}
+      <div className="h-24 flex items-center justify-center border-b border-white/10 flex-col mt-6">
+        <h1 className="font-bold tracking-wide text-xl text-emerald-600">
+          {open ? "GrowthChildCare" : "GC"}
         </h1>
+        <span className="font-bold tracking-wide text-sm text-emerald-500">{open ? "Monitoring Sistem" : ""}</span>
       </div>
 
       {/* ===== Profile ===== */}
@@ -45,29 +46,11 @@ const Sidebar = ({ open }) => {
           !open && "justify-center"
         }`}
       >
-        <div className="relative">
-          <img
-            src={gustimg}
-            alt="profile"
-            className="w-11 h-11 object-cover rounded-full ring-2 ring-indigo-500"
-          />
-          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-slate-900 rounded-full"></span>
-        </div>
-
-        {open && (
-          <div className="flex flex-col leading-tight">
-            <span className="font-semibold text-lg">
-              {user.name || "User"}
-            </span>
-            <span className="text-sm text-slate-400 capitalize">
-              {user.role} Posyandu
-            </span>
-          </div>
-        )}
+       
       </div>
 
       {/* ===== Menu ===== */}
-      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto -mt-11">
         {menu.map((item) => (
           <NavLink
             key={item.id}
@@ -77,8 +60,8 @@ const Sidebar = ({ open }) => {
               
               ${
                 isActive
-                  ? "bg-indigo-500/20 text-indigo-400 shadow-inner zoom-in"
-                  : "text-slate-400 hover:bg-white/5 hover:text-white zoom-in"
+                  ? "bg-green-100 text-emerald-700 shadow-inner zoom-in"
+                  : "text-gray-600 hover:bg-emerald-700 hover:text-white zoom-in"
               }
 
               ${!open && "justify-center"}`
@@ -86,10 +69,10 @@ const Sidebar = ({ open }) => {
           >
             {/* Active Indicator */}
             <span
-              className={`absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-lg transition-all
+              className={`absolute right-0 top-1/2 -translate-y-1/2 h-10 w-1 rounded-r-lg transition-all
               ${
                 window.location.pathname === item.link
-                  ? "bg-indigo-500"
+                  ? "bg-emerald-500"
                   : "bg-transparent"
               }`}
             />

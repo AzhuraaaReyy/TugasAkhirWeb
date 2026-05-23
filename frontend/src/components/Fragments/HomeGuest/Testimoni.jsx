@@ -14,7 +14,7 @@ import "swiper/css/pagination";
 import { useState } from "react";
 import TestimoniCard from "../../Elements/Card/TestimoniCard";
 import testimoni from "../../../data/testimoni";
-import FormTestimoni from "../FormTestimoni";
+import FormTestimoni from "../Form/FormTestimoni";
 import { useRef } from "react";
 
 const Testimoni = () => {

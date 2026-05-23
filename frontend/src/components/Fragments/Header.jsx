@@ -1,7 +1,7 @@
 import { Bell, Settings, Menu } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { useRef, useEffect } from "react";
-
+import gustimg from "../../assets/images/Guest.jpg";
 const Header = ({
   toggleSidebar,
   pageName,
@@ -11,7 +11,6 @@ const Header = ({
   notifList,
   markAsRead,
   markAllAsRead,
-  
 }) => {
   const { user } = useAuth();
   const notifRef = useRef(null);
@@ -48,9 +47,7 @@ const Header = ({
         />
 
         <div>
-          <p className="text-sm text-gray-400">
-            Selamat Datang, {user?.name || "User"}
-          </p>
+          
           <h1 className="text-2xl font-bold capitalize">{pageName}</h1>
         </div>
       </div>
@@ -121,6 +118,32 @@ const Header = ({
                   Semua notifikasi sudah dibaca 🎉
                 </p>
               )}
+            </div>
+          )}
+        </div>
+        {/* ===== Profile ===== */}
+        <div
+          className={`flex items-center gap-3 px-4 py-5 border-b border-white/10 transition-all ${
+            !open && "justify-center"
+          }`}
+        >
+          <div className="relative">
+            <img
+              src={gustimg}
+              alt="profile"
+              className="w-11 h-11 object-cover rounded-full ring-2 ring-indigo-500"
+            />
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-slate-900 rounded-full"></span>
+          </div>
+
+          {open && (
+            <div className="flex flex-col leading-tight">
+              <span className="font-semibold text-lg text-gray-500">
+                {user.name || "User"}
+              </span>
+              <span className="text-sm text-black capitalize">
+                {user.role} Posyandu
+              </span>
             </div>
           )}
         </div>

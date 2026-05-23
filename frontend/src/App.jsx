@@ -29,6 +29,7 @@ import DetailDeteksi from "./pages/Kader/DetailDeteksi";
 import CreateFormOrangtua from "./pages/Kader/ManajemenBalita/CreateOrtu";
 import CreateFormBalita from "./pages/Kader/ManajemenBalita/Create";
 import AuthCallback from "./pages/Callback";
+import LihatRiwayat from "./pages/Kader/LihatRiwayat";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -83,6 +84,7 @@ const App = () => {
         { path: "laporan", element: <Laporan /> },
         { path: "notif", element: <Notifikasi /> },
         { path: "detaildeteksi/:id", element: <DetailDeteksi /> },
+        { path: "lihatriwayat/:id", element: <LihatRiwayat /> },
       ],
     },
 

@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import api from "@/services/api";
 import Pagination from "@/components/Pagination/pagination";
+import { Atom } from "react-loading-indicators";
 const ManajemenBalita = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,17 +74,16 @@ const ManajemenBalita = () => {
   const endIndex = startIndex + itemsPerPage;
 
   const currentData = filteredData.slice(startIndex, endIndex);
-  if (loading) {
-    return (
-      <MainLayouts>
-        <div className="p-6">Loading data...</div>
-      </MainLayouts>
-    );
-  }
+  
 
   return (
     <MainLayouts type="manajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat Dashboard..." />
+          </div>
+        )}
         <div className="bg-white rounded-2xl shadow-md p-6">
           {/* HEADER */}
           <div className="mb-6">

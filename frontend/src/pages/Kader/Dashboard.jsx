@@ -1,17 +1,18 @@
 import Barchart from "../../components/Elements/Chart/BartChart";
 import LineChart from "../../components/Elements/Chart/LineChart";
+import Status from "../../components/Elements/Chart/StatusChart";
 import { Icon } from "../../assets/icons";
 import CardTotal from "../../components/Fragments/Dashboard/CardTotal";
-import MainLayouts from "../../layouts/MainLayouts";
 import CardStunting from "../../components/Fragments/Dashboard/CardStunting";
 import CardTidakStunting from "../../components/Fragments/Dashboard/CardTidakStunting";
-import { useEffect, useState } from "react";
+import MainLayouts from "../../layouts/MainLayouts";
 import Content from "../../components/Fragments/Dashboard/ContentGambar";
 import ContentMap from "../../components/Fragments/Dashboard/ContentMap";
+import { useEffect, useState } from "react";
 import api from "@/services/api";
-import Status from "../../components/Elements/Chart/StatusChart";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { useAuth } from "../../context/useAuth";
 import { Atom } from "react-loading-indicators";
 import "dayjs/locale/id";
 
@@ -20,8 +21,9 @@ dayjs.locale("id");
 
 const Dashboard = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
-
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+
   const [summary, setSummary] = useState({
     total_balita: 0,
     stunting: 0,
@@ -30,21 +32,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await api.get("/balitas");
-      setLastUpdate(res.data.last_update);
-    };
-
-    fetchData();
-
-    const interval = setInterval(fetchData, 10000); // tiap 10 detik
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
       try {
-        const res = await api.get("/balitas"); // endpoint kamu
+        const res = await api.get("/balitas");
+
+        setLastUpdate(res.data.last_update);
 
         setSummary({
           total_balita: res.data.total_balita,
@@ -59,106 +50,121 @@ const Dashboard = () => {
     };
 
     fetchData();
+
+    const interval = setInterval(fetchData, 10000);
+
+    return () => clearInterval(interval);
   }, []);
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <Atom color="#32cd32" size="medium" text="Memuat Data..." />
-      </div>
-    );
-  }
+
   return (
     <MainLayouts type="dashboard">
-      <div className="px-6 py-8 bg-slate-100 min-h-screen">
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          {/* ================= HEADER ================= */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Dashboard Monitoring
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Ringkasan data dan statistik kondisi balita
+      <div className="bg-emerald-50 rounded-2xl shadow-md p-6">
+        {/* LOADING OVERLAY */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
+        {/* ================= HEADER ================= */}
+        <div className="mb-8 mt-6">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Selamat Datang, Kader {user?.name || "User"}
+          </h1>
+
+          <p className="text-sm text-gray-500 mt-1">
+            Pantau perkembangan pertumbuhan, status gizi, dan kondisi kesehatan
+            balita secara real-time.
+          </p>
+        </div>
+
+        {/* ================= CARD TOTAL ================= */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
+          <CardTotal total={summary.total_balita} />
+
+          <CardTidakStunting total={summary.tidak_stunting} />
+
+          <CardStunting total={summary.stunting} />
+        </div>
+
+        {/* ================= CHART SECTION ================= */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
+          {/* ================= LINE CHART ================= */}
+          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px]">
+            <h2 className="text-xl font-bold text-gray-800 mb-1">
+              Monitoring Pertumbuhan
+            </h2>
+
+            <p className="text-gray-500 text-sm mb-6">Status Gizi Tahun Ini</p>
+
+            <LineChart />
+
+            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
+              <Icon.Waktu className="w-4 h-4 text-gray-400" />
+
+              <span className="text-sm text-gray-400">
+                {lastUpdate
+                  ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+                  : "Memuat..."}
+              </span>
+            </div>
+          </div>
+
+          {/* ================= BAR CHART ================= */}
+          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px]">
+            <h2 className="text-xl font-bold text-gray-800 mb-1">
+              Perbandingan Status Gizi
+            </h2>
+
+            <p className="text-gray-500 text-sm mb-6">
+              Tahun Lalu vs Tahun Ini
             </p>
-          </div>
 
-          {/* ================= CARD TOTAL ================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
-            <CardTotal total={summary.total_balita} />
-            <CardTidakStunting total={summary.tidak_stunting} />
-            <CardStunting total={summary.stunting} />
-          </div>
+            <Barchart />
 
-          {/* ================= CHART SECTION ================= */}
-          <div className="grid grid-cols-1 xl:grid-cols-1 gap-6 mb-10">
-            {/* Chart 2 */}
-            <div className="bg-white rounded-2xl hover:shadow-xl transition p-6 border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                Monitoring Pertumbuhan Balita
-              </h2>
-              <p className="text-gray-500 text-sm  mb-6">
-                Status Gizi Tahun Ini
-              </p>
+            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
+              <Icon.Waktu className="w-4 h-4 text-gray-400" />
 
-              <LineChart />
-
-              <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-                <Icon.Waktu className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-400">
-                  {lastUpdate
-                    ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
-                    : "Memuat..."}
-                </span>
-              </div>
+              <span className="text-sm text-gray-400">
+                {lastUpdate
+                  ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+                  : "Memuat..."}
+              </span>
             </div>
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-10">
-            {/* Chart Monitoring */}
-            <div className="bg-white rounded-2xl hover:shadow-xl transition p-6 border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                Monitoring Pertumbuhan Balita
-              </h2>
-              <p className="text-gray-500 text-sm  mb-6">
-                Status Gizi Tahun Lalu vs Tahun Ini
-              </p>
 
-              <Barchart />
+          {/* ================= STATUS CHART ================= */}
+          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px]">
+            <h2 className="text-xl font-bold text-gray-800 mb-1">
+              Persentase Status Gizi
+            </h2>
 
-              <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-                <Icon.Waktu className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-400">
-                  {lastUpdate
-                    ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
-                    : "Memuat..."}
-                </span>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl  hover:shadow-xl transition p-6 border border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                Monitoring Pertumbuhan Balita
-              </h2>
-              <p className="text-gray-500 text-sm font-bold mb-6">
-                Grafik Status Gizi Dalam %
-              </p>
+            <p className="text-gray-500 text-sm mb-6">Grafik Status Gizi (%)</p>
 
+            <div className="flex justify-center items-center">
               <Status />
+            </div>
 
-              <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-                <Icon.Waktu className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-400">
-                  {lastUpdate
-                    ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
-                    : "Memuat..."}
-                </span>
-              </div>
+            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
+              <Icon.Waktu className="w-4 h-4 text-gray-400" />
+
+              <span className="text-sm text-gray-400">
+                {lastUpdate
+                  ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+                  : "Memuat..."}
+              </span>
             </div>
           </div>
-          {/* ================= CONTENT IMAGE ================= */}
-          <div className="bg-white rounded-2xl p-6 mb-10 shadow-xl border border-gray-100 shadow-sm hover:shadow-md transition">
+        </div>
+
+        {/* ================= CONTENT & MAP ================= */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* ================= CONTENT ================= */}
+          <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 hover:shadow-md transition">
             <Content />
           </div>
 
-          {/* ================= MAP SECTION ================= */}
-          <div className="bg-white rounded-2xl shadow-xl mb-10 hover:shadow-md transition ">
+          {/* ================= MAP ================= */}
+          <div className="bg-white rounded-2xl shadow-xl hover:shadow-md transition overflow-hidden">
             <ContentMap />
           </div>
         </div>

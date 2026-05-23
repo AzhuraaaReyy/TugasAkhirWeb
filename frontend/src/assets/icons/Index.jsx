@@ -15,7 +15,7 @@ const IconWrapper = ({ children }) => (
 const DashboardIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -30,7 +30,7 @@ const DashboardIcon = () => (
 const ManajemenIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -45,7 +45,7 @@ const ManajemenIcon = () => (
 const InputPenimbanganIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -61,7 +61,7 @@ const InputPenimbanganIcon = () => (
 const DeteksiDiniIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -76,7 +76,7 @@ const DeteksiDiniIcon = () => (
 const RiwayatIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -91,7 +91,7 @@ const RiwayatIcon = () => (
 const GrafikIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -105,7 +105,7 @@ const GrafikIcon = () => (
 const ManajemenStatusRisikoIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -119,7 +119,7 @@ const ManajemenStatusRisikoIcon = () => (
 const LaporanIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -135,7 +135,7 @@ const LaporanIcon = () => (
 const NotificationIcon = () => (
   <IconWrapper>
     <g
-      stroke="#ffffff"
+      stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -149,7 +149,7 @@ const NotificationIcon = () => (
 const WaktuIcon = () => (
   <IconWrapper>
     <g
-      stroke="#868686"
+      stroke="currentColor"
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -164,7 +164,7 @@ const WaktuIcon = () => (
 const Peopleicon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="currentColor"
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -180,7 +180,7 @@ const Peopleicon = () => (
 const timbanganicon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="currentColor"
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -197,7 +197,7 @@ const timbanganicon = () => (
 const weighticon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="currentColor"
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -211,7 +211,7 @@ const weighticon = () => (
 const tallicon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="currentColor"
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -226,7 +226,7 @@ const tallicon = () => (
 const statusicon = () => (
   <IconWrapper>
     <g
-      stroke="#00bd16"
+      stroke="currentColor"
       stroke-width="2"
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -239,7 +239,11 @@ const statusicon = () => (
 );
 const edukasicon = () => (
   <IconWrapper>
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#ffffff">
+    <svg
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+    >
       <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
       <g
         id="SVGRepo_tracerCarrier"
@@ -273,5 +277,5 @@ export const Icon = {
   Edukasi: edukasicon,
 };
 IconWrapper.propTypes = {
-  children: PropTypes.node.isRequired, // Validasi children sebagai node
+  children: PropTypes.node.isRequired, 
 };

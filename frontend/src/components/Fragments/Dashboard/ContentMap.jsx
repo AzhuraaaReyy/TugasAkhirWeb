@@ -3,7 +3,6 @@ import {
   TileLayer,
   CircleMarker,
   Popup,
-  Tooltip,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -14,10 +13,9 @@ import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import { useEffect, useState } from "react";
 import api from "@/services/api";
 
-// ✅ FIX PENTING: import yang benar
 import "leaflet.heat/dist/leaflet-heat.js";
 
-/* FIX DEFAULT ICON */
+/* ================= FIX DEFAULT ICON ================= */
 delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
@@ -26,30 +24,64 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+/* ================= STATUS CONFIG ================= */
+const STUNTING_STATUS = [
+  {
+    label: "Normal",
+    color: "#10B981",
+    description:
+      "Jumlah kasus stunting tergolong rendah dan kondisi wilayah masih terkendali.",
+  },
+  {
+    label: "Waspada",
+    color: "#F59E0B",
+    description:
+      "Terdapat peningkatan risiko stunting sehingga perlu dilakukan pemantauan.",
+  },
+  {
+    label: "Stunting Tinggi",
+    color: "#EF4444",
+    description:
+      "Jumlah kasus stunting relatif tinggi dan memerlukan perhatian khusus.",
+  },
+];
+
+/* ================= HELPER ================= */
+const getMarkerStyle = (stunting) => {
+  if (stunting > 5) {
+    return {
+      color: "#EF4444",
+      label: "Stunting Tinggi",
+    };
+  }
+
+  if (stunting > 3) {
+    return {
+      color: "#F59E0B",
+      label: "Waspada",
+    };
+  }
+
+  return {
+    color: "#10B981",
+    label: "Normal",
+  };
+};
+
 /* ================= HEATMAP COMPONENT ================= */
 const HeatmapLayer = ({ data }) => {
   const map = useMap();
 
   useEffect(() => {
-    if (!map || !data.length || !L.heatLayer) {
-      console.log("Heatmap belum siap:", {
-        map: !!map,
-        data: data.length,
-        heat: !!L.heatLayer,
-      });
-      return;
-    }
+    if (!map || !data.length || !L.heatLayer) return;
 
-    // ✅ mapping data
     const points = data
       .filter((item) => item.coordinates && item.stunting > 0)
       .map((item) => [
-        item.coordinates[0], // lat
-        item.coordinates[1], // lng
-        Number(item.stunting) || 1, // weight minimal 1
+        item.coordinates[0],
+        item.coordinates[1],
+        Number(item.stunting) || 1,
       ]);
-
-    console.log("POINTS HEATMAP:", points);
 
     if (!points.length) return;
 
@@ -57,18 +89,17 @@ const HeatmapLayer = ({ data }) => {
       radius: 50,
       blur: 30,
       maxZoom: 17,
-      max: 10, // biar tetap terlihat walau data kecil
+      max: 10,
       gradient: {
-        0.2: "green",
-        0.5: "yellow",
-        0.8: "orange",
-        1.0: "red",
+        0.2: "#10B981",
+        0.5: "#F59E0B",
+        0.8: "#FB923C",
+        1.0: "#EF4444",
       },
     });
 
     heat.addTo(map);
 
-    // cleanup biar tidak double
     return () => {
       map.removeLayer(heat);
     };
@@ -77,60 +108,75 @@ const HeatmapLayer = ({ data }) => {
   return null;
 };
 
+/* ================= LEGEND COMPONENT ================= */
+const MapLegend = () => {
+  return (
+    <div className="mt-6 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      {/* Header */}
+      <div className="border-b border-gray-100 px-5 py-4 bg-gray-50">
+        <h3 className="text-base font-semibold text-gray-800">
+          Klasifikasi Indikator Stunting
+        </h3>
+
+        <p className="text-sm text-gray-500 mt-1">
+          Keterangan warna pada peta berdasarkan tingkat kasus stunting di
+          setiap wilayah.
+        </p>
+      </div>
+
+      {/* Content */}
+      <div className="grid grid-cols-1 md:grid-cols-3">
+        {STUNTING_STATUS.map((status, index) => (
+          <div
+            key={index}
+            className="p-5 border-r last:border-r-0 border-gray-100"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className="w-4 h-4 rounded-full shadow-sm"
+                style={{ backgroundColor: status.color }}
+              />
+
+              <h4 className="font-semibold text-gray-800">{status.label}</h4>
+            </div>
+
+            <p className="text-sm leading-relaxed text-gray-500">
+              {status.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ================= MAIN COMPONENT ================= */
 const ContentMap = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     api.get("/mapposyandu").then((res) => {
-      console.log("DATA API:", res.data);
       setData(res.data);
     });
   }, []);
-  console.log(
-    "COORDINATES:",
-    data.map((d) => d.coordinates),
-  );
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-10">
-      {/* Header */}
-      <h2 className="text-xl font-bold text-gray-800">
-        🗺️ Sebaran Kasus Stunting
-      </h2>
-      <p className="text-gray-500 text-sm mb-6">
-        Monitoring jumlah balita, kasus stunting, dan risiko per wilayah.
-      </p>
+    <div className="h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      {/* ================= HEADER ================= */}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-gray-800">
+          Sebaran Kasus Stunting
+        </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* ================= LEFT SIDE ================= */}
-        <div className="space-y-6">
-          {data.map((item, index) => (
-            <div
-              key={index}
-              className="p-4 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition"
-            >
-              <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800">{item.wilayah}</h3>
-                <span className="text-sm text-gray-500">
-                  {item.balita} Balita
-                </span>
-              </div>
+        <p className="text-sm text-gray-500 mt-1">
+          Monitoring jumlah balita, kasus stunting, dan risiko wilayah
+          berdasarkan data posyandu.
+        </p>
+      </div>
 
-              <div className="flex gap-4 mt-3 text-sm">
-                <span className="text-red-500 font-medium">
-                  🔴 {item.stunting} Stunting
-                </span>
-                <span className="text-amber-500 font-medium">
-                  🟠 {item.berisiko} Berisiko
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
+      <div className="flex flex-col gap-6">
         {/* ================= MAP ================= */}
-        <div className="h-[400px] w-full rounded-2xl overflow-hidden">
+        <div className="relative z-0 h-[450px] w-full rounded-2xl overflow-hidden border border-gray-100">
           <MapContainer
             center={[-6.9904, 110.4229]}
             zoom={15}
@@ -142,52 +188,125 @@ const ContentMap = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            {/* ✅ HEATMAP */}
+            {/* ================= HEATMAP ================= */}
             <HeatmapLayer data={data} />
 
-            {/* ✅ MARKER */}
-            {data.map((item, i) => (
-              <CircleMarker
-                key={i}
-                center={item.coordinates}
-                radius={14}
-                pathOptions={{
-                  color: "#ffffff",
-                  weight: 3,
-                  fillColor:
-                    item.stunting > 5
-                      ? "#EF4444"
-                      : item.stunting > 3
-                        ? "#F59E0B"
-                        : "#10B981",
-                  fillOpacity: 1,
-                }}
-              >
-                <Tooltip
-                  direction="top"
-                  offset={[0, -12]}
-                  opacity={1}
-                  permanent
-                  className="!bg-transparent !border-none !shadow-none"
-                >
-                  <div className="text-lg">
-                    {item.stunting > 5 ? "🚨" : item.stunting > 3 ? "⚠️" : "📍"}
-                  </div>
-                </Tooltip>
+            {/* ================= MARKER ================= */}
+            {data.map((item, index) => {
+              const marker = getMarkerStyle(item.stunting);
 
-                <Popup>
-                  <strong>{item.wilayah}</strong>
-                  <br />
-                  Total Balita: {item.balita}
-                  <br />
-                  Stunting: {item.stunting}
-                  <br />
-                  Berisiko: {item.berisiko}
-                </Popup>
-              </CircleMarker>
-            ))}
+              return (
+                <CircleMarker
+                  key={index}
+                  center={item.coordinates}
+                  radius={12}
+                  pathOptions={{
+                    color: "#ffffff",
+                    weight: 2,
+                    fillColor: marker.color,
+                    fillOpacity: 0.9,
+                  }}
+                >
+                  <Popup>
+                    <div className="min-w-[180px]">
+                      <h3 className="font-semibold text-gray-800 mb-3">
+                        {item.wilayah}
+                      </h3>
+
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div className="flex justify-between gap-4">
+                          <span>Status</span>
+                          <span className="font-medium">{marker.label}</span>
+                        </div>
+
+                        <div className="flex justify-between gap-4">
+                          <span>Total Balita</span>
+                          <span className="font-medium">{item.balita}</span>
+                        </div>
+
+                        <div className="flex justify-between gap-4">
+                          <span>Stunting</span>
+                          <span className="font-medium text-red-500">
+                            {item.stunting}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between gap-4">
+                          <span>Berisiko</span>
+                          <span className="font-medium text-amber-500">
+                            {item.berisiko}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              );
+            })}
           </MapContainer>
         </div>
+
+        {/* ================= LIST DATA ================= */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {data.map((item, index) => {
+            const marker = getMarkerStyle(item.stunting);
+
+            return (
+              <div
+                key={index}
+                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md transition"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 text-base">
+                      {item.wilayah}
+                    </h3>
+
+                    <p className="text-sm text-gray-500 mt-1">
+                      Status wilayah: {marker.label}
+                    </p>
+                  </div>
+
+                  <div
+                    className="w-4 h-4 rounded-full mt-1"
+                    style={{ backgroundColor: marker.color }}
+                  />
+                </div>
+
+                {/* Statistik */}
+                <div className="grid grid-cols-3 gap-3 mt-5">
+                  <div className="rounded-xl bg-gray-50 p-3 text-center">
+                    <p className="text-xs text-gray-500">Balita</p>
+
+                    <h4 className="text-lg font-semibold text-gray-800 mt-1">
+                      {item.balita}
+                    </h4>
+                  </div>
+
+                  <div className="rounded-xl bg-red-50 p-3 text-center">
+                    <p className="text-xs text-red-500">Stunting</p>
+
+                    <h4 className="text-lg font-semibold text-red-600 mt-1">
+                      {item.stunting}
+                    </h4>
+                  </div>
+
+                  <div className="rounded-xl bg-amber-50 p-3 text-center">
+                    <p className="text-xs text-amber-500">Berisiko</p>
+
+                    <h4 className="text-lg font-semibold text-amber-600 mt-1">
+                      {item.berisiko}
+                    </h4>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ================= LEGEND ================= */}
+        <MapLegend />
       </div>
     </div>
   );

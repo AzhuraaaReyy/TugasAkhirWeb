@@ -11,7 +11,7 @@ export const kaderMenu = [
     id: "deteksidini",
     link: "/kader/deteksidini",
     icon: <Icon.DeteksiDini />,
-    label: "Deteksi Dini",
+    label: "Catat&Deteksi",
   },
   {
     id: "riwayat",
@@ -57,7 +57,7 @@ export const orangTuaMenu = [
     id: "notifikasiortu",
     link: "/orangtua/deteksi",
     icon: <Icon.Dashboard />,
-    label: "Deteksi Dini",
+    label: "Catat&Deteksi",
   },
   {
     id: "edukasiortu",
