@@ -19,7 +19,6 @@ return new class extends Migration
             $table->enum('jk', ['L', 'P']);
             $table->date('tgl_lahir')->nullable();
             $table->string('tmp_lahir')->nullable();
-            $table->string('alamat')->nullable();
             $table->timestamps();
         });
     }

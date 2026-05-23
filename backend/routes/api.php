@@ -41,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
             ]);
         });
         Route::get('/balitas', [BalitaController::class, 'index']);
+        Route::get('/balitas/{id}', [BalitaController::class, 'show']);
         Route::post('/balitas', [BalitaController::class, 'store']);
         Route::put('/balitas/{id}', [BalitaController::class, 'update']);
         Route::get('/balitas/detail/{id}', [BalitaController::class, 'show']);

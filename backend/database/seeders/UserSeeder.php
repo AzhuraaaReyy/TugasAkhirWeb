@@ -16,16 +16,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $users = [
-            [
-                'name' => 'Admin Utama',
-                'email' => 'admin@gmail.com',
-                'password' => Hash::make('123456'),
-                'no_telp' => '081111111111',
-                'role' => 'admin',
-                'alamat' => 'Semarang',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
+           
             [
                 'name' => 'Kader Posyandu',
                 'email' => 'kader@gmail.com',

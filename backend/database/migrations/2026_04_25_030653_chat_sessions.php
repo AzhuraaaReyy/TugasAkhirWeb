@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('chat_sessions', function (Blueprint $table) {
             $table->id();
-            $table->string('session_id')->unique();  // UUID dari frontend
+            $table->string('session_id')->unique();  
             $table->foreignId('deteksi_id')->nullable()->constrained('deteksis');
             $table->string('current_topic')->nullable();      
             $table->string('current_intent')->nullable();     

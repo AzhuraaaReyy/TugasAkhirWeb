@@ -14,7 +14,6 @@ class Balita extends Model
         'jk',
         'tgl_lahir',
         'tmp_lahir',
-        'alamat',
         'posyandu_id'
     ];
 
