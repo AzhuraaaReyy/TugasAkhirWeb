@@ -137,7 +137,7 @@ class RiwayatGrafikController extends Controller
                     'status' => $status,
                     'statusBBU' => $statusBBU,
                     'zscore' => $zScore,
-                    'ZScoreBBU'=> $ZScoreBBU,
+                    'ZScoreBBU' => $ZScoreBBU,
                     'median_tb' => $who->m ?? null,
                     'minus2_tb' => $who ? $who->m - (2 * $who->s) : null,
                     'minus3_tb' => $who ? $who->m - (3 * $who->s) : null,

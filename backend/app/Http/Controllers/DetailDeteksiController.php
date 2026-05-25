@@ -12,7 +12,11 @@ class DetailDeteksiController extends Controller
 {
     public function detaildeteksi($id)
     {
-        $detaildeteksi = DetailDeteksi::with('deteksi.balita.deteksis')->findOrFail($id);
+        $detaildeteksi = DetailDeteksi::with([
+            'deteksi.user',
+            'deteksi.balita.posyandu',
+            'deteksi.balita.deteksis'
+        ])->findOrFail($id);
         $detail = $detaildeteksi->deteksi;
 
         // ambil zscore dari DB
@@ -34,6 +38,8 @@ class DetailDeteksiController extends Controller
 
         $sekarang = $penimbangan->first();
         $sebelumnya = $penimbangan->skip(1)->first();
+
+        $kunjunganTerbaru = $penimbangan->whereNotNull('user_id')->first() ?? $sekarang;
 
         // HITUNG STATUS
         $status_berat = "Belum ada data pembanding";
@@ -102,6 +108,10 @@ class DetailDeteksiController extends Controller
                 'keterangan' => $detaildeteksi->keterangan,
                 'rekomendasi' => $detaildeteksi->rekomendasi,
                 'total_deteksi' => $detail->balita?->deteksis()->count(),
+                'lokasi_posyandu' => $detail->balita?->posyandu?->nama_posyandu ?? "Posyandu Wilayah",
+                'kader_pemeriksa' => $detail->user?->name
+                    ?? $kunjunganTerbaru?->user?->name
+                    ?? "Kader Posyandu",
             ]
         ]);
     }

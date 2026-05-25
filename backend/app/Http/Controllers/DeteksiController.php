@@ -8,6 +8,7 @@ use App\Models\Penimbangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class DeteksiController extends Controller
 {
@@ -89,6 +90,7 @@ class DeteksiController extends Controller
         //create
         $deteksi = Deteksi::create([
             'balita_id' => $balita->id,
+            'user_id' => Auth::id(),
             'tgl_deteksi' => Carbon::parse($request->tgl_deteksi)->format('Y-m-d'),
             'berat' => $request->berat,
             'tinggi' => $request->tinggi,

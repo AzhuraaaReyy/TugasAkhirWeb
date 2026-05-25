@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('deteksis', function (Blueprint $table) {
             $table->id();
             $table->foreignId('balita_id')->constrained('balitas')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->date('tgl_deteksi');
             $table->float('berat');
             $table->float('tinggi');

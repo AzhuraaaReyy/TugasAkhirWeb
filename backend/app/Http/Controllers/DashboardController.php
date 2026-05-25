@@ -10,13 +10,13 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-
     public function index()
     {
         $bulanIni = Carbon::now()->month;
         $tahunIni = Carbon::now()->year;
 
-        // ================= BELUM TIMBANG =================
+
+        // Anak belum timbang
         $listBelumTimbang = Balita::whereDoesntHave('deteksis', function ($q) use ($bulanIni, $tahunIni) {
             $q->whereMonth('tgl_deteksi', $bulanIni)
                 ->whereYear('tgl_deteksi', $tahunIni);
@@ -26,27 +26,36 @@ class DashboardController extends Controller
 
         $belumTimbang = $listBelumTimbang->count();
 
-        // ================= TURUN BB =================
+        //Ukur berat badan
         $listTurunBB = [];
 
-        $balitas = Balita::with(['deteksis' => function ($q) {
-            $q->orderByDesc('tgl_deteksi');
-        }])->get();
+        $balitas = Balita::with([
+            'deteksis' => function ($q) {
+                $q->orderByDesc('tgl_deteksi')
+                    ->orderByDesc('id');
+            }
+        ])->get();
 
         foreach ($balitas as $balita) {
+
             $deteksi = $balita->deteksis;
 
             if ($deteksi->count() >= 2) {
+
                 $sekarang = $deteksi[0];
                 $sebelumnya = $deteksi[1];
 
                 if ($sekarang->berat < $sebelumnya->berat) {
+
                     $listTurunBB[] = [
                         'id' => $balita->id,
                         'name' => $balita->name,
+
                         'berat_sekarang' => $sekarang->berat,
                         'berat_sebelumnya' => $sebelumnya->berat,
-                        'selisih' => $sekarang->berat - $sebelumnya->berat, // negatif = turun
+
+                        'selisih' => $sekarang->berat - $sebelumnya->berat,
+
                         'tgl_sekarang' => $sekarang->tgl_deteksi,
                         'tgl_sebelumnya' => $sebelumnya->tgl_deteksi,
                     ];
@@ -56,12 +65,19 @@ class DashboardController extends Controller
 
         $turunBB = count($listTurunBB);
 
-        // ================= RUJUKAN =================
-        $listRujukan = Deteksi::where('zscore_tb_u', '<', -3)
-            ->with('balita')
+
+        //buat rujukan
+        $listRujukan = Deteksi::with('balita')
+            ->where(function ($q) {
+                $q->where('zscore_tb_u', '<', -3)
+                    ->orWhere('zscore_bb_u', '<', -3)
+                    ->orWhere('zscore_tb_bb', '<', -3);
+            })
             ->get()
             ->map(function ($item) {
+
                 $alasan = [];
+
                 $keterangan = "Perlu pemeriksaan lebih lanjut untuk memastikan kondisi pertumbuhan.";
 
                 if (!is_null($item->zscore_tb_u) && $item->zscore_tb_u < -3) {
@@ -72,7 +88,7 @@ class DashboardController extends Controller
                     $alasan[] = "Berat badan berada di bawah standar usia";
                 }
 
-                if (!is_null($item->zscore_bb_tb) && $item->zscore_bb_tb < -3) {
+                if (!is_null($item->zscore_tb_bb) && $item->zscore_tb_bb < -3) {
                     $alasan[] = "Berat badan tidak seimbang dengan tinggi badan";
                 }
 
@@ -83,24 +99,29 @@ class DashboardController extends Controller
                 return [
                     'id' => $item->balita->id,
                     'name' => $item->balita->name,
+
                     'keterangan' => $keterangan,
+
                     'alasan' => $alasan,
-                    'tgl_deteksi' => Carbon::parse($item->tgl_deteksi)->translatedFormat('d F Y'),
+
+                    'tgl_deteksi' => Carbon::parse($item->tgl_deteksi)
+                        ->translatedFormat('d F Y'),
                 ];
             });
 
         $rujukan = $listRujukan->count();
 
-        // ================= JADWAL =================
+
+        //jadwal posyandu
         $jadwalNotif = Notifikasi::where('tipe', 'Jadwal Posyandu')
-            ->orderByDesc('tanggal')
+            ->latest('tanggal')
             ->first();
 
         $jadwal = $jadwalNotif
-            ? Carbon::parse($jadwalNotif->tanggal)->translatedFormat('d F Y')
+            ? Carbon::parse($jadwalNotif->tanggal)
+            ->translatedFormat('d F Y')
             : '-';
 
-        // ================= RESPONSE =================
         return response()->json([
             'belum_timbang' => $belumTimbang,
             'list_belum_timbang' => $listBelumTimbang,
@@ -119,111 +140,148 @@ class DashboardController extends Controller
     public function grafikStunting()
     {
         $deteksis = Deteksi::with('balita.posyandu')
-            ->orderBy('tgl_deteksi', 'asc')
+            ->orderBy('created_at', 'asc')
             ->get();
-        $deteksiTerbaru = $deteksis
-            ->groupBy('balita_id')
-            ->map(function ($items) {
-                return $items->first();
-            });
-        $data = $deteksiTerbaru
+
+        $data = $deteksis
             ->groupBy(function ($item) {
-                return Carbon::parse($item->tgl_deteksi)->format('M');
+                return Carbon::parse($item->created_at)->format('Y-m');
             })
-            ->map(function ($items, $month) {
+            ->map(function ($itemsPerBulan, $bulanKey) {
 
-                return $items->groupBy(function ($item) {
-                    return $item->balita->posyandu->nama_posyandu ?? 'Tidak diketahui';
-                })->map(function ($group, $posyandu) use ($month) {
 
-                    return [
-                        'month' => $month,
-                        'posyandu' => $posyandu,
+                //ambil data terbaru tiap bulan
+                $latestPerBalita = $itemsPerBulan
+                    ->sortByDesc('created_at')
+                    ->groupBy('balita_id')
+                    ->map(function ($items) {
+                        return $items->first();
+                    });
 
-                        'stunting' => $group->filter(function ($item) {
-                            $status = strtolower($item->status_tb_u ?? '');
+                //list berdasarkan posyandu
+                return $latestPerBalita
+                    ->groupBy(function ($item) {
+                        return $item->balita->posyandu->nama_posyandu
+                            ?? 'Tidak diketahui';
+                    })
+                    ->map(function ($group, $posyandu) use ($bulanKey) {
+
+                        $stunting = $group->filter(function ($item) {
+
+                            $status = strtolower(trim($item->status_tb_u ?? ''));
+
                             return str_contains($status, 'pendek');
-                        })->count(),
+                        })->count();
 
-                        'tidakStunting' => $group->filter(function ($item) {
-                            $status = strtolower($item->status_tb_u ?? '');
+                        $tidakStunting = $group->filter(function ($item) {
+
+                            $status = strtolower(trim($item->status_tb_u ?? ''));
+
                             return str_contains($status, 'normal') ||
                                 str_contains($status, 'tinggi');
-                        })->count(),
-                    ];
-                });
+                        })->count();
+
+                        return [
+                            'month' => Carbon::parse($bulanKey . '-01')
+                                ->translatedFormat('F Y'),
+
+                            'posyandu' => $posyandu,
+
+                            'stunting' => $stunting,
+
+                            'tidakStunting' => $tidakStunting,
+
+                            'total' => $group->count(),
+                        ];
+                    });
             })
             ->flatten(1)
             ->values();
 
         return response()->json($data);
     }
+
 
     public function grafikPerbandinganTahunan()
     {
-        $deteksis = Deteksi::with('balita')
-            ->orderBy('tgl_deteksi', 'desc')
+        $deteksis = Deteksi::orderBy('created_at', 'asc')
             ->get();
 
-        $deteksiTerbaru = $deteksis
-            ->groupBy('balita_id')
-            ->map(fn($items) => $items->first())
-            ->values();
-
-
-        $data = $deteksiTerbaru
+        $data = $deteksis
             ->groupBy(function ($item) {
-                return Carbon::parse($item->tgl_deteksi)->format('Y');
+                return Carbon::parse($item->created_at)->format('Y');
             })
-            ->map(function ($items, $year) {
+            ->map(function ($itemsPerTahun, $year) {
 
-                return $items->groupBy(function ($item) {
-                    return Carbon::parse($item->tgl_deteksi)->format('M');
-                })->map(function ($group, $month) use ($year) {
+                return $itemsPerTahun
+                    ->groupBy(function ($item) {
+                        return Carbon::parse($item->created_at)->format('Y-m');
+                    })
+                    ->map(function ($itemsPerBulan, $monthKey) use ($year) {
 
-                    return [
-                        'month' => $month,
-                        'year' => (int)$year,
+                        $latestPerBalita = $itemsPerBulan
+                            ->sortByDesc('created_at')
+                            ->groupBy('balita_id')
+                            ->map(fn($items) => $items->first());
 
-                        'stunting' => $group->filter(function ($item) {
-                            $status = strtolower($item->status_tb_u ?? '');
+                        $stunting = $latestPerBalita->filter(function ($item) {
+
+                            $status = strtolower(trim($item->status_tb_u ?? ''));
+
                             return str_contains($status, 'pendek');
-                        })->count(),
+                        })->count();
 
-                        'tidakStunting' => $group->filter(function ($item) {
-                            $status = strtolower($item->status_tb_u ?? '');
+                        $tidakStunting = $latestPerBalita->filter(function ($item) {
+
+                            $status = strtolower(trim($item->status_tb_u ?? ''));
+
                             return str_contains($status, 'normal') ||
                                 str_contains($status, 'tinggi');
-                        })->count(),
-                    ];
-                });
+                        })->count();
+
+                        return [
+                            'month' => Carbon::parse($monthKey . '-01')
+                                ->translatedFormat('M'),
+
+                            'year' => (int)$year,
+
+                            'stunting' => $stunting,
+
+                            'tidakStunting' => $tidakStunting,
+
+                            'total' => $latestPerBalita->count(),
+                        ];
+                    });
             })
             ->flatten(1)
             ->values();
 
         return response()->json($data);
     }
+
     public function grafikPieStatus()
     {
-        $deteksis = Deteksi::orderBy('tgl_deteksi', 'desc')->get();
-
-
-        $deteksiTerbaru = $deteksis
+        $deteksiTerbaru = Deteksi::latest()
+            ->get()
             ->groupBy('balita_id')
             ->map(fn($items) => $items->first())
             ->values();
-
 
         $normal = 0;
         $stunting = 0;
 
-
         foreach ($deteksiTerbaru as $item) {
-            $status = strtolower($item->status_tb_u ?? '');
+
+            $status = strtolower(trim($item->status_tb_u ?? ''));
 
             if (str_contains($status, 'pendek')) {
+
                 $stunting++;
-            } elseif (str_contains($status, 'normal') ||  str_contains($status, 'tinggi')) {
+            } elseif (
+                str_contains($status, 'normal') ||
+                str_contains($status, 'tinggi')
+            ) {
+
                 $normal++;
             }
         }
@@ -231,13 +289,16 @@ class DashboardController extends Controller
         return response()->json([
             'normal' => $normal,
             'stunting' => $stunting,
-
         ]);
     }
 
     public function mapping()
     {
-        $data = Posyandu::with(['balitas.deteksis'])->get();
+        $data = Posyandu::with([
+            'balitas.deteksis' => function ($q) {
+                $q->latest();
+            }
+        ])->get();
 
         $result = $data->map(function ($posyandu) {
 
@@ -250,42 +311,55 @@ class DashboardController extends Controller
 
             foreach ($balitas as $balita) {
 
-                $isStunting = false;
-                $isBerisiko = false;
+                $latestDeteksi = $balita->deteksis->first();
 
-                foreach ($balita->deteksis as $deteksi) {
-                    if (
-                        $deteksi->zscore_tb_u < -3 ||
-                        $deteksi->zscore_bb_u < -3 ||
-                        $deteksi->zscore_tb_bb < -3
-                    ) {
-                        $isStunting = true;
-                    }
-
-
-                    if (
-                        (
-                            ($deteksi->zscore_tb_u >= -3 && $deteksi->zscore_tb_u < -2) ||
-                            ($deteksi->zscore_bb_u >= -3 && $deteksi->zscore_bb_u < -2) ||
-                            ($deteksi->zscore_tb_bb >= -3 && $deteksi->zscore_tb_bb < -2)
-                        )
-                    ) {
-                        $isBerisiko = true;
-                    }
+                if (!$latestDeteksi) {
+                    continue;
                 }
 
-                if ($isStunting) $stuntingIds[] = $balita->id;
-                else if ($isBerisiko) $berisikoIds[] = $balita->id;
+                //anak stunting
+                if (
+                    $latestDeteksi->zscore_tb_u < -3 ||
+                    $latestDeteksi->zscore_bb_u < -3 ||
+                    $latestDeteksi->zscore_tb_bb < -3
+                ) {
+
+                    $stuntingIds[] = $balita->id;
+                }
+                //anak tidak stunting
+                elseif (
+
+                    ($latestDeteksi->zscore_tb_u >= -3 &&
+                        $latestDeteksi->zscore_tb_u < -2)
+
+                    ||
+
+                    ($latestDeteksi->zscore_bb_u >= -3 &&
+                        $latestDeteksi->zscore_bb_u < -2)
+
+                    ||
+
+                    ($latestDeteksi->zscore_tb_bb >= -3 &&
+                        $latestDeteksi->zscore_tb_bb < -2)
+
+                ) {
+
+                    $berisikoIds[] = $balita->id;
+                }
             }
 
             return [
                 'wilayah' => $posyandu->nama_posyandu,
+
                 'balita' => $balitaCount,
+
                 'stunting' => count(array_unique($stuntingIds)),
+
                 'berisiko' => count(array_unique($berisikoIds)),
+
                 'coordinates' => [
-                    (float) $posyandu->latitude,
-                    (float) $posyandu->longitude
+                    (float)$posyandu->latitude,
+                    (float)$posyandu->longitude
                 ],
             ];
         });

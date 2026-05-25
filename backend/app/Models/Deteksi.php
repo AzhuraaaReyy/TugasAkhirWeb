@@ -11,6 +11,7 @@ class Deteksi extends Model
 
     protected $fillable = [
         'balita_id',
+        'user_id',
         'tgl_deteksi',
         'umur',
         'berat',
@@ -51,5 +52,10 @@ class Deteksi extends Model
     public function detaildeteksis()
     {
         return $this->hasMany(DetailDeteksi::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

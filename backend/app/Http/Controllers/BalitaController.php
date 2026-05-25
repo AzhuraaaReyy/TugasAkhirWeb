@@ -19,22 +19,21 @@ class BalitaController extends Controller
             ->get();
 
         //ambil data terbaru saja
-        $deteksiTerbaru = $deteksis
+        $deteksiTerbaru = Deteksi::with('balita')
+            ->latest()
+            ->get()
             ->groupBy('balita_id')
-            ->map(function ($items) {
-                return $items->first(); // karena sudah di sort desc
-            });
+            ->map(fn($items) => $items->first())
+            ->values();
 
-        //menghitung stunting dan tidak stunting
         $stunting = $deteksiTerbaru->filter(function ($item) {
-            $status = strtolower($item->status_tb_u ?? '');
+            $status = strtolower(trim($item->status_tb_u ?? ''));
 
-            return str_contains($status, 'sangat pendek') ||
-                str_contains($status, 'pendek');
+            return str_contains($status, 'pendek');
         })->count();
 
         $tidakStunting = $deteksiTerbaru->filter(function ($item) {
-            $status = strtolower($item->status_tb_u ?? '');
+            $status = strtolower(trim($item->status_tb_u ?? ''));
 
             return str_contains($status, 'normal') ||
                 str_contains($status, 'tinggi');
@@ -54,9 +53,6 @@ class BalitaController extends Controller
                 'tgl_lahir' => $balita->tgl_lahir,
                 'tmp_lahir' => $balita->tmp_lahir,
                 'posyandu' => $balita->posyandu?->nama_posyandu,
-                'status_tb_u' => $deteksi->status_tb_u ?? '-',
-                'status_bb_u' => $deteksi->status_bb_u ?? '-',
-                'tgl_deteksi_terakhir' => $deteksi->tgl_deteksi ?? null,
             ];
         });
         $totalBalita = Balita::count();
