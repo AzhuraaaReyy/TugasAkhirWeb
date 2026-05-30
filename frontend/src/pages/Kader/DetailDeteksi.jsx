@@ -3,12 +3,12 @@ import { useParams } from "react-router-dom";
 import MainLayouts from "../../layouts/MainLayouts";
 import api from "@/services/api";
 import { useNavigate } from "react-router-dom";
-import CardTotalPenimbangan from "../../components/Fragments/Riwayat&Grafik/CardPenimbangan";
-import CardBerat from "../../components/Fragments/Riwayat&Grafik/CardBerat";
-import CardTinggi from "../../components/Fragments/Riwayat&Grafik/CardTinggi";
-import CardStatus from "../../components/Fragments/Riwayat&Grafik/CardStatus";
+import CardTotalPenimbangan from "../../components/Fragments/Monitoring/CardPenimbangan";
+import CardBerat from "../../components/Fragments/Monitoring/CardBerat";
+import CardTinggi from "../../components/Fragments/Monitoring/CardTinggi";
+import CardStatus from "../../components/Fragments/Monitoring/CardStatus";
 import { useState } from "react";
-import EarlyWarning from "@/components/Fragments/Riwayat&Grafik/EarlyWarning";
+import EarlyWarning from "@/components/Fragments/Monitoring/EarlyWarning";
 import { Atom } from "react-loading-indicators";
 import {
   LineChart,

@@ -1,8 +1,6 @@
 import FormInput from "@/components/Fragments/Form/FormInput";
 import FormSelect from "@/components/Fragments/Form/FormSelect";
 import Select from "react-select";
-const OPTION_HEIGHT = 44;
-const MAX_VISIBLE_OPTIONS = 4;
 
 export default function FormDeteksi({
   form,
@@ -12,6 +10,8 @@ export default function FormDeteksi({
   balitas,
   handleSelectBalita,
 }) {
+  const OPTION_HEIGHT = 44;
+  const MAX_VISIBLE_OPTIONS = 3;
   return (
     <div className="w-full lg:w-7/12 flex">
       <div className="bg-white rounded-3xl border border-gray-200 shadow-sm  w-full h-full">

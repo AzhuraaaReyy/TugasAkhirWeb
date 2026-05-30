@@ -27,6 +27,16 @@ export default function HasilAnalisisDeteksi({ hasil, metode }) {
       },
     });
   };
+  const handleMonitoring = () => {
+    
+    if (!hasil?.balita_id) {
+      console.error("ID Balita tidak ditemukan pada hasil deteksi");
+      return;
+    }
+    navigate(`/kader/lihatmonitoring/${hasil.balita_id}`, {
+      state: { metode, hasil },
+    });
+  };
   const mapping = {
     stunting: {
       zscore: hasil?.zscore_tbu,
@@ -183,7 +193,10 @@ export default function HasilAnalisisDeteksi({ hasil, metode }) {
               Lihat Riwayat
             </button>
 
-            <button className="flex-1 h-12 rounded-2xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">
+            <button
+              onClick={handleMonitoring}
+              className="flex-1 h-12 rounded-2xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition"
+            >
               Lihat Monitoring
             </button>
           </div>

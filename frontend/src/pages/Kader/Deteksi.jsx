@@ -104,6 +104,7 @@ export default function DeteksiDini() {
       });
 
       alert("Data balita berhasil disimpan");
+      await fetchBalitas();
       handleBack();
     } catch (error) {
       if (error.response?.status === 422) {

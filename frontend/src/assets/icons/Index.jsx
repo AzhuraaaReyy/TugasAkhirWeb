@@ -277,5 +277,5 @@ export const Icon = {
   Edukasi: edukasicon,
 };
 IconWrapper.propTypes = {
-  children: PropTypes.node.isRequired, 
+  children: PropTypes.node.isRequired,
 };

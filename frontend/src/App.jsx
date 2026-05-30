@@ -30,6 +30,7 @@ import CreateFormOrangtua from "./pages/Kader/ManajemenBalita/CreateOrtu";
 import CreateFormBalita from "./pages/Kader/ManajemenBalita/Create";
 import AuthCallback from "./pages/Callback";
 import LihatRiwayat from "./pages/Kader/LihatRiwayat";
+import LihatMonitoring from "./pages/Kader/LihatMonitoring";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -58,6 +59,10 @@ const App = () => {
       path: "/register",
       element: <Register />,
     },
+    {
+      path: "/lihatmonitoringsaja",
+      element: <LihatMonitoring />,
+    },
     { path: "/auth/callback", element: <AuthCallback /> },
 
     //kader posyandu
@@ -85,6 +90,7 @@ const App = () => {
         { path: "notif", element: <Notifikasi /> },
         { path: "detaildeteksi/:id", element: <DetailDeteksi /> },
         { path: "lihatriwayat/:id", element: <LihatRiwayat /> },
+        { path: "lihatmonitoring/:id", element: <LihatMonitoring /> },
       ],
     },
 

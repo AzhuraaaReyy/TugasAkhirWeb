@@ -91,40 +91,6 @@ export default function HeaderProfile({ form }) {
           Input Pemeriksaan Baru
         </button>
       </div>
-
-      {/* Ringkasan Tumbuh Kembang */}
-      <div className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm">
-        <h3 className="font-bold text-gray-800 text-base mb-4">
-          Ringkasan Tumbuh Kembang
-        </h3>
-        <p className="text-xs text-gray-400 mb-4">
-          Perkembangan <span className="text-gray-300">(vs bulan lalu)</span>
-        </p>
-
-        <div className="space-y-4 text-sm">
-          {["Berat Badan", "Tinggi Badan", "Lingkar Kepala"].map((item) => (
-            <div key={item} className="flex justify-between items-center">
-              <span className="text-gray-600">{item}</span>
-              <span className="text-emerald-600 font-medium bg-emerald-50 px-2 py-1 rounded-lg flex items-center gap-1 text-xs">
-                Naik <ArrowUpRight size={14} />
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Catatan Dokter */}
-      <div className="bg-white rounded-[24px] border border-gray-100 p-6 shadow-sm">
-        <h3 className="font-bold text-gray-800 text-base mb-3 flex items-center gap-2">
-          <span>📋</span> Catatan Dokter
-        </h3>
-        <p className="text-sm text-gray-600 leading-relaxed">
-          "{form.doctorNotes}"
-        </p>
-        <span className="block mt-3 text-xs text-gray-400 font-medium">
-          — {form.doctorName}
-        </span>
-      </div>
     </div>
   );
 }
