@@ -8,6 +8,7 @@ use App\Http\Controllers\DeteksiController;
 use App\Http\Controllers\LaporanController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PenimbanganController;
 use App\Http\Controllers\PosyanduController;
@@ -66,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/riwayat/{id}', [RiwayatGrafikController::class, 'ambildatabalita']);
         Route::get('/grafik/{id}', [RiwayatGrafikController::class, 'grafik']);
+        Route::get('/perkembangan/{id}', [MonitoringController::class, 'getPerkembangan']);
 
         Route::get('/laporan', [LaporanController::class, 'laporan']);
 

@@ -11,7 +11,6 @@ class PosyanduController extends Controller
     public function index()
     {
         $posyandu = Posyandu::all();
-
         return response()->json([
             'data' => $posyandu
         ]);

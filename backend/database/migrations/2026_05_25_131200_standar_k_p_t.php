@@ -11,7 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //
+        Schema::create('standar_kpt', function (Blueprint $table) {
+            $table->id()->autoIncrement();
+            $table->integer('interval_bulan');
+            $table->integer('umur_awal');
+            $table->integer('umur_akhir');
+            $table->enum('gender', ['laki-laki', 'perempuan']);
+            $table->decimal('kpt_cm', 5, 3);
+            $table->timestamps();
+        });
     }
 
     /**
@@ -19,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('standar_kpt');
     }
 };

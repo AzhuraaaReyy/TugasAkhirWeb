@@ -90,62 +90,277 @@ class RiwayatGrafikController extends Controller
 
 
 
-    public function grafik($id)
+    public function grafik($balita_id)
     {
-        $deteksi = Deteksi::with('balita.deteksis')->findOrFail($id);
+        $deteksisRaw = Deteksi::where('balita_id', $balita_id)
+            ->with('balita')
+            ->orderBy('tgl_deteksi', 'asc')
+            ->get();
 
-        $data = $deteksi->balita->deteksis
-            ->sortBy('tgl_deteksi') // 🔥 urut berdasarkan tanggal
-            ->values()
-            ->map(function ($item) {
+        if ($deteksisRaw->isEmpty()) {
+            return response()->json([]);
+        }
 
-                $zScore = $item->zscore_tb_u;
+        // hindari tanggal duplicate
+        $deteksis = $deteksisRaw->unique('tgl_deteksi')->values();
 
-                $ZScoreBBU = $item->zscore_bb_u;
+        $data = $deteksis->map(function ($item, $index) use ($deteksis) {
 
-                $status = $zScore !== null
-                    ? $this->deteksiTBU($zScore)
-                    : '-';
+            // ZSCORE WHO
+            $zScore = $item->zscore_tb_u;
+            $ZScoreBBU = $item->zscore_bb_u;
 
-                $statusBBU = $ZScoreBBU !== null
-                    ? $this->deteksiBBU($ZScoreBBU)
-                    : '-';
+            $status = $zScore !== null
+                ? $this->deteksiTBU($zScore)
+                : '-';
 
-                $who = DB::table('who_tb_u')
-                    ->where('month', $item->umur)
-                    ->where('gender', $item->balita->jk)
+            $statusBBU = $ZScoreBBU !== null
+                ? $this->deteksiBBU($ZScoreBBU)
+                : '-';
+
+            // DEFAULT VALUE
+            $kenaikanBB = 0;
+            $kenaikanTB = 0;
+
+            $targetKbm = null;
+            $targetKpt = null;
+
+            $statusPertumbuhanBB = "Data Awal";
+            $statusPertumbuhanTB = "Data Awal";
+            $tooltipBB = "Data awal";
+            $tooltipTB = "Data awal";
+
+            //ambil status z-score
+            $status_bbu = $this->deteksiBBU($ZScoreBBU);
+            $status_tbu = $this->deteksiTBU($zScore);
+
+
+            // CEK PERTUMBUHAN
+            if ($index > 0) {
+
+                // data sebelumnya
+                $prevItem = $deteksis[$index - 1];
+
+                // hitung kenaikan langsung dari data sebelumnya
+                $kenaikanBB = round(
+                    (float)$item->berat - (float)$prevItem->berat,
+                    2
+                );
+
+                $kenaikanTB = round(
+                    (float)$item->tinggi - (float)$prevItem->tinggi,
+                    2
+                );
+                $umurSebelumnya = (int)$prevItem->umur;
+                $umurSekarang = (int)$item->umur;
+
+                // interval real antar penimbangan
+                $intervalAktual = $umurSekarang - $umurSebelumnya;
+                $umurAnak = (int)$item->umur;
+                $genderAnak = strtolower(trim($item->balita->jk));
+
+                $genderDB = $genderAnak == 'l'
+                    ? 'laki-laki'
+                    : 'perempuan';
+
+                //Hitung ideal KBM
+                $kbmStandar = DB::table('standar_kbm')
+                    ->whereRaw('LOWER(TRIM(gender)) = ?', [strtolower(trim($genderDB))])
+                    ->where('umur_awal', '<=', $umurAnak)
+                    ->where('umur_akhir', '>=', $umurAnak)
+                    ->orderByRaw('ABS(interval_bulan - ?)', [$intervalAktual])
                     ->first();
 
-                return [
-                    'umur' => (int) $item->umur,
-                    'tinggi' => (float) $item->tinggi,
-                    'berat' => (float) $item->berat,
+                if ($kbmStandar) {
 
-                    // 🔥 TANGGAL (PENTING)
-                    'tgl_deteksi' => $item->tgl_deteksi,
-                    'tgl_format' => $item->tgl_deteksi
-                        ? Carbon::parse($item->tgl_deteksi)->format('Y-m-d')
-                        : null,
-                    'tgl_label' => $item->tgl_deteksi
-                        ? Carbon::parse($item->tgl_deteksi)->translatedFormat('d M Y')
-                        : '-',
+                    $targetKbm = (float)$kbmStandar->kbm_kg;
 
-                    'bulan' => $item->tgl_deteksi
-                        ? Carbon::parse($item->tgl_deteksi)->translatedFormat('F')
-                        : '-',
+                    $statusPertumbuhanBB =
+                        $kenaikanBB >= $targetKbm
+                        ? "Telah Tercapai"
+                        : "Belum Tercapai";
+                } else {
 
-                    'status' => $status,
-                    'statusBBU' => $statusBBU,
-                    'zscore' => $zScore,
-                    'ZScoreBBU' => $ZScoreBBU,
-                    'median_tb' => $who->m ?? null,
-                    'minus2_tb' => $who ? $who->m - (2 * $who->s) : null,
-                    'minus3_tb' => $who ? $who->m - (3 * $who->s) : null,
-                ];
-            });
+                    // fallback ke WHO
+                    $statusPertumbuhanBB = $statusBBU;
+                }
+
+                //Hitung Ideal KPT
+                $kptStandar = DB::table('standar_kpt')
+                    ->whereRaw('LOWER(TRIM(gender)) = ?', [$genderDB])
+
+                    ->where('umur_awal', '<=', $umurAnak)
+                    ->where('umur_akhir', '>=', $umurAnak)
+
+                    // cari interval yang <= interval aktual
+                    ->where('interval_bulan', '<=', max($intervalAktual, 2))
+
+                    // ambil paling mendekati
+                    ->orderBy('interval_bulan', 'desc')
+
+                    ->first();
+
+                if ($kptStandar) {
+
+                    $targetKpt = (float)$kptStandar->kpt_cm;
+
+                    $statusPertumbuhanTB =
+                        $kenaikanTB >= $targetKpt
+                        ? "Telah Tercapai"
+                        : "Belum Tercapai";
+                } else {
+
+                    // fallback ke WHO
+                    $statusPertumbuhanTB = $status;
+                }
+
+                $selisihBB = $targetKbm !== null
+                    ? round($kenaikanBB - $targetKbm, 2)
+                    : 0;
+                $selisihTB = $targetKpt !== null
+                    ? round($kenaikanTB - $targetKpt, 2)
+                    : 0;
+
+                //Tooltip BB
+                if ($targetKbm !== null) {
+
+                    if ($kenaikanBB >= $targetKbm) {
+
+                        $tooltipBB =
+                            "Pertumbuhan luar biasa (+" . $kenaikanBB . " kg), " .
+                            "melampaui standar minimal +" . $targetKbm . " kg (selisih +" . $selisihBB . " kg)";
+                    } else {
+
+                        $tooltipBB =
+                            "Pertumbuhan kurang optimal (" . $kenaikanBB . " kg), " .
+                            "standar minimal " . $targetKbm . " kg, " .
+                            "kurang " . abs($selisihBB) . " kg dari target.";
+                    }
+                } else {
+                    $tooltipBB = $statusPertumbuhanBB;
+                }
+
+
+
+
+                //Tooltip TB
+                if ($targetKpt !== null) {
+
+                    if ($kenaikanTB >= $targetKpt) {
+
+                        $tooltipTB =
+                            "Pertumbuhan luar biasa (+" . $kenaikanTB . " cm), " .
+                            "melampaui standar minimal +" . $targetKpt . " cm (selisih +" . $selisihTB . " cm)";
+                    } else {
+
+                        $tooltipTB =
+                            $tooltipTB =
+                            "Pertumbuhan kurang optimal (" . $kenaikanTB . " cm), " .
+                            "standar minimal " . $targetKpt . " cm, " .
+                            "kurang " . abs($selisihTB) . " cm dari target.";
+                    }
+                } else {
+                    $tooltipTB = $statusPertumbuhanTB;
+                }
+            }
+
+            $warnaBB = "gray";
+
+            if ($targetKbm !== null) {
+                if ($kenaikanBB >= $targetKbm) {
+                    $warnaBB = "green";
+                } else {
+                    $warnaBB = "red";
+                }
+            }
+
+            $warnaTB = "gray";
+
+            if ($targetKpt !== null) {
+                if ($kenaikanTB >= $targetKpt) {
+                    $warnaTB = "green";
+                } else {
+                    $warnaTB = "red";
+                }
+            }
+            // Ambil WHO TB/U
+            $gender = strtoupper(trim($item->balita->jk));
+            $who = DB::table('who_tb_u')
+                ->where('month', $item->umur)
+                ->where('gender', $gender)
+                ->first();
+
+            //Ambil WHO BB/U    
+            $whobbu = DB::table('who_bb_u')
+                ->where('month', $item->umur)
+                ->where('gender', $gender)
+                ->first();
+
+
+            return [
+                'id' => $item->id,
+
+                'umur' => (int)$item->umur,
+
+                'tinggi' => (float)$item->tinggi,
+                'berat' => (float)$item->berat,
+
+
+                // TOOLTIP DATA
+                'kenaikan_berat' => $kenaikanBB,
+                'targetKbm' => $targetKbm,
+
+                'kenaikan_tinggi' => $kenaikanTB,
+                'targetKpt' => $targetKpt,
+
+
+                // TANGGAL
+                'tgl_deteksi' => $item->tgl_deteksi,
+
+                'tgl_label' => $item->tgl_deteksi
+                    ? Carbon::parse($item->tgl_deteksi)
+                    ->translatedFormat('d F Y')
+                    : '-',
+
+                'bulan' => $item->tgl_deteksi
+                    ? Carbon::parse($item->tgl_deteksi)
+                    ->translatedFormat('d M')
+                    : '-',
+
+                // STATUS
+                'status' => $status,
+
+                // status pertumbuhan dinamis
+                'statusTinggi' => $statusPertumbuhanTB,
+                'statusBBU' => $statusPertumbuhanBB,
+
+                'tooltipBB' => $tooltipBB,
+                'tooltipTB' => $tooltipTB,
+                'warnaTB' => $warnaTB,
+                'warnaBB' => $warnaBB,
+                // ZSCORE
+                'zscore' => $zScore,
+                'ZScoreBBU' => $ZScoreBBU,
+
+                // GARIS WHO TBU
+                'median_tb' => $who->m ?? null,
+                'minus2_tb' => $who ? $who->m - (2 * $who->s) : null,
+                'minus3_tb' => $who ? $who->m - (3 * $who->s) : null,
+
+                // GARIS WHO BBU
+                'median_bb' => $whobbu->m ?? null,
+                'minus2_bb' => $whobbu ? $whobbu->m - (2 * $whobbu->s) : null,
+                'minus3_bb' => $whobbu ? $whobbu->m - (3 * $whobbu->s) : null,
+
+                'statustbu' =>  $status_tbu,
+                'statusbbu' =>  $status_bbu,
+            ];
+        });
 
         return response()->json($data);
     }
+
+
 
 
     private function deteksiTBU($z)

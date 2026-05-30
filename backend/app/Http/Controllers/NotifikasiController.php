@@ -9,6 +9,7 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class NotifikasiController extends Controller
 {
@@ -26,7 +27,7 @@ class NotifikasiController extends Controller
 
         // 1. Simpan Notifikasi
         $notif = Notifikasi::create([
-            'pengirim_id' => auth()->id(),
+            'pengirim_id' => Auth::id(),
             'judul' => $request->judul,
             'tipe' => $request->tipe,
             'pesan' => $request->pesan,
@@ -103,10 +104,10 @@ class NotifikasiController extends Controller
 
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::id();
 
         $data = UserNotifikasi::with('notifikasi')
-            ->where('user_id', $user->id)
+            ->where('user_id', $user)
             ->latest()
             ->get();
 

@@ -6,6 +6,7 @@ use App\Models\Balita;
 use App\Models\Penimbangan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class PenimbanganController extends Controller
 {
@@ -54,7 +55,7 @@ class PenimbanganController extends Controller
         }
 
         $validated['umur'] = $bulan < 0 ? 0 : $bulan;
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = Auth::id();
 
         $penimbangan = Penimbangan::create($validated);
 

@@ -64,6 +64,12 @@ class DetailDeteksiController extends Controller
                 $status_tinggi = "Tetap";
             }
         }
+        $rekomendasidata = include storage_path('data/rekomendasi.php');
+        $rekomendasiBBU = $rekomendasidata['bbu'][$status_bbu] ?? [];
+
+        $rekomendasiTBU = $rekomendasidata['tbu'][$status_tbu] ?? [];
+
+        $rekomendasiBBTB = $rekomendasidata['bbtb'][$status_bbtb] ?? [];
         return response()->json([
             'message' => "Detail data deteksi",
             'data' => [
@@ -74,7 +80,7 @@ class DetailDeteksiController extends Controller
                 'name' => $detail->balita?->name,
                 'jk' => $detail->balita?->jk,
                 'tgl_lahir' => $detail->balita?->tgl_lahir,
-
+                'orang_tua' => $detail->balita?->user?->name ?? "-",
                 // data pengukuran
                 'tgl_deteksi' => Carbon::parse($detail->tgl_deteksi)->format('Y-m-d'),
                 'umur' => $detail->umur,
@@ -105,6 +111,16 @@ class DetailDeteksiController extends Controller
                 ],
 
                 // keterangan & rekomendasi
+                'keterangangizi' => [
+                    'stunting' => $this->keteranganTBU($status_tbu),
+                    'wasting' => $this->keteranganBBTB($status_bbtb),
+                    'underweight' => $this->keteranganBBU($status_bbu),
+                ],
+                'rekomendasigizi' => [
+                    'stunting' => $rekomendasiTBU,
+                    'wasting' => $rekomendasiBBTB,
+                    'underweight' => $rekomendasiBBU,
+                ],
                 'keterangan' => $detaildeteksi->keterangan,
                 'rekomendasi' => $detaildeteksi->rekomendasi,
                 'total_deteksi' => $detail->balita?->deteksis()->count(),

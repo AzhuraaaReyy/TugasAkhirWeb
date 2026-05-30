@@ -30,6 +30,8 @@ class DatabaseSeeder extends Seeder
             WhoBbUSeeder::class,
             WhoTbUSeeder::class,
             WhoBbTbSeeder::class,
+            StandarKBMSeeder::class,
+            StandarKPTSeeder::class,
         ]);
     }
 }
