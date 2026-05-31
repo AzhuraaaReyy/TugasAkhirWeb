@@ -31,6 +31,7 @@ import CreateFormBalita from "./pages/Kader/ManajemenBalita/Create";
 import AuthCallback from "./pages/Callback";
 import LihatRiwayat from "./pages/Kader/LihatRiwayat";
 import LihatMonitoring from "./pages/Kader/LihatMonitoring";
+import Chatbot from "./pages/Chatbot";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -91,6 +92,7 @@ const App = () => {
         { path: "detaildeteksi/:id", element: <DetailDeteksi /> },
         { path: "lihatriwayat/:id", element: <LihatRiwayat /> },
         { path: "lihatmonitoring/:id", element: <LihatMonitoring /> },
+        { path: "chatbot", element: <Chatbot /> },
       ],
     },
 

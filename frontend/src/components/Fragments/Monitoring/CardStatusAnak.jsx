@@ -198,7 +198,7 @@ export default function CardStatusAnak({ data }) {
 
           <p className="text-sm text-gray-600 leading-relaxed mt-3 text-justify">
             Ringkasan status gizi berikut membantu memahami kondisi
-            pertumbuhan Si Kecil berdasarkan standar WHO. Nilai Z-Score
+            pertumbuhan anak berdasarkan standar WHO. Nilai Z-Score
             digunakan untuk membandingkan tinggi badan dan berat badan anak
             dengan anak lain seusianya, sehingga risiko stunting, underweight,
             maupun wasting dapat terdeteksi secara lebih cepat dan ditangani dengan
@@ -293,7 +293,7 @@ export default function CardStatusAnak({ data }) {
         </h2>
         <p className="text-sm text-gray-600 leading-relaxed mb-5 text-justify">
           Warna dan kategori berikut digunakan untuk membantu
-          memahami hasil pemantauan status gizi Si Kecil secara lebih mudah.
+          memahami hasil pemantauan status gizi anak secara lebih mudah.
           Setiap indikator menunjukkan kondisi pertumbuhan berdasarkan standar
           WHO, mulai dari kondisi normal, risiko gangguan pertumbuhan, hingga
           kondisi yang memerlukan perhatian khusus. Dengan memahami arti setiap

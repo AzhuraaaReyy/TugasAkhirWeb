@@ -15,7 +15,7 @@ export default function Profile({ data }) {
   return (
     <div className="w-full h-full ">
       <div className="bg-white rounded-[24px] border border-white border-2 p-6 shadow-sm flex flex-col items-center hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7">
-        <div className="w-32 h-32 rounded-xl overflow-hidden border-4 border-emerald-200 bg-gray-100 mb-3">
+        <div className="w-32 h-32 rounded-xl overflow-hidden border-4 border-emerald-200 bg-gray-100 mb-4 mt-5">
           <img
             src={profileImage}
             alt={data.name}
@@ -85,7 +85,7 @@ export default function Profile({ data }) {
           </div>
         </div>
 
-        <button className="w-full mt-10 border-white border-1 bg-emerald-300 hover:bg-emerald-400  text-black font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm shadow-emerald-200">
+        <button className="w-full mt-12 mb-5 border-white border-1 bg-emerald-300 hover:bg-emerald-400  text-black font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm shadow-emerald-200">
           <Plus size={18} />
           Input Pemeriksaan Baru
         </button>

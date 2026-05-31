@@ -118,7 +118,7 @@ export default function LihatRiwayat() {
             <h1 className="text-3xl font-black text-gray-900 tracking-tight sm:text-4xl">
               Lihat Riwayat Balita
             </h1>
-            <p className="text-sm text-gray-500 mt-2 max-w-xl leading-relaxed">
+            <p className=" w-full  text-sm text-gray-500 mt-2  leading-relaxed">
               Halaman ini menampilkan riwayat pemeriksaan dan hasil deteksi
               risiko stunting berdasarkan data pertumbuhan balita dari waktu ke
               waktu.

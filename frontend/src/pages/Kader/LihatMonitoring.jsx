@@ -37,7 +37,7 @@ export default function LihatMonitoring() {
         const formattedData = res.data.map((item) => ({
           id: item.id,
           name: item.bulan,
-
+          tanggal: item.tgl_deteksi,
           tinggi: item.tinggi,
           berat: item.berat,
 
@@ -171,7 +171,13 @@ export default function LihatMonitoring() {
                 <CardStatus status={detail.statusTBU} />
               </div>
               <div className="min-w-0">
-                <CardGiziIndikator data={detail.ZscoreTBU} />
+                <CardGiziIndikator
+                  data={{
+                    tbu: detail.ZscoreTBU,
+                    bbu: detail.ZscoreBBU,
+                    bbtb: detail.ZscoreBBTB,
+                  }}
+                />
               </div>
               {/* Indikator status gizi */}
             </div>
@@ -242,17 +248,16 @@ export default function LihatMonitoring() {
               </div>
             </div>
           </div>
+          <div className="min-w-0">
+            <CardPerkembangan data={perkembangan} />
+          </div>
           <div className="flex min-w-0">
             <CardStatusAnak data={detail} />
           </div>
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 ">
-            <div className="min-w-0">
-              <CardPerkembangan data={perkembangan} />
-            </div>
-            <div className="min-w-0">
-              <CardKeteranganRekomendasi data={detail} />
-            </div>
+          <div className="min-w-0">
+            <CardKeteranganRekomendasi data={detail}  riwayat={chartData} />
           </div>
+
           <div className="flex items-center justify-center gap-2 pt-2 text-center text-xs text-gray-400">
             <svg
               className="h-4 w-4 shrink-0"
