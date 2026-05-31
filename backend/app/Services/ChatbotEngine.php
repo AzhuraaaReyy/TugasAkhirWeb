@@ -14,14 +14,18 @@ class ChatbotEngine
         private IntentClassifier $classifier
     ) {}
 
-    public function process(string $sessionId, int $deteksiId, string $text): array
+    public function process(string $sessionId, int $balitaId, string $text): array
     {
         $session = ChatSession::firstOrCreate(
             ['session_id' => $sessionId],
-            ['deteksi_id' => $deteksiId, 'history' => [], 'context' => []]
+            ['deteksi_id' => $balitaId, 'history' => [], 'context' => []]
         );
 
-        $deteksi = Deteksi::with('balita')->find($deteksiId);
+        $deteksi = Deteksi::with('balita')
+            ->where('balita_id', $balitaId)
+            ->orderByDesc('tgl_deteksi')->orderByDesc('id')
+            ->first();
+
         if (!$deteksi) {
             return ['status' => 'error', 'message' => 'Data deteksi tidak ditemukan'];
         }
