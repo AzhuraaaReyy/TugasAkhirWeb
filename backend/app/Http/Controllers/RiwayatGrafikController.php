@@ -10,6 +10,42 @@ use Carbon\Carbon;
 
 class RiwayatGrafikController extends Controller
 {
+
+    public function ambilstatustimeline($balitaId)
+    {
+        $deteksis = Deteksi::where('balita_id', $balitaId)
+            ->with('balita') // <- TAMBAHKAN: accessor umur menghitung dari tgl_lahir (sama dgn profil)
+            ->orderBy('tgl_deteksi', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $data = $deteksis->map(function ($d) {
+            return [
+                'id'             => $d->id,
+                'tgl_deteksi'    => $d->tgl_deteksi,
+                'tgl_label'      => $d->tgl_deteksi
+                    ? Carbon::parse($d->tgl_deteksi)->locale('id')->translatedFormat('d M Y')
+                    : '-',
+                'umur'           => $d->umur,
+                'berat'          => $d->berat,
+                'tinggi'         => $d->tinggi,
+                'lingkar_kepala' => $d->lingkar_kepala ?? null,
+                'zscore_tbu'     => $d->zscore_tb_u,
+                'zscore_bbu'     => $d->zscore_bb_u,
+                'zscore_bbtb'    => $d->zscore_tb_bb,
+                'status_tbu'     => $d->status_tb_u  ?? $this->deteksiTBU($d->zscore_tb_u),
+                'status_bbu'     => $d->status_bb_u  ?? $this->deteksiBBU($d->zscore_bb_u),
+                'status_bbtb'    => $d->status_tb_bb ?? $this->deteksiBBTB($d->zscore_tb_bb),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
+    }
+
+
     public function ambildatabalita($id)
     {
         $balita = Balita::with(['penimbangans.user', 'penimbanganTerakhir', 'user'])
@@ -193,10 +229,7 @@ class RiwayatGrafikController extends Controller
                     ->where('umur_akhir', '>=', $umurAnak)
 
                     // cari interval yang <= interval aktual
-                    ->where('interval_bulan', '<=', max($intervalAktual, 2))
-
-                    // ambil paling mendekati
-                    ->orderBy('interval_bulan', 'desc')
+                    ->orderByRaw('ABS(interval_bulan - ?)', [$intervalAktual])
 
                     ->first();
 
@@ -362,6 +395,17 @@ class RiwayatGrafikController extends Controller
 
 
 
+    private function deteksiBBTB($z)
+    {
+        if (!is_numeric($z)) return "-";
+        if ($z < -3) return "Gizi buruk (severely wasted)";
+        if ($z >= -3 && $z < -2) return "Gizi kurang (wasted)";
+        if ($z >= -2 && $z <= 1) return "Gizi baik (normal)";
+        if ($z > 1 && $z <= 2) return "Berisiko gizi lebih (possible risk of overweight)";
+        if ($z > 2 && $z <= 3) return "Gizi lebih (overweight)";
+        if ($z > 3) return "Obesitas (obese)";
+        return "-";
+    }
 
     private function deteksiTBU($z)
     {

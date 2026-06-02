@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('no_telp')->unique();
+            $table->string('no_telp')->unique()->nullable();
             $table->enum('role', ['kader', 'orangtua']);
             $table->string('alamat');
             $table->string('google_id')->nullable();

@@ -42,7 +42,7 @@ class AuthSocialiteController extends Controller
                     'google_id' => $socialUser->id,
                     'google_token' => $socialUser->token,
                     'google_refresh_token' => $socialUser->refreshToken,
-                    'no_telp' => '-',
+                    'no_telp' => null,
                     'role' => 'orangtua', // default role
                     'alamat' => '-',
                 ]);

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Deteksi;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DetailDeteksiController extends Controller
 {
@@ -70,6 +71,7 @@ class DetailDeteksiController extends Controller
         $rekomendasiTBU = $rekomendasidata['tbu'][$status_tbu] ?? [];
 
         $rekomendasiBBTB = $rekomendasidata['bbtb'][$status_bbtb] ?? [];
+
         return response()->json([
             'message' => "Detail data deteksi",
             'data' => [

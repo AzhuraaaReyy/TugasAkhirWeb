@@ -40,7 +40,7 @@ class Deteksi extends Model
             return null;
         }
 
-        return Carbon::parse($this->balita->tgl_lahir)
+        return (int) Carbon::parse($this->balita->tgl_lahir)
             ->diffInMonths(Carbon::parse($this->tgl_deteksi));
     }
 

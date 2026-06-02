@@ -67,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/riwayat/{id}', [RiwayatGrafikController::class, 'ambildatabalita']);
         Route::get('/grafik/{id}', [RiwayatGrafikController::class, 'grafik']);
+        Route::get('/ambilstatustimeline/{balitaId}', [RiwayatGrafikController::class, 'ambilstatustimeline']);
         Route::get('/perkembangan/{id}', [MonitoringController::class, 'getPerkembangan']);
 
         Route::get('/laporan', [LaporanController::class, 'laporan']);
@@ -85,8 +86,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/detaildeteksi/{id}', [DetailDeteksiController::class, 'detaildeteksi']);
         Route::post('/detaildeteksi/store', [DetailDeteksiController::class, 'store']);
 
+        Route::get('/detailmonitoring/{balitaId}', [MonitoringController::class, 'detailMonitoringBalita']);
+        Route::get('/monitoring/{balita}/{deteksi}', [MonitoringController::class, 'LihatMonitoring']);
+        Route::get('/grafik-snapshot/{deteksiId}', [MonitoringController::class, 'grafikSnapshot']);
 
+        Route::get('/detailmonitoring-snapshot/{deteksiId}', [MonitoringController::class, 'detailMonitoringSnapshot']);
 
+        Route::get('/perkembangan-snapshot/{deteksiId}', [MonitoringController::class, 'perkembanganSnapshot']);
         Route::post('/ask', [QnAController::class, 'ask']);
         Route::get('/guided/{status}', [QnAController::class, 'guided']);
     });

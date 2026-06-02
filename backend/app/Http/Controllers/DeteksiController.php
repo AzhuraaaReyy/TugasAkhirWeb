@@ -61,18 +61,14 @@ class DeteksiController extends Controller
             ]);
         }
         //hitung umur
-        $umur = $request->umur;
-        if (is_null($umur)) {
-            $umur = $this->hitungUmur($request->tgl_lahir, $request->tgl_deteksi);
-        }
-
         $umurAsli = $this->hitungUmur($request->tgl_lahir, $request->tgl_deteksi);
 
         $warning = null;
-
         if (!is_null($request->umur) && abs($request->umur - $umurAsli) > 1) {
             $warning = 'Umur tidak sesuai dengan tanggal lahir';
         }
+
+        $umur = $umurAsli;
 
         $jk = $balita->jk;
         $bb = $request->berat;
@@ -170,7 +166,7 @@ class DeteksiController extends Controller
 
     private function hitungUmur($tgl_lahir, $tgl_deteksi)
     {
-        return Carbon::parse($tgl_lahir)
+        return (int) Carbon::parse($tgl_lahir)
             ->diffInMonths(Carbon::parse($tgl_deteksi));
     }
 
