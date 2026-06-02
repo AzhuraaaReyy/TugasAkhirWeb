@@ -18,20 +18,21 @@ import CardStatus from "@/components/Fragments/Monitoring/CardStatus";
 import ChartZScoreTBU from "@/components/Fragments/Monitoring/ChartZscoreTb";
 import ChartZscoreBb from "@/components/Fragments/Monitoring/ChartZscoreBb";
 
-export default function LihatMonitoring() {
+export default function TrenMonitoring() {
   const [chartData, setChartData] = useState([]);
   const [detail, setDetail] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { id } = useParams();
+  const { balitaId, deteksiId } = useParams();
   const navigate = useNavigate();
-  const [showChatHint, setShowChatHint] = useState(false);
   const [perkembangan, setPerkembangan] = useState(null);
-
+  const [showChatHint, setShowChatHint] = useState(false);
+  console.log("BALITA ID:", balitaId);
+  console.log("DETEKSI ID:", deteksiId);
   useEffect(() => {
     const fetchGrafik = async () => {
       try {
-        const res = await api.get(`/grafik/${id}`);
-
+        const res = await api.get(`/grafik-snapshot/${deteksiId}`);
+        console.log("API GRAFIK:", res.data);
         const formattedData = res.data.map((item) => ({
           id: item.id,
           name: item.bulan,
@@ -81,13 +82,13 @@ export default function LihatMonitoring() {
       }
     };
 
-    if (id) fetchGrafik();
-  }, [id]);
+    if (deteksiId) fetchGrafik();
+  }, [deteksiId]);
 
   useEffect(() => {
     const fetchPerkembangan = async () => {
       try {
-        const res = await api.get(`/perkembangan/${id}`);
+        const res = await api.get(`/perkembangan-snapshot/${deteksiId}`);
         setPerkembangan(res.data);
         console.log("Debug Perkembangan:", res.data);
       } catch (err) {
@@ -96,14 +97,14 @@ export default function LihatMonitoring() {
         setLoading(false);
       }
     };
-    if (id) fetchPerkembangan();
-  }, [id]);
+    if (deteksiId) fetchPerkembangan();
+  }, [deteksiId]);
 
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const res = await api.get(`/detailmonitoring/${id}`);
-
+        const res = await api.get(`/detailmonitoring-snapshot/${deteksiId}`);
+        console.log("API DETAIL:", res.data);
         const item = res.data.data;
 
         const formattedData = {
@@ -141,8 +142,8 @@ export default function LihatMonitoring() {
       }
     };
 
-    if (id) fetchDetail();
-  }, [id]);
+    if (deteksiId) fetchDetail();
+  }, [deteksiId]);
 
   if (loading) {
     return (
@@ -318,7 +319,9 @@ export default function LihatMonitoring() {
           {/* ===== AJAKAN TANYA AI ===== */}
         </div>
       </div>
+      {/* ================= CHATBOT FLOATING BUTTON ================= */}
 
+      {/* Tombol Kanan */}
       {/* Tombol Kanan */}
       {/* CHATBOT FLOATING */}
       <div
@@ -329,24 +332,24 @@ export default function LihatMonitoring() {
         {/* Bubble */}
         <div
           className={`
-    overflow-hidden
-    transition-all duration-500 ease-out
-    ${
-      showChatHint
-        ? "max-w-lg opacity-100 translate-x-0"
-        : "max-w-0 opacity-0 translate-x-4"
-    }
-  `}
+         overflow-hidden
+         transition-all duration-500 ease-out
+         ${
+           showChatHint
+             ? "max-w-lg opacity-100 translate-x-0"
+             : "max-w-0 opacity-0 translate-x-4"
+         }
+       `}
         >
           <div
             className="
-      flex items-center gap-3
-      whitespace-nowrap
-      rounded-full
-      bg-emerald-600
-      px-5 py-3
-      shadow-2xl
-    "
+           flex items-center gap-3
+           whitespace-nowrap
+           rounded-full
+           bg-emerald-600
+           px-5 py-3
+           shadow-2xl
+         "
           >
             <Bot size={18} className="text-white shrink-0" />
 
@@ -358,37 +361,37 @@ export default function LihatMonitoring() {
 
         {/* Tombol Bot */}
         <button
-          onClick={() => navigate(`/chatbot/${id}`)}
+          onClick={() => navigate(`/chatbot/${deteksiId}`)}
           className="
-      group
-      relative
-      w-16 h-16
-      rounded-full
-      bg-emerald-600
-      text-white
-      shadow-xl
-      flex items-center justify-center
-      hover:scale-110
-      transition-all duration-300
-    "
+           group
+           relative
+           w-16 h-16
+           rounded-full
+           bg-emerald-600
+           text-white
+           shadow-xl
+           flex items-center justify-center
+           hover:scale-110
+           transition-all duration-300
+         "
         >
           <span
             className="
-        absolute inset-0
-        rounded-full
-        bg-emerald-500
-        animate-ping
-        opacity-20
-      "
+             absolute inset-0
+             rounded-full
+             bg-emerald-500
+             animate-ping
+             opacity-20
+           "
           />
 
           <Bot
             size={28}
             className={`
-        relative z-10
-        transition-transform duration-700
-        ${showChatHint ? "rotate-[360deg]" : ""}
-      `}
+             relative z-10
+             transition-transform duration-700
+             ${showChatHint ? "rotate-[360deg]" : ""}
+           `}
           />
         </button>
       </div>

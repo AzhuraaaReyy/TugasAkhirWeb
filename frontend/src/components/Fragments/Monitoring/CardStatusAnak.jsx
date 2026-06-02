@@ -197,12 +197,11 @@ export default function CardStatusAnak({ data }) {
           <h3 className="text-xl font-extrabold text-gray-800">Status Anak</h3>
 
           <p className="text-sm text-gray-600 leading-relaxed mt-3 text-justify">
-            Ringkasan status gizi berikut membantu memahami kondisi
-            pertumbuhan anak berdasarkan standar WHO. Nilai Z-Score
-            digunakan untuk membandingkan tinggi badan dan berat badan anak
-            dengan anak lain seusianya, sehingga risiko stunting, underweight,
-            maupun wasting dapat terdeteksi secara lebih cepat dan ditangani dengan
-            tepat.
+            Ringkasan status gizi berikut membantu memahami kondisi pertumbuhan
+            anak berdasarkan standar WHO. Nilai Z-Score digunakan untuk
+            membandingkan tinggi badan dan berat badan anak dengan anak lain
+            seusianya, sehingga risiko stunting, underweight, maupun wasting
+            dapat terdeteksi secara lebih cepat dan ditangani dengan tepat.
           </p>
         </div>
 
@@ -292,13 +291,13 @@ export default function CardStatusAnak({ data }) {
           Keterangan Status
         </h2>
         <p className="text-sm text-gray-600 leading-relaxed mb-5 text-justify">
-          Warna dan kategori berikut digunakan untuk membantu
-          memahami hasil pemantauan status gizi anak secara lebih mudah.
-          Setiap indikator menunjukkan kondisi pertumbuhan berdasarkan standar
-          WHO, mulai dari kondisi normal, risiko gangguan pertumbuhan, hingga
-          kondisi yang memerlukan perhatian khusus. Dengan memahami arti setiap
-          status, orang tua dapat mengambil langkah yang tepat untuk mendukung
-          tumbuh kembang anak secara optimal.
+          Warna dan kategori berikut digunakan untuk membantu memahami hasil
+          pemantauan status gizi anak secara lebih mudah. Setiap indikator
+          menunjukkan kondisi pertumbuhan berdasarkan standar WHO, mulai dari
+          kondisi normal, risiko gangguan pertumbuhan, hingga kondisi yang
+          memerlukan perhatian khusus. Dengan memahami arti setiap status, orang
+          tua dapat mengambil langkah yang tepat untuk mendukung tumbuh kembang
+          anak secara optimal.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {legends.map((item, idx) => (

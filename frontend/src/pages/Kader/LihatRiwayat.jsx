@@ -34,6 +34,7 @@ export default function LihatRiwayat() {
     riwayat: [],
     lokasi_posyandu: "",
     kader_pemeriksa: "",
+    balita_id: "",
   });
 
   const metode = location.state?.metode || "stunting";
@@ -42,36 +43,52 @@ export default function LihatRiwayat() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get(`/detaildeteksi/${id}`);
-        const data = res.data.data;
+        // 1) Timeline dulu (berbasis balita_id) -> sumber deteksi_id yang benar
+        const resRiwayat = await api.get(`/ambilstatustimeline/${id}`);
+        const dataRiwayat = resRiwayat.data?.data || [];
 
-        const resGrafik = await api.get(`/grafik/${id}`);
-        const dataGrafik = resGrafik.data;
+        const terbaru = dataRiwayat[dataRiwayat.length - 1] || {};
+        const sebelumnya = dataRiwayat[dataRiwayat.length - 2] || {};
 
+        // 2) Detail dipanggil dgn DETEKSI_ID terbaru (bukan balita_id)
+        let data = {};
+        if (terbaru.id) {
+          const res = await api.get(`/detaildeteksi/${terbaru.id}`);
+          data = res.data?.data || {};
+        }
+
+        // status: prioritaskan hasil deteksi baru, lalu data terbaru di timeline
         const statusMapping = {
           stunting: hasil?.status_tbu?.status || data.status?.tbu,
           wasting: hasil?.status_bb_tb?.status || data.status?.bbtb,
           underweight: hasil?.status_bbu?.status || data.status?.bbu,
         };
-        console.log(data);
+        const statusByMetode = {
+          stunting: terbaru.status_tbu,
+          wasting: terbaru.status_bbtb,
+          underweight: terbaru.status_bbu,
+        };
+
         setForm((prev) => ({
           ...prev,
-          umur: data.umur || "",
-          tgl_deteksi: data.tgl_deteksi || "",
-          status: statusMapping[metode] || "-",
+          // angka inti diambil dari timeline (sudah dihitung & konsisten)
+          umur: terbaru.umur ?? data.umur ?? "",
+          tgl_deteksi: terbaru.tgl_deteksi ?? data.tgl_deteksi ?? "",
+          status: statusMapping[metode] || statusByMetode[metode] || "-",
 
-          // Data tambahan pendukung untuk HeaderProfile
-          berat_sekarang: data.berat || "",
-          berat_sebelumnya: data.berat_sebelumnya || "",
-          tinggi_sekarang: data.tinggi || "",
-          tinggi_sebelumnya: data.tinggi_sebelumnya || "",
+          berat_sekarang: terbaru.berat ?? data.berat ?? "",
+          berat_sebelumnya: sebelumnya.berat ?? data.berat_sebelumnya ?? "",
+          tinggi_sekarang: terbaru.tinggi ?? data.tinggi ?? "",
+          tinggi_sebelumnya: sebelumnya.tinggi ?? data.tinggi_sebelumnya ?? "",
+
+          // info tambahan dari detail (yang tidak ada di timeline)
+          keterangan: data.keterangan ?? "",
+          rekomendasi: data.rekomendasi ?? "",
           lokasi_posyandu:
             data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
           kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
 
-          riwayat: Array.isArray(dataGrafik)
-            ? dataGrafik
-            : dataGrafik?.data || [],
+          riwayat: dataRiwayat,
         }));
       } catch (err) {
         console.error(err.response?.data || err.message);
@@ -89,6 +106,7 @@ export default function LihatRiwayat() {
 
         setForm((prev) => ({
           ...prev,
+          balita_id: data.id,
           name: data.name || "",
           jk:
             data.jk === "L" || data.jk?.toLowerCase() === "laki-laki"
@@ -109,6 +127,7 @@ export default function LihatRiwayat() {
 
     fetchBalitas();
   }, [id]);
+  console.log("ITEM RIWAYAT:", form.riwayat[0]);
 
   return (
     <MainLayouts type="lihatriwayat">
@@ -132,7 +151,7 @@ export default function LihatRiwayat() {
               <EvaluasiKenaikanBulanan form={form} />
             </div>
             <div className="flex-1 w-full h-full">
-              <TimelineCard form={form} />
+              <TimelineCard form={form} metode={metode} />
             </div>
           </div>
         </div>

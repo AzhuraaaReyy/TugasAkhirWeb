@@ -17,7 +17,7 @@ const CardTinggi = ({ tinggi }) => {
           </p>
 
           {/* Nominal besar */}
-          <h2 className="text-2xl font-bold text-gray-800 mt-2">{tinggi}</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mt-2">{tinggi} cm</h2>
         </div>
       }
     />

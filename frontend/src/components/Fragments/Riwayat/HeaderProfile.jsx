@@ -71,7 +71,7 @@ export default function HeaderProfile({ form }) {
           <div className="flex justify-between border-b border-gray-50 pb-2">
             <span className="text-gray-400">Usia</span>
             <span className="font-semibold text-gray-700">
-              {Math.floor(form.umur)} Bulan
+              {form.umur} Bulan
             </span>
           </div>
           <div className="flex justify-between pb-1">

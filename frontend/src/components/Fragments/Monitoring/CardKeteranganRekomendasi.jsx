@@ -1,16 +1,6 @@
-import React from "react";
-import {
-  CheckCircle2,
-  AlertTriangle,
-  Activity,
-  ShieldCheck,
-  TrendingDown,
-  TrendingUp,
-  Minus,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
 
 const MIN_BERTURUT = 2;
-
 const EPS_BERAT = 0.05;
 
 const urutkanRiwayat = (riwayat = []) =>
@@ -21,144 +11,295 @@ const urutkanRiwayat = (riwayat = []) =>
     return (a?.umur ?? 0) - (b?.umur ?? 0);
   });
 
-/**
- * Hitung tren dari deret nilai (urut waktu menaik).
- * @returns {{ arah: "naik"|"turun"|"tetap"|null, panjang: number }}
- */
-const hitungTren = (nilai = [], eps = EPS_BERAT) => {
-  const arr = nilai.map((v) => Number(v)).filter((v) => !isNaN(v));
-  if (arr.length < 2) return { arah: null, panjang: 0 };
+const hitungTren = (riwayat = [], eps = EPS_BERAT) => {
+  if (riwayat.length < 2) return { arah: null, panjang: 0 };
 
-  let arah = null;
-  let panjang = 0;
+  let arahTerakhir = null;
+  let jumlah = 0;
 
-  for (let i = arr.length - 1; i > 0; i--) {
-    const delta = arr[i] - arr[i - 1];
-    const stepArah = delta <= -eps ? "turun" : delta >= eps ? "naik" : "tetap";
+  for (let i = riwayat.length - 1; i > 0; i--) {
+    const sekarang = Number(riwayat[i].berat);
+    const sebelumnya = Number(riwayat[i - 1].berat);
+    const delta = sekarang - sebelumnya;
+    const arah = delta <= -eps ? "turun" : delta >= eps ? "naik" : "tetap";
 
-    if (arah === null) {
-      arah = stepArah;
-      panjang = 1;
-    } else if (stepArah === arah) {
-      panjang++;
-    } else {
-      break;
+    if (!arahTerakhir) {
+      arahTerakhir = arah;
+      jumlah = 1;
+      continue;
     }
+    if (arah === arahTerakhir) jumlah++;
+    else break;
   }
 
-  return { arah, panjang };
+  return { arah: arahTerakhir, panjang: jumlah + 1 };
 };
+
+/* Kategori hanya dipakai internal untuk dedup (agar saran yang nyaris sama
+   tidak tampil berulang) — tidak ditampilkan ke layar. */
+const kategoriKey = (teks = "") => {
+  const t = teks.toLowerCase();
+  if (/(protein|telur|ikan|ayam|hati|daging|tempe|tahu|lauk)/.test(t))
+    return "protein";
+  if (/(sayur|buah|vitamin|serat|zat besi)/.test(t)) return "sayur";
+  if (/(stimulasi|motorik|aktivitas|merangkak|bermain|psikomotor)/.test(t))
+    return "stimulasi";
+  if (
+    /(posyandu|puskesmas|periksa|konsultasi|tenaga kesehatan|dokter|bidan|evaluasi|spesialis)/.test(
+      t,
+    )
+  )
+    return "periksa";
+  if (/(timbang|nimbang|pantau|mantau|pemantauan)/.test(t)) return "pantau";
+  if (/(tidur|istirahat)/.test(t)) return "tidur";
+  if (/(susu|asi|formula)/.test(t)) return "susu";
+  if (
+    /(sanitasi|cuci tangan|air bersih|kebersihan|jamban|sabun|imunisasi)/.test(
+      t,
+    )
+  )
+    return "sanitasi";
+  if (/(energi|kalori|padat)/.test(t)) return "energi";
+  return "umum";
+};
+
+/* Deteksi urgensi: rekomendasi dengan kata kunci di bawah dianggap "prioritas"
+   (perlu dilakukan dalam waktu dekat), sisanya masuk "rutin". */
+const URGEN_RX =
+  /(puskesmas|rumah sakit|segera|secepatnya|dokter|ahli gizi|spesialis|rujuk|penanganan)/i;
+const isPrioritas = (teks = "") => URGEN_RX.test(teks);
+
+/* Dedup: buang teks duplikat, lalu batasi satu item per kategori. */
+const dedupRekomendasi = (list = [], maks = Infinity) => {
+  const seenText = new Set();
+  const seenKat = new Set();
+  const out = [];
+  for (const r of list) {
+    const txt = (r || "").trim();
+    if (!txt || seenText.has(txt)) continue;
+    const kat = kategoriKey(txt);
+    if (seenKat.has(kat)) continue;
+    seenText.add(txt);
+    seenKat.add(kat);
+    out.push(r);
+    if (out.length >= maks) break;
+  }
+  return out;
+};
+
+/* Frasa bahasa awam untuk ringkasan "Apa yang terjadi?" */
+const FRASA = {
+  stunting: {
+    berat:
+      "tinggi badannya jauh tertinggal dari anak seusianya akibat kekurangan gizi yang berlangsung lama",
+    sedang: "tinggi badannya mulai tertinggal dari anak seusianya",
+  },
+  underweight: {
+    berat: "berat badannya sangat kurang untuk usianya",
+    sedang: "berat badannya masih kurang untuk usianya",
+  },
+  wasting: {
+    berat:
+      "tubuhnya terlalu kurus dibanding tinggi badannya dan perlu penanganan segera",
+    sedang: "tubuhnya mulai terlalu kurus dibanding tinggi badannya",
+  },
+  bbLebih: {
+    risiko: "berat badannya mulai berisiko berlebih untuk usianya",
+  },
+  giziLebih: {
+    risiko: "berat badannya mulai berisiko berlebih dibanding tinggi badannya",
+    sedang: "berat badannya berlebih dibanding tinggi badannya",
+    berat: "berat badannya jauh berlebih dibanding tinggi badannya (obesitas)",
+  },
+};
+
+/* Dampak cadangan, dipakai HANYA bila kolom DB dampak_* kosong */
+const DAMPAK_DEFAULT = {
+  stunting:
+    "Bila dibiarkan, stunting dapat menghambat perkembangan otak dan kemampuan belajar anak, menurunkan daya tahan tubuh, serta memengaruhi produktivitasnya saat dewasa.",
+  underweight:
+    "Berat badan yang terus tertinggal membuat anak lebih mudah sakit dan lemas, serta memperlambat tumbuh kembangnya bila tidak segera diperbaiki.",
+  wasting:
+    "Kondisi ini meningkatkan risiko infeksi dan, bila terlambat ditangani, dapat mengganggu pertumbuhan serta keselamatan anak.",
+  lebih:
+    "Kelebihan berat badan yang dibiarkan dapat berkembang menjadi obesitas serta meningkatkan risiko gangguan kesehatan seperti tekanan darah tinggi dan masalah metabolik saat anak tumbuh besar.",
+};
+
+function Reveal({ show, delay = 0, className = "", children }) {
+  return (
+    <div
+      className={`transition-all duration-500 ease-out ${
+        show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
+      } ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* Daftar rekomendasi sederhana: penanda titik kecil + teks, tanpa icon. */
+function DaftarRekomendasi({ items, tone = "emerald" }) {
+  const dot = tone === "amber" ? "bg-amber-500" : "bg-emerald-500";
+  return (
+    <ul className="space-y-2.5">
+      {items.map((item, i) => (
+        <li
+          key={i}
+          className="flex gap-3 text-[13.5px] leading-relaxed text-gray-700"
+        >
+          <span
+            className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${dot}`}
+          />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function CardKeteranganRekomendasi({ data, riwayat }) {
   const nama = data?.name || "Anak";
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 40);
+    return () => clearTimeout(t);
+  }, []);
+
   const riwayatFinal =
     (Array.isArray(riwayat) && riwayat.length ? riwayat : data?.riwayat) || [];
-  const statusUtama =
-    data?.statusTBU?.includes("Sangat pendek") ||
-    data?.statusTBU?.includes("Pendek")
-      ? "stunting"
-      : data?.statusBBTB?.includes("Gizi buruk") ||
-          data?.statusBBTB?.includes("Gizi kurang")
-        ? "wasting"
-        : data?.statusBBU?.includes("sangat kurang") ||
-            data?.statusBBU?.includes("kurang")
-          ? "underweight"
-          : "normal";
 
-  const statusConfig = {
-    normal: {
-      bg: "bg-emerald-50/70",
-      border: "border-emerald-100",
-      iconBg: "bg-emerald-100",
-      icon: <CheckCircle2 className="text-emerald-600" size={20} />,
-      titleColor: "text-emerald-900",
-      textColor: "text-emerald-700",
-      rekomBg: "bg-amber-50/60",
-      rekomBorder: "border-amber-100",
-      rekomText: "text-amber-800",
-      title: `Pertumbuhan ${nama} saat ini dalam kisaran normal.`,
-      description:
-        "Pertumbuhan dan status gizi anak berada dalam kondisi baik sesuai indikator WHO. Tetap pertahankan pola hidup sehat dan pemantauan rutin.",
-    },
-    stunting: {
-      bg: "bg-red-50/70",
-      border: "border-red-100",
-      iconBg: "bg-red-100",
-      icon: <AlertTriangle className="text-red-600" size={20} />,
-      titleColor: "text-red-900",
-      textColor: "text-red-700",
-      rekomBg: "bg-orange-50/60",
-      rekomBorder: "border-orange-100",
-      rekomText: "text-orange-800",
-      title: `${nama} terindikasi mengalami gangguan pertumbuhan tinggi badan.`,
-      description:
-        data?.keteranganStunting ||
-        "Tinggi badan anak berada di bawah standar usianya sehingga perlu perhatian pada asupan gizi dan pemantauan pertumbuhan.",
-    },
-    wasting: {
-      bg: "bg-yellow-50/70",
-      border: "border-yellow-100",
-      iconBg: "bg-yellow-100",
-      icon: <AlertTriangle className="text-yellow-600" size={20} />,
-      titleColor: "text-yellow-900",
-      textColor: "text-yellow-700",
-      rekomBg: "bg-amber-50/60",
-      rekomBorder: "border-amber-100",
-      rekomText: "text-amber-800",
-      title: `${nama} mengalami masalah gizi berdasarkan berat badan dan tinggi badan.`,
-      description:
-        data?.keteranganWasting ||
-        "Berat badan anak tidak proporsional terhadap tinggi badannya dan membutuhkan perhatian pada pola makan.",
-    },
-    underweight: {
-      bg: "bg-orange-50/70",
-      border: "border-orange-100",
-      iconBg: "bg-orange-100",
-      icon: <Activity className="text-orange-600" size={20} />,
-      titleColor: "text-orange-900",
-      textColor: "text-orange-700",
-      rekomBg: "bg-amber-50/60",
-      rekomBorder: "border-amber-100",
-      rekomText: "text-amber-800",
-      title: `${nama} memiliki berat badan di bawah standar usianya.`,
-      description:
-        data?.keteranganUnderweight ||
-        "Berat badan anak berada di bawah standar WHO sehingga perlu peningkatan asupan gizi.",
-    },
-  };
+  // ===== KLASIFIKASI SETIAP INDIKATOR (mengikuti data status) =====
+  const tbu = (data?.statusTBU || "").toLowerCase();
+  const bbu = (data?.statusBBU || "").toLowerCase();
+  const bbtb = (data?.statusBBTB || "").toLowerCase();
 
-  const current = statusConfig[statusUtama];
+  const indikatorMasalah = [];
+
+  // Tinggi badan (TB/U)
+  if (tbu.includes("sangat pendek"))
+    indikatorMasalah.push({
+      key: "stunting",
+      singkat: "Tinggi badan",
+      frasa: FRASA.stunting.berat,
+      dampak: data?.dampakStunting || DAMPAK_DEFAULT.stunting,
+    });
+  else if (tbu.includes("pendek"))
+    indikatorMasalah.push({
+      key: "stunting",
+      singkat: "Tinggi badan",
+      frasa: FRASA.stunting.sedang,
+      dampak: data?.dampakStunting || DAMPAK_DEFAULT.stunting,
+    });
+
+  // Berat badan menurut umur (BB/U)
+  if (bbu.includes("sangat kurang"))
+    indikatorMasalah.push({
+      key: "underweight",
+      singkat: "Berat badan",
+      frasa: FRASA.underweight.berat,
+      dampak: data?.dampakUnderweight || DAMPAK_DEFAULT.underweight,
+    });
+  else if (bbu.includes("kurang"))
+    indikatorMasalah.push({
+      key: "underweight",
+      singkat: "Berat badan",
+      frasa: FRASA.underweight.sedang,
+      dampak: data?.dampakUnderweight || DAMPAK_DEFAULT.underweight,
+    });
+  else if (bbu.includes("lebih"))
+    indikatorMasalah.push({
+      key: "bbu_lebih",
+      singkat: "Berat badan",
+      frasa: FRASA.bbLebih.risiko,
+      dampak: DAMPAK_DEFAULT.lebih,
+    });
+
+  // Berat badan menurut tinggi (BB/TB)
+  if (bbtb.includes("gizi buruk"))
+    indikatorMasalah.push({
+      key: "wasting",
+      singkat: "Keseimbangan gizi",
+      frasa: FRASA.wasting.berat,
+      dampak: data?.dampakWasting || DAMPAK_DEFAULT.wasting,
+    });
+  else if (bbtb.includes("gizi kurang"))
+    indikatorMasalah.push({
+      key: "wasting",
+      singkat: "Keseimbangan gizi",
+      frasa: FRASA.wasting.sedang,
+      dampak: data?.dampakWasting || DAMPAK_DEFAULT.wasting,
+    });
+  else if (bbtb.includes("obesitas") || bbtb.includes("obese"))
+    indikatorMasalah.push({
+      key: "obesitas",
+      singkat: "Keseimbangan gizi",
+      frasa: FRASA.giziLebih.berat,
+      dampak: DAMPAK_DEFAULT.lebih,
+    });
+  else if (bbtb.includes("berisiko"))
+    indikatorMasalah.push({
+      key: "risiko_lebih",
+      singkat: "Keseimbangan gizi",
+      frasa: FRASA.giziLebih.risiko,
+      dampak: DAMPAK_DEFAULT.lebih,
+    });
+  else if (bbtb.includes("gizi lebih") || bbtb.includes("overweight"))
+    indikatorMasalah.push({
+      key: "gizi_lebih",
+      singkat: "Keseimbangan gizi",
+      frasa: FRASA.giziLebih.sedang,
+      dampak: DAMPAK_DEFAULT.lebih,
+    });
+
+  const adaMasalah = indikatorMasalah.length > 0;
+  const banyakMasalah = indikatorMasalah.length > 1;
+
+  // Ringkasan bahasa awam
+  const frasaMasalah = indikatorMasalah.map((it) => it.frasa);
+  let ringkasan;
+  if (frasaMasalah.length === 0) {
+    ringkasan = `Pertumbuhan ${nama} berada dalam kisaran normal sesuai standar WHO. Tetap pertahankan pola makan bergizi dan pemantauan rutin agar tumbuh kembangnya terjaga.`;
+  } else if (frasaMasalah.length === 1) {
+    ringkasan = `Saat ini ${nama} menunjukkan satu hal yang perlu diperhatikan, yaitu ${frasaMasalah[0]}. Kondisi ini sebaiknya segera mendapat perhatian agar tumbuh kembang anak tetap optimal.`;
+  } else {
+    const gabung =
+      frasaMasalah.length === 2
+        ? `${frasaMasalah[0]}; serta ${frasaMasalah[1]}`
+        : frasaMasalah.slice(0, -1).join("; ") +
+          "; serta " +
+          frasaMasalah[frasaMasalah.length - 1];
+    ringkasan = `Saat ini ${nama} menunjukkan ${frasaMasalah.length} hal yang perlu diperhatikan: ${gabung}. Kondisi-kondisi ini sebaiknya ditangani bersama agar tumbuh kembang anak kembali ke jalur yang sehat.`;
+  }
+
+  // ===== TREN PENIMBANGAN =====
   const riwayatTerurut = urutkanRiwayat(riwayatFinal);
-  const trenBerat = hitungTren(riwayatTerurut.map((r) => r.berat));
+  const trenBerat = hitungTren(riwayatTerurut);
 
   const TREN_INFO = {
     turun: {
-      wrap: "bg-red-50 border-red-200",
-      icon: <TrendingDown className="text-red-600" size={20} />,
+      wrap: "bg-red-50 border-red-100",
       titleColor: "text-red-800",
-      title: "Peringatan: berat badan menurun berturut-turut",
-      desc: `Berat badan ${nama} turun pada ${trenBerat.panjang} penimbangan terakhir secara berturut-turut. Kondisi ini perlu perhatian — segera konsultasikan ke kader Posyandu atau tenaga kesehatan untuk mencari penyebabnya.`,
+      title: "Berat badan menurun berturut-turut",
+      desc: `${nama} mengalami penurunan berat badan selama ${trenBerat.panjang} kali penimbangan berturut-turut. Perlu segera diperiksakan.`,
     },
     tetap: {
-      wrap: "bg-amber-50 border-amber-200",
-      icon: <Minus className="text-amber-600" size={20} />,
+      wrap: "bg-amber-50 border-amber-100",
       titleColor: "text-amber-800",
-      title: "Perhatian: pertumbuhan stagnan",
-      desc: `Berat badan ${nama} cenderung tidak bertambah (stagnan) pada ${trenBerat.panjang} penimbangan terakhir berturut-turut. Pertumbuhan yang stagnan juga perlu diperhatikan — pastikan asupan gizi tercukupi dan konsultasikan ke Posyandu.`,
+      title: "Pertumbuhan stagnan",
+      desc: `${nama} tidak menunjukkan kenaikan berat badan selama ${trenBerat.panjang} kali penimbangan berturut-turut. Evaluasi pola makan dianjurkan.`,
     },
     naik: {
-      wrap: "bg-emerald-50 border-emerald-200",
-      icon: <TrendingUp className="text-emerald-600" size={20} />,
+      wrap: "bg-emerald-50 border-emerald-100",
       titleColor: "text-emerald-800",
       title: "Pertumbuhan positif",
-      desc: `Berat badan ${nama} naik pada ${trenBerat.panjang} penimbangan terakhir secara berturut-turut. Pertahankan pola asuh dan asupan gizinya, serta lanjutkan pemantauan rutin.`,
+      desc: `${nama} menunjukkan kenaikan berat badan selama ${trenBerat.panjang} kali penimbangan berturut-turut. Pertahankan pola makan dan pemantauan rutin.`,
     },
   };
-
   const trenConfig = trenBerat.arah ? TREN_INFO[trenBerat.arah] : null;
   const adaPeringatanTren = trenConfig && trenBerat.panjang >= MIN_BERTURUT;
 
-  // ===== REKOMENDASI =====
   const perluPerbaikan =
     adaPeringatanTren &&
     (trenBerat.arah === "turun" || trenBerat.arah === "tetap");
@@ -171,94 +312,162 @@ export default function CardKeteranganRekomendasi({ data, riwayat }) {
       ]
     : [];
 
-  const rekomendasi = [
-    ...rekomendasiTren,
+  // Rekomendasi DB lebih dulu (spesifik), tren menyusul.
+  const sumberRekomendasi = [
     ...(data?.rekomendasiStunting || []),
     ...(data?.rekomendasiWasting || []),
     ...(data?.rekomendasiUnderweight || []),
+    ...rekomendasiTren,
   ];
 
-  const uniqueRekomendasi = [...new Set(rekomendasi)].slice(0, 4);
+  // ===== PEMBAGIAN REKOMENDASI =====
+  const rekomendasiTunggal = dedupRekomendasi(sumberRekomendasi, 4);
+  const rekomendasiPrioritas = dedupRekomendasi(
+    sumberRekomendasi.filter(isPrioritas),
+    3,
+  );
+  const rekomendasiRutin = dedupRekomendasi(
+    sumberRekomendasi.filter((r) => !isPrioritas(r)),
+    4,
+  );
+  const adaRekomendasi =
+    rekomendasiPrioritas.length > 0 || rekomendasiRutin.length > 0;
 
   return (
-    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm w-full">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">
-        Keterangan & Rekomendasi
-      </h3>
+    <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
+      {/* ====== KIRI: KETERANGAN KONDISI ====== */}
+      <Reveal show={mounted} delay={0}>
+        <div className="flex h-full flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-7">
+          <div className="flex items-center gap-3">
+            <span className="h-6 w-1.5 rounded-full bg-emerald-500" />
+            <h3 className="text-xl font-extrabold tracking-tight text-gray-900">
+              Keterangan kondisi
+            </h3>
+          </div>
 
-      <div className="space-y-4">
-        {/* BANNER TREN PENIMBANGAN */}
-        {adaPeringatanTren && (
-          <div
-            className={`p-5 rounded-2xl border flex gap-4 items-start ${trenConfig.wrap} hover:-translate-y-1 hover:shadow-lg transition-all duration-300`}
-          >
-            <div className="w-10 h-10 rounded-full bg-white/70 flex items-center justify-center shrink-0">
-              {trenConfig.icon}
-            </div>
-            <div>
-              <h4 className={`text-sm font-bold ${trenConfig.titleColor}`}>
-                {trenConfig.title}
+          <div className="mt-5 space-y-4">
+            {/* APA YANG TERJADI */}
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <h4 className="text-sm font-bold text-emerald-700">
+                Apa yang terjadi?
               </h4>
-              <p className="text-xs mt-1 leading-relaxed text-gray-700 text-justify">
-                {trenConfig.desc}
+              <p className="mt-1.5 text-[13px] leading-relaxed text-gray-600">
+                {ringkasan}
               </p>
             </div>
-          </div>
-        )}
 
-        {/* Bagian Status */}
-        <div
-          className={`${current.bg} p-5 rounded-2xl border ${current.border} flex gap-4 items-start hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative`}
-        >
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${current.iconBg}`}
-          >
-            {current.icon}
-          </div>
-          <div>
-            <h4
-              className={`text-sm font-bold ${current.titleColor} text-justify`}
-            >
-              {current.title}
-            </h4>
-            <p
-              className={`text-xs mt-1 leading-relaxed ${current.textColor} text-justify`}
-            >
-              {current.description}
-            </p>
-          </div>
-        </div>
+            {/* DAMPAK JANGKA PANJANG */}
+            <div className="rounded-2xl bg-gray-50 p-4">
+              <h4 className="text-sm font-bold text-emerald-700">
+                Dampak jangka panjang
+              </h4>
+              {adaMasalah ? (
+                <div className="mt-2 space-y-2.5">
+                  {banyakMasalah && (
+                    <p className="text-[13px] leading-relaxed text-gray-600">
+                      Bila tidak segera ditangani, kondisi ini berisiko saling
+                      menumpuk:
+                    </p>
+                  )}
+                  {indikatorMasalah.map((it) => (
+                    <p
+                      key={it.key}
+                      className="text-[13px] leading-relaxed text-gray-600"
+                    >
+                      {banyakMasalah && (
+                        <span className="font-semibold text-gray-800">
+                          {it.singkat}.{" "}
+                        </span>
+                      )}
+                      {it.dampak}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1.5 text-[13px] leading-relaxed text-gray-600">
+                  Dengan asupan gizi dan pemantauan yang terjaga, anak
+                  berpeluang besar tumbuh optimal sesuai potensinya.
+                </p>
+              )}
+            </div>
 
-        {/* Bagian Rekomendasi */}
-        <div
-          className={`${current.rekomBg} p-5 rounded-2xl border ${current.rekomBorder} hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative`}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="text-orange-500" size={20} />
-            <h4 className="text-sm font-bold text-orange-900">
-              Rekomendasi Sistem
-            </h4>
-          </div>
-
-          <ul
-            className={`text-xs space-y-2 font-medium ${current.rekomText} text-justify`}
-          >
-            {uniqueRekomendasi.length > 0 ? (
-              uniqueRekomendasi.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-start gap-2 leading-relaxed"
-                >
-                  <span className="text-emerald-600 mt-0.5">✔</span>
-                  <span>{item}</span>
-                </li>
-              ))
-            ) : (
-              <li className="text-gray-500">Tidak ada rekomendasi tersedia.</li>
+            {/* BANNER TREN */}
+            {adaPeringatanTren && (
+              <div
+                className={`rounded-2xl border px-4 py-3 ${trenConfig.wrap}`}
+              >
+                <h4 className={`text-sm font-bold ${trenConfig.titleColor}`}>
+                  {trenConfig.title}
+                </h4>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-gray-600">
+                  {trenConfig.desc}
+                </p>
+              </div>
             )}
-          </ul>
+          </div>
+
+          <p className="mt-5 text-sm italic leading-relaxed text-gray-400">
+            &ldquo;Pertumbuhan anak bukan lomba lari, tapi maraton yang butuh
+            dukungan tepat.&rdquo;
+          </p>
         </div>
-      </div>
+      </Reveal>
+
+      {/* ====== KANAN: REKOMENDASI TINDAKAN ====== */}
+      <Reveal show={mounted} delay={90}>
+        <div className="flex h-full flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-7">
+          <div className="flex items-center gap-3">
+            <span className="h-6 w-1.5 rounded-full bg-emerald-500" />
+            <h3 className="text-xl font-extrabold tracking-tight text-gray-900">
+              Rekomendasi tindakan
+            </h3>
+          </div>
+
+          <div className="mt-5 flex-1">
+            {adaMasalah ? (
+              adaRekomendasi ? (
+                <div className="space-y-5">
+                  {rekomendasiPrioritas.length > 0 && (
+                    <div className="rounded-2xl bg-amber-50/70 px-4 py-3.5 ring-1 ring-amber-100">
+                      <p className="mb-2 text-[12.5px] font-semibold text-amber-800">
+                        Sebaiknya segera dilakukan
+                      </p>
+                      <DaftarRekomendasi
+                        items={rekomendasiPrioritas}
+                        tone="amber"
+                      />
+                    </div>
+                  )}
+
+                  {rekomendasiRutin.length > 0 && (
+                    <div className="px-1">
+                      <p className="mb-2 text-[12.5px] font-semibold text-emerald-700">
+                        Untuk dijaga sehari-hari
+                      </p>
+                      <DaftarRekomendasi
+                        items={rekomendasiRutin}
+                        tone="emerald"
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Tidak ada rekomendasi tersedia.
+                </p>
+              )
+            ) : rekomendasiTunggal.length > 0 ? (
+              <div className="px-1">
+                <DaftarRekomendasi items={rekomendasiTunggal} tone="emerald" />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Tidak ada rekomendasi tersedia.
+              </p>
+            )}
+          </div>
+        </div>
+      </Reveal>
     </div>
   );
 }

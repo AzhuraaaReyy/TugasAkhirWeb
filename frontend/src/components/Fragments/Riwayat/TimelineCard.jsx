@@ -7,11 +7,18 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-export default function TimelineCard({ form }) {
+export default function TimelineCard({ form, metode = "stunting" }) {
   const riwayatMentah = form?.riwayat || [];
   const [limit, setLimit] = useState(4);
   const [idCardAktif, setIdCardAktif] = useState(null);
-
+  const ambilStatus = (item) => {
+    const byMetode = {
+      stunting: item.status_tbu ?? item.statusTBU,
+      wasting: item.status_bbtb ?? item.statusBBTB ?? item.status_bb_tb,
+      underweight: item.status_bbu ?? item.statusBBU,
+    };
+    return byMetode[metode] || item.status || "Pemeriksaan Rutin Selesai";
+  };
   if (!riwayatMentah.length) {
     return (
       <div className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm text-center text-sm text-gray-400 mt-6">
@@ -44,7 +51,7 @@ export default function TimelineCard({ form }) {
       date: item.tgl_label || "-",
       age: `${item.umur || 0} Bulan`,
       isLatest: index === riwayatKronologis.length - 1,
-      status: item.status || "Pemeriksaan Rutin Selesai",
+      status: ambilStatus(item) || "Pemeriksaan Rutin Selesai",
       bb: `${item.berat || 0} kg`,
       bbDiff: hitungSelisih(item.berat, itemSebelumnya?.berat),
       tb: `${item.tinggi || 0} cm`,
@@ -219,7 +226,10 @@ export default function TimelineCard({ form }) {
                         onClick={(e) => {
                           e.stopPropagation(); // Mencegah klik tombol menutup/reset card
                           // Arahkan ke halaman monitoring atau buka modal
-                          window.location.href = `/monitoring/${log.id}`;
+                          console.log("FORM =", form);
+                          console.log("BALITA ID =", form.balita_id);
+                          console.log("LOG ID =", log.id);
+                          window.location.href = `/kader/monitoring/${form.balita_id}/${log.id}`;
                         }}
                         className="flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-4 py-2 rounded-lg transition-colors"
                       >

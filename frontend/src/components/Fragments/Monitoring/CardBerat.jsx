@@ -17,7 +17,7 @@ const CardBerat = ({ berat }) => {
           </p>
 
           {/* Nominal besar */}
-          <h2 className="text-2xl font-bold text-gray-800 mt-2">{berat}</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mt-2">{berat} kg</h2>
         </div>
       }
     />
