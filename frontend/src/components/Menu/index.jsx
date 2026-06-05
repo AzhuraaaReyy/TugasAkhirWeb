@@ -54,49 +54,15 @@ export const orangTuaMenu = [
     label: "Dashboard",
   },
   {
-    id: "notifikasiortu",
-    link: "/orangtua/deteksi",
+    id: "riwayatortu",
+    link: "/orangtua/riwayat",
     icon: <Icon.Dashboard />,
-    label: "Catat&Deteksi",
+    label: "Riwayat Pemeriksaan",
   },
   {
     id: "edukasiortu",
     link: "/orangtua/edukasi",
     icon: <Icon.Edukasi />,
     label: "Edukasi",
-  },
-
-  {
-    id: "riwayatortu",
-    link: "/orangtua/riwayat",
-    icon: <Icon.Dashboard />,
-    label: "Riwayat Pemeriksaan",
-  },
-];
-export const adminMenu = [
-  {
-    id: "dashboardortu",
-    link: "/DashboardOrangTua",
-    icon: <Icon.Dashboard />,
-    label: "Dashboard",
-  },
-  {
-    id: "notifikasiortu",
-    link: "/DeteksiOrangTua",
-    icon: <Icon.Dashboard />,
-    label: "Deteksi Dini",
-  },
-  {
-    id: "edukasiortu",
-    link: "/EdukasiOrangTua",
-    icon: <Icon.Edukasi />,
-    label: "Edukasi",
-  },
-
-  {
-    id: "riwayatortu",
-    link: "/RiwayatOrangTua",
-    icon: <Icon.Dashboard />,
-    label: "Riwayat Pemeriksaan",
   },
 ];

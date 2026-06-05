@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
-import { kaderMenu, orangTuaMenu, adminMenu } from "../Menu";
+import { kaderMenu, orangTuaMenu } from "../Menu";
 
 const Sidebar = ({ open }) => {
   const { user, logout, loading } = useAuth();
@@ -23,12 +23,7 @@ const Sidebar = ({ open }) => {
 
   if (!user) return null;
 
-  const menu =
-    user.role === "admin"
-      ? adminMenu
-      : user.role === "kader"
-        ? kaderMenu
-        : orangTuaMenu;
+  const menu = user.role === "kader" ? kaderMenu : orangTuaMenu;
 
   return (
     <aside

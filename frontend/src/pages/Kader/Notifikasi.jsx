@@ -1,45 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayouts from "../../layouts/MainLayouts";
 import TerkirimCard from "../../components/Fragments/Notifikasi/TerkirimCard";
 import TotalNotifikasiCard from "../../components/Fragments/Notifikasi/TotalNotifikasiCard";
 import PendingCard from "../../components/Fragments/Notifikasi/PendingCard";
 import api from "@/services/api";
-import { useEffect } from "react";
+
+const FORM_KOSONG = {
+  judul: "",
+  tipe: "",
+  metode: "",
+  target: "",
+  user_id: "",
+  tanggal: "",
+  pesan: "",
+};
+
 export default function Notifikasi() {
   const [notifikasiList, setNotifikasiList] = useState([]);
   const [listOrangTua, setListOrangTua] = useState([]);
-  const [form, setForm] = useState({
-    judul: "",
-    tipe: "",
-    metode: "",
-    target: "",
-    user_id: "",
-    tanggal: "",
-    pesan: "",
-    status_kirim: "",
-    status_baca: "",
-  });
+  const [form, setForm] = useState(FORM_KOSONG);
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     api.get("/orangtua").then((res) => {
-      setListOrangTua(res.data);
+      setListOrangTua(res.data || []);
     });
   }, []);
-  const [editingId, setEditingId] = useState(null);
 
-  // FETCH DATA (DIBUAT FUNCTION BIAR BISA DIPANGGIL ULANG)
+  // FETCH DATA (bisa dipanggil ulang setelah kirim)
   const fetchNotifikasi = async () => {
     try {
       const res = await api.get("/notifikasi");
-      console.log(res.data);
 
-      const data = res.data.map((item) => ({
+      // Mapping defensif: mendukung dua bentuk response —
+      // (a) hasil tampildata() yang sudah rata: item.judul
+      // (b) hasil index() UserNotifikasi: item.notifikasi.judul
+      const data = (res.data || []).map((item) => ({
         id: item.id,
-        judul: item.judul || "-",
-        tipe: item.tipe || "-",
-        metode: item.metode || "-",
-        tanggal: item.tanggal || "-",
-        status_kirim: item.status_kirim || "-",
-        status_baca: item.status_baca || "-",
+        judul: item.judul ?? item.notifikasi?.judul ?? "-",
+        tipe: item.tipe ?? item.notifikasi?.tipe ?? "-",
+        metode: item.metode ?? "-",
+        tanggal: String(item.tanggal ?? item.notifikasi?.tanggal ?? "-").slice(
+          0,
+          10,
+        ),
+        status_kirim: item.status_kirim ?? "-",
+        status_baca: item.status_baca ?? "-",
       }));
 
       setNotifikasiList(data);
@@ -49,11 +56,7 @@ export default function Notifikasi() {
   };
 
   useEffect(() => {
-    const loadData = async () => {
-      await fetchNotifikasi();
-    };
-
-    loadData();
+    fetchNotifikasi();
   }, []);
 
   // HANDLE INPUT
@@ -68,59 +71,76 @@ export default function Notifikasi() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validasi ringan di frontend agar pesan errornya jelas
+    if (
+      !form.judul ||
+      !form.tipe ||
+      !form.metode ||
+      !form.target ||
+      !form.pesan
+    ) {
+      alert("Judul, jenis, metode, target, dan isi pesan wajib diisi.");
+      return;
+    }
+    if (form.target === "tertentu" && !form.user_id) {
+      alert("Pilih orang tua tujuan terlebih dahulu.");
+      return;
+    }
+
     try {
+      setLoading(true);
+
       await api.post("/notifikasi", form);
 
       alert("Notifikasi berhasil dikirim");
 
-      setForm({
-        judul: "",
-        tipe: "",
-        metode: "",
-        pesan: "",
-        tanggal: "",
-        email: "",
-        phone: "",
-      });
-
+      setForm(FORM_KOSONG);
       setEditingId(null);
 
-      // 🔥 REFRESH DATA
+      // refresh riwayat
       fetchNotifikasi();
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Gagal kirim notifikasi");
+      alert(
+        err.response?.data?.message ||
+          "Gagal kirim notifikasi. Periksa kembali isian formulir.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  // EDIT (FIX mapping)
+  // EDIT (prefill form dengan data yang ada)
   const handleEdit = (item) => {
     setForm({
-      judul: item.judul,
-      tipe: item.tipe,
-      metode: item.metode,
-      pesan: "",
-      tanggal: item.tanggal,
-      email: "",
-      phone: "",
+      ...FORM_KOSONG,
+      judul: item.judul !== "-" ? item.judul : "",
+      tipe: item.tipe !== "-" ? item.tipe : "",
+      metode: item.metode !== "-" ? item.metode : "",
+      tanggal: item.tanggal !== "-" ? item.tanggal : "",
     });
 
     setEditingId(item.id);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // HAPUS (sementara FE saja)
+  // HAPUS (sementara hanya di tampilan)
   const handleDelete = (id) => {
     if (confirm("Hapus notifikasi ini?")) {
       setNotifikasiList(notifikasiList.filter((n) => n.id !== id));
     }
   };
 
-  // 🔥 STATISTIK (FIX STATUS)
+  // STATISTIK — pakai field status_kirim (bukan n.status yang tidak ada)
   const totalNotif = notifikasiList.length;
 
-  const terkirim = notifikasiList.filter((n) => n.status === "terkirim").length;
+  const terkirim = notifikasiList.filter(
+    (n) => n.status_kirim === "terkirim",
+  ).length;
 
-  const pending = notifikasiList.filter((n) => n.status === "gagal").length;
+  const pending = notifikasiList.filter(
+    (n) => n.status_kirim === "gagal",
+  ).length;
 
   return (
     <MainLayouts type="notifikasi">
@@ -140,7 +160,11 @@ export default function Notifikasi() {
 
           {/* FORM BUAT NOTIFIKASI */}
           <div className="bg-white shadow-lg rounded-2xl p-6 mb-10 border border-gray-200 border-2">
-            <h2 className="text-lg font-extrabold mb-6">Buat Notifikasi</h2>
+            <h2 className="text-lg font-extrabold mb-1">Buat Notifikasi</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Notifikasi dengan tanggal akan otomatis tampil di Kalender
+              Monitoring orang tua.
+            </p>
 
             <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
               {/* JUDUL */}
@@ -154,7 +178,7 @@ export default function Notifikasi() {
                   value={form.judul}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="Contoh: Jadwal Posyandu"
+                  placeholder="Contoh: Jadwal Posyandu Juni"
                 />
               </div>
 
@@ -243,7 +267,7 @@ export default function Notifikasi() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {form.tipe === "Jadwal Posyandu"
                     ? "Tanggal Posyandu"
-                    : "Tanggal Kirim"}
+                    : "Tanggal Kirim / Acara"}
                 </label>
                 <input
                   type="date"
@@ -252,6 +276,9 @@ export default function Notifikasi() {
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
+                <p className="text-xs text-gray-400 mt-1">
+                  Tanggal ini yang akan ditandai hijau di kalender orang tua.
+                </p>
               </div>
 
               {/* PESAN */}
@@ -273,10 +300,28 @@ export default function Notifikasi() {
               <div className="md:col-span-2 flex gap-3">
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                  disabled={loading}
+                  className={`px-6 py-2 rounded-lg text-white transition ${
+                    loading
+                      ? "bg-blue-300 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
                 >
-                  Kirim Notifikasi
+                  {loading ? "Mengirim..." : "Kirim Notifikasi"}
                 </button>
+
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm(FORM_KOSONG);
+                      setEditingId(null);
+                    }}
+                    className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
+                  >
+                    Batal
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -288,7 +333,7 @@ export default function Notifikasi() {
             <div className="overflow-x-auto rounded-xl border border-gray-200 text-center">
               <table className="w-full text-sm text-left border-collapse">
                 <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
-                  <tr className=" text-center">
+                  <tr className="text-center">
                     <th className="px-4 py-3">NO</th>
                     <th className="px-4 py-3">Judul</th>
                     <th className="px-4 py-3">Jenis</th>
@@ -303,20 +348,12 @@ export default function Notifikasi() {
                   {notifikasiList.length > 0 ? (
                     notifikasiList.map((item, index) => (
                       <tr key={item.id} className="hover:bg-gray-50 transition">
-                        {/* Judul Notifikasi */}
                         <td className="px-4 py-3 text-gray-500">{index + 1}</td>
-                        <td className="py-3">{item.judul || "-"}</td>
+                        <td className="py-3">{item.judul}</td>
+                        <td>{item.tipe}</td>
+                        <td>{item.metode}</td>
+                        <td>{item.tanggal}</td>
 
-                        {/* Tipe Notifikasi */}
-                        <td>{item.tipe || "-"}</td>
-
-                        {/* Metode Pengiriman */}
-                        <td>{item.metode || "-"}</td>
-
-                        {/* Tanggal */}
-                        <td>{item.tanggal || "-"}</td>
-
-                        {/* Status Kirim */}
                         <td>
                           <span
                             className={`px-3 py-1 rounded-full text-xs ${
@@ -325,11 +362,10 @@ export default function Notifikasi() {
                                 : "bg-red-100 text-red-700"
                             }`}
                           >
-                            {item.status_kirim || "-"}
+                            {item.status_kirim}
                           </span>
                         </td>
 
-                        {/* Aksi Edit / Hapus */}
                         <td className="flex gap-2 justify-center py-2">
                           <button
                             onClick={() => handleEdit(item)}
@@ -350,7 +386,7 @@ export default function Notifikasi() {
                   ) : (
                     <tr>
                       <td
-                        colSpan="6"
+                        colSpan="7"
                         className="text-center py-8 text-gray-400"
                       >
                         Belum ada notifikasi

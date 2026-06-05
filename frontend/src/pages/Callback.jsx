@@ -18,25 +18,20 @@ export default function AuthCallback() {
       }
 
       try {
-        // ✅ simpan token
         localStorage.setItem("token", token);
-
-        // ✅ set header axios (WAJIB)
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        // 🔥 AMBIL USER DARI BACKEND
         const res = await api.get("/user");
-
-        // ✅ set user dari backend
         setUser(res.data);
 
         const role = res.data.role;
 
-        // ✅ redirect sesuai role
-        if (role === "admin") {
-          navigate("/admin/dashboard");
-        } else if (role === "kader") {
+        if (role === "kader") {
           navigate("/kader/dashboard");
+        } else if (role === "orangtua" && !res.data.no_telp) {
+          // akun Google belum punya nomor HP ->
+          // lengkapi dulu agar tertaut dengan data anak dari kader
+          navigate("/orangtua/lengkapinotelp");
         } else {
           navigate("/orangtua/dashboard");
         }
@@ -48,5 +43,13 @@ export default function AuthCallback() {
     };
 
     handleLogin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // WAJIB ada return — komponen tanpa return membuat React error
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <p className="text-gray-500">Memproses login Google...</p>
+    </div>
+  );
 }

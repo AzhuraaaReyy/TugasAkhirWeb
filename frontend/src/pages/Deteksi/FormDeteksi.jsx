@@ -128,10 +128,6 @@ export default function FormDeteksi({
                       label: "Wasting (BB/TB)",
                       value: "wasting",
                     },
-                    {
-                      label: "Underweight (BB/U)",
-                      value: "underweight",
-                    },
                   ]}
                 />
 

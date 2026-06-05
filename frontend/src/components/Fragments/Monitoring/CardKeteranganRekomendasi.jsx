@@ -181,14 +181,14 @@ export default function CardKeteranganRekomendasi({ data, riwayat }) {
   if (tbu.includes("sangat pendek"))
     indikatorMasalah.push({
       key: "stunting",
-      singkat: "Tinggi badan",
+      singkat: "Tinggi badan (Stunting)",
       frasa: FRASA.stunting.berat,
       dampak: data?.dampakStunting || DAMPAK_DEFAULT.stunting,
     });
   else if (tbu.includes("pendek"))
     indikatorMasalah.push({
       key: "stunting",
-      singkat: "Tinggi badan",
+      singkat: "Tinggi badan (Stunting)",
       frasa: FRASA.stunting.sedang,
       dampak: data?.dampakStunting || DAMPAK_DEFAULT.stunting,
     });
@@ -197,21 +197,21 @@ export default function CardKeteranganRekomendasi({ data, riwayat }) {
   if (bbu.includes("sangat kurang"))
     indikatorMasalah.push({
       key: "underweight",
-      singkat: "Berat badan",
+      singkat: "Berat badan (UnderWeight)",
       frasa: FRASA.underweight.berat,
       dampak: data?.dampakUnderweight || DAMPAK_DEFAULT.underweight,
     });
   else if (bbu.includes("kurang"))
     indikatorMasalah.push({
       key: "underweight",
-      singkat: "Berat badan",
+      singkat: "Berat badan (UnderWeight)",
       frasa: FRASA.underweight.sedang,
       dampak: data?.dampakUnderweight || DAMPAK_DEFAULT.underweight,
     });
   else if (bbu.includes("lebih"))
     indikatorMasalah.push({
       key: "bbu_lebih",
-      singkat: "Berat badan",
+      singkat: "Berat badan (UnderWeight)",
       frasa: FRASA.bbLebih.risiko,
       dampak: DAMPAK_DEFAULT.lebih,
     });
@@ -220,35 +220,35 @@ export default function CardKeteranganRekomendasi({ data, riwayat }) {
   if (bbtb.includes("gizi buruk"))
     indikatorMasalah.push({
       key: "wasting",
-      singkat: "Keseimbangan gizi",
+      singkat: "Keseimbangan gizi (Wasting)",
       frasa: FRASA.wasting.berat,
       dampak: data?.dampakWasting || DAMPAK_DEFAULT.wasting,
     });
   else if (bbtb.includes("gizi kurang"))
     indikatorMasalah.push({
       key: "wasting",
-      singkat: "Keseimbangan gizi",
+      singkat: "Keseimbangan gizi (Wasting)",
       frasa: FRASA.wasting.sedang,
       dampak: data?.dampakWasting || DAMPAK_DEFAULT.wasting,
     });
   else if (bbtb.includes("obesitas") || bbtb.includes("obese"))
     indikatorMasalah.push({
       key: "obesitas",
-      singkat: "Keseimbangan gizi",
+      singkat: "Keseimbangan gizi (Wasting)",
       frasa: FRASA.giziLebih.berat,
       dampak: DAMPAK_DEFAULT.lebih,
     });
   else if (bbtb.includes("berisiko"))
     indikatorMasalah.push({
       key: "risiko_lebih",
-      singkat: "Keseimbangan gizi",
+      singkat: "Keseimbangan gizi (Wasting)",
       frasa: FRASA.giziLebih.risiko,
       dampak: DAMPAK_DEFAULT.lebih,
     });
   else if (bbtb.includes("gizi lebih") || bbtb.includes("overweight"))
     indikatorMasalah.push({
       key: "gizi_lebih",
-      singkat: "Keseimbangan gizi",
+      singkat: "Keseimbangan gizi (Wasting)",
       frasa: FRASA.giziLebih.sedang,
       dampak: DAMPAK_DEFAULT.lebih,
     });

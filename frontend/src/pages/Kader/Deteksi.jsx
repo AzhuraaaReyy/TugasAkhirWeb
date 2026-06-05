@@ -5,7 +5,8 @@ import { Atom } from "react-loading-indicators";
 import FormPencatatan from "../Deteksi/FormPencatatan";
 import FormDeteksi from "../Deteksi/FormDeteksi";
 import RiwayatDeteksi from "../Deteksi/HasilAnalisisDeteksi";
-
+import gambarpencatatan from "../../assets/images/rekamedis.png";
+import gambardeteksigizi from "../../assets/images/deteksisistem.png";
 export default function DeteksiDini() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -247,7 +248,7 @@ export default function DeteksiDini() {
 
   return (
     <MainLayouts type="deteksidini">
-      <div className="min-h-screen bg-gray-100 p-8">
+      <div className="h-full bg-gray-100 p-8">
         {/* ================= LOADING ================= */}
         {loading && (
           <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -280,25 +281,15 @@ export default function DeteksiDini() {
             {/* CARD PENCATATAN */}
             <div
               onClick={() => setStep("record")}
-              className="bg-white rounded-3xl border border-gray-200 p-8 cursor-pointer hover:shadow-xl transition duration-300 group"
+              className="bg-white rounded-3xl border p-8 cursor-pointer hover:shadow-xl transition duration-300 group shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7 border-2 border-gray-100"
             >
-              <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mb-5">
-                <svg
-                  className="w-7 h-7 text-emerald-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"
-                  />
-                </svg>
-              </div>
+              <img
+                src={gambarpencatatan}
+                alt="Edukasi"
+                className="w-full h-[250px] object-cover rounded-xl"
+              />
 
-              <h2 className="text-xl font-bold text-gray-800 mb-3">
+              <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
                 Pencatatan Pemeriksaan
               </h2>
 
@@ -318,25 +309,14 @@ export default function DeteksiDini() {
             {/* CARD DETEKSI */}
             <div
               onClick={() => setStep("deteksi")}
-              className="bg-white rounded-3xl border border-gray-200 p-8 cursor-pointer hover:shadow-xl transition duration-300 group"
+              className="bg-white rounded-3xl border border-gray-200 p-8 cursor-pointer hover:shadow-xl transition duration-300 group shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7 border-2 border-gray-100"
             >
-              <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-5">
-                <svg
-                  className="w-7 h-7 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 17v-6h13v6M9 5v6h13V5M3 5h.01M3 12h.01M3 19h.01"
-                  />
-                </svg>
-              </div>
-
-              <h2 className="text-xl font-bold text-gray-800 mb-3">
+              <img
+                src={gambardeteksigizi}
+                alt="Edukasi"
+                className="w-full h-[250px] object-cover rounded-xl"
+              />
+              <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
                 Deteksi Status Gizi
               </h2>
 

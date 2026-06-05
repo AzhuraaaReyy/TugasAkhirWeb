@@ -33,6 +33,7 @@ import LihatRiwayat from "./pages/Kader/LihatRiwayat";
 import LihatMonitoring from "./pages/Kader/LihatMonitoring";
 import Chatbot from "./pages/Chatbot";
 import TrenMonitoring from "./components/Fragments/Riwayat/TrenMonitoring";
+import LengkapiNoTelp from "./pages/LengkapinoTelp";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -110,30 +111,16 @@ const App = () => {
         </RequireAuth>
       ),
       children: [
-        { path: "dashboard", element: <DashboardOrangTua /> },
+        { path: "dashboard/:id?", element: <DashboardOrangTua /> },
         { path: "edukasi", element: <EdukasiKesehatanAnak /> },
         { path: "riwayat", element: <RiwayatPemeriksaan /> },
         { path: "deteksi", element: <Deteksi /> },
         { path: "notifikasi", element: <NotifikasiOrtu /> },
+        { path: "lengkapinotelp", element: <LengkapiNoTelp /> },
       ],
     },
 
     //admin
-    {
-      path: "/admin",
-      element: (
-        <RequireAuth role="admin">
-          <Outlet />
-        </RequireAuth>
-      ),
-      children: [
-        { path: "dashboard", element: <DashboardOrangTua /> },
-        { path: "manajemenposyandu", element: <EdukasiKesehatanAnak /> },
-        { path: "manajemenedukasi", element: <RiwayatPemeriksaan /> },
-        { path: "manajemenberita", element: <Deteksi /> },
-        { path: "manajemenfaqs", element: <NotifikasiOrtu /> },
-      ],
-    },
   ]);
 
   return (

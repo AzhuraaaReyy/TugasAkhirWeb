@@ -59,17 +59,17 @@ const FormLogin = () => {
       <form onSubmit={handleSubmit(onFormSubmit, onErrors)}>
         <div className="mb-6">
           <LabeledInput
-            label="Email address"
-            type="email"
-            placeholder="hello@example.com"
+            label="Email atau No. HP"
+            type="text"
+            placeholder="hello@example.com atau 081234567890"
             name="email"
             register={{
               ...register("email", {
-                required: "Email address is required",
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Invalid email address",
-                },
+                required: "Email atau nomor HP wajib diisi",
+                validate: (v) =>
+                  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(v) ||
+                  /^(0|62)[0-9]{8,13}$/.test(v) ||
+                  "Masukkan email atau nomor HP yang valid",
               }),
             }}
           />

@@ -21,7 +21,8 @@ const Content = () => {
 
   const [events, setEvents] = useState([]);
 
-  const [selectedDateEvent, setSelectedDateEvent] = useState(null);
+  // Tanggal yang sedang dipilih di kalender (untuk panel keterangan)
+  const [selectedDate, setSelectedDate] = useState(null);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -30,16 +31,38 @@ const Content = () => {
     });
 
     api.get("/kalender-notifikasi").then((res) => {
-      setEvents(res.data);
+      setEvents(res.data || []);
     });
   }, []);
 
-  /* ================= CHECK EVENT ================= */
-  const getEventByDate = (date) => {
-    const formatted = date.toISOString().split("T")[0];
+  /* ================= HELPER TANGGAL ================= */
+  // Normalisasi tanggal dari backend: "2026-06-15 00:00:00" -> "2026-06-15"
+  const normalisasiTanggal = (t) => String(t || "").slice(0, 10);
 
-    return events.filter((event) => event.tanggal === formatted);
+  // Format tanggal LOKAL (bukan toISOString/UTC agar tidak geser sehari di WIB)
+  const formatLokal = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}-${String(date.getDate()).padStart(2, "0")}`;
+
+  const getEventByDate = (date) => {
+    const formatted = formatLokal(date);
+    return events.filter(
+      (event) => normalisasiTanggal(event.tanggal) === formatted,
+    );
   };
+
+  const tanggalIndo = (date) =>
+    date.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+  // Event pada tanggal yang sedang dipilih
+  const eventTerpilih = selectedDate ? getEventByDate(selectedDate) : [];
 
   return (
     <div className="mb-10">
@@ -160,12 +183,21 @@ const Content = () => {
           </h2>
 
           <p className="text-sm text-gray-500">
-            Jadwal dan event monitoring balita
+            Tanggal berwarna hijau menandakan ada event / jadwal posyandu. Klik
+            tanggalnya untuk melihat keterangan acara.
           </p>
         </div>
 
         <ReactCalendar
           className="w-full border-none"
+          /* Tandai hijau setiap tanggal yang punya event */
+          tileClassName={({ date, view }) => {
+            if (view === "month" && getEventByDate(date).length > 0) {
+              return "has-event";
+            }
+            return null;
+          }}
+          /* Titik kecil di bawah angka tanggal */
           tileContent={({ date, view }) => {
             if (view === "month") {
               const eventsOnDate = getEventByDate(date);
@@ -177,53 +209,57 @@ const Content = () => {
               ) : null;
             }
           }}
+          /* Klik tanggal mana pun -> panel keterangan di bawah ikut berubah */
           onClickDay={(date) => {
-            const eventsOnDate = getEventByDate(date);
-
-            if (eventsOnDate.length > 0) {
-              setSelectedDateEvent(eventsOnDate);
-            }
+            setSelectedDate(date);
           }}
         />
-      </div>
 
-      {/* ================= EVENT POPUP ================= */}
-      {selectedDateEvent && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white w-[95%] max-w-md rounded-2xl p-6 relative shadow-xl">
-            <button
-              onClick={() => setSelectedDateEvent(null)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-black"
-            >
-              <X />
-            </button>
+        {/* ============ KETERANGAN ACARA (di bawah kalender) ============ */}
+        <div className="mt-6 border-t border-gray-300 pt-5">
+          <h3 className="font-semibold text-gray-800 mb-3">
+            🗓 Keterangan Acara
+            {selectedDate ? ` — ${tanggalIndo(selectedDate)}` : ""}
+          </h3>
 
-            <h2 className="text-lg font-bold mb-5 text-gray-800">
-              Event Monitoring
-            </h2>
+          {!selectedDate ? (
+            <p className="text-sm text-gray-400">
+              Belum ada acara yang dipilih. Klik tanggal bertanda hijau pada
+              kalender untuk melihat detail acara.
+            </p>
+          ) : eventTerpilih.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              Belum ada event atau acara pada tanggal ini.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {eventTerpilih.map((event) => (
+                <div
+                  key={event.id}
+                  className="border border-emerald-200 bg-emerald-50/50 rounded-xl p-4"
+                >
+                  <div className="flex justify-between items-start gap-3">
+                    <h4 className="font-semibold text-gray-800">
+                      {event.judul}
+                    </h4>
 
-            <div className="space-y-4">
-              {selectedDateEvent.map((event) => (
-                <div key={event.id} className="border rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-800">{event.judul}</h3>
-
-                  <p className="text-sm text-gray-600 mt-1">{event.pesan}</p>
-
-                  <div className="mt-3 flex justify-between items-center">
-                    <span className="text-xs text-gray-400">
-                      {event.tanggal}
-                    </span>
-
-                    <span className="bg-emerald-100 text-emerald-600 text-xs px-2 py-1 rounded-full">
+                    <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full whitespace-nowrap">
                       {event.tipe}
                     </span>
                   </div>
+
+                  <p className="text-sm text-gray-600 mt-1">{event.pesan}</p>
+
+                  <p className="text-xs text-gray-400 mt-2">
+                    {normalisasiTanggal(event.tanggal)}
+                  </p>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
+
       {/* ================= NOTIFICATION POPUP ================= */}
       {selectedNotif && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
