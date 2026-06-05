@@ -20,7 +20,7 @@ class QnAController extends Controller
             'session_id' => 'nullable|string',
         ]);
 
-        // 🔥 Generate session_id otomatis kalau frontend belum kirim
+        //Generate session_id otomatis kalau frontend belum kirim
         $sessionId = $request->session_id ?? 'sess_' . uniqid();
 
         $response = $this->engine->process(

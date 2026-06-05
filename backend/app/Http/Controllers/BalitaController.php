@@ -8,9 +8,41 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BalitaController extends Controller
 {
+    public function balitaSaya()
+    {
+        $anak = Balita::where('user_id', Auth::id())
+            ->select('id', 'name', 'jk', 'tgl_lahir')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($b) {
+                // Deteksi terakhir anak (boleh null bila belum pernah diukur)
+                $terakhir = Deteksi::where('balita_id', $b->id)
+                    ->orderByDesc('tgl_deteksi')
+                    ->orderByDesc('id')
+                    ->first();
+
+                return [
+                    'id'              => $b->id,
+                    'name'            => $b->name,
+                    'jk'              => $b->jk,
+                    'tgl_lahir'       => optional($b->tgl_lahir)->format('Y-m-d'),
+                    // info tambahan, berguna untuk kartu pilih anak:
+                    'sudah_dideteksi' => $terakhir !== null,
+                    'deteksi_terakhir' => $terakhir
+                        ? optional($terakhir->tgl_deteksi)->format('Y-m-d')
+                        : null,
+                    'status_tb_u'     => $terakhir->status_tb_u ?? null,
+                ];
+            });
+
+        return response()->json($anak);
+    }
+
     public function index()
     {
         //ambil data deteksi yang berelasi dengan balita
@@ -70,6 +102,12 @@ class BalitaController extends Controller
 
     public function store(Request $request)
     {
+        // Normalisasi DULU: 0812xxx / +62812xxx -> 62812xxx
+        // supaya pencarian akun & login konsisten satu format
+        $request->merge([
+            'no_telp' => $this->normalisasiNoTelp($request->no_telp),
+        ]);
+
         $validated = $request->validate(
             [
                 // ================= DATA BALITA =================
@@ -81,7 +119,7 @@ class BalitaController extends Controller
 
                 // ================= DATA ORANG TUA =================
                 'nama_orangtua' => 'required|string|max:255|regex:/^[A-Za-z\s\.\']+$/',
-                'no_telp' => 'required|regex:/^[0-9]+$/|digits_between:12,13|unique:users,no_telp',
+                'no_telp' => 'required|regex:/^62[0-9]{9,13}$/',
                 'alamat' => 'required|string',
             ],
             [
@@ -101,42 +139,59 @@ class BalitaController extends Controller
                 'nama_orangtua.required' => 'Nama orang tua wajib diisi.',
                 'nama_orangtua.regex' => 'Nama orang tua hanya boleh berisi huruf.',
                 'no_telp.required' => 'Nomor WhatsApp wajib diisi.',
-                'no_telp.regex' => 'Nomor WhatsApp hanya boleh berisi angka.',
-                'no_telp.digits_between' => 'Nomor WhatsApp harus terdiri dari 12 sampai 13 digit.',
-                'no_telp.unique' => 'Nomor WhatsApp sudah terdaftar.',
+                'no_telp.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890',
                 'alamat.required' => 'Alamat wajib diisi.',
             ]
         );
 
         try {
+            return DB::transaction(function () use ($validated) {
 
-            // ================= SIMPAN DATA ORANG TUA =================
-            $passwordDefault = Carbon::parse(
-                $validated['tgl_lahir']
-            )->format('dmY');
-            $orangtua = User::create([
-                'name' => $validated['nama_orangtua'],
-                'no_telp' => $validated['no_telp'],
-                'alamat' => $validated['alamat'],
-                'email' => 'orangtua' . time() . '@gmail.com',
-                'password' => Hash::make($passwordDefault),
-                'role' => 'orangtua',
-            ]);
+                /* ============ CARI ATAU BUAT AKUN WALI ============ */
+                $orangtua = User::where('no_telp', $validated['no_telp'])->first();
 
-            // ================= SIMPAN DATA BALITA =================
-            $balita = Balita::create([
-                'user_id' => $orangtua->id,
-                'name' => $validated['name'],
-                'jk' => $validated['jk'],
-                'tgl_lahir' => $validated['tgl_lahir'],
-                'tmp_lahir' => $validated['tmp_lahir'],
-                'posyandu_id' => $validated['posyandu_id'],
-            ]);
+                $passwordDefault = null;
 
-            return response()->json([
-                'message' => 'Data balita berhasil ditambahkan',
-                'data' => $balita->load('user'),
-            ], 201);
+                if (!$orangtua) {
+                    // password default: tanggal lahir anak (ddmmyyyy),
+                    $passwordDefault = Carbon::parse(
+                        $validated['tgl_lahir']
+                    )->format('dmY');
+
+                    $orangtua = User::create([
+                        'name' => $validated['nama_orangtua'],
+                        'no_telp' => $validated['no_telp'],
+                        'alamat' => $validated['alamat'],
+                        'email' => null,
+                        'password' => Hash::make($passwordDefault),
+                        'role' => 'orangtua',
+                        'akun_aktif' => false,
+                    ]);
+                }
+
+                /* ============ SIMPAN DATA BALITA ============ */
+                $balita = Balita::create([
+                    'user_id' => $orangtua->id,     // <-- koneksi ortu-anak
+                    'name' => $validated['name'],
+                    'jk' => $validated['jk'],
+                    'tgl_lahir' => $validated['tgl_lahir'],
+                    'tmp_lahir' => $validated['tmp_lahir'],
+                    'posyandu_id' => $validated['posyandu_id'],
+                ]);
+
+                return response()->json([
+                    'message' => $passwordDefault
+                        ? 'Data balita berhasil ditambahkan dan akun wali baru dibuat.'
+                        : 'Data balita berhasil ditambahkan ke akun wali yang sudah ada.',
+                    'data' => $balita->load('user'),
+                    'info_akun' => $passwordDefault ? [  // Info untuk kader sampaikan ke orang tua (hanya saat akun baru). 
+                        'login_dengan' => 'Nomor WhatsApp', // Bisa juga dikirim otomatis via WhatsAppService.
+                        'no_telp' => $validated['no_telp'],
+                        'password_default' => $passwordDefault,
+                        'catatan' => 'Sarankan orang tua segera mengganti password atau mendaftar mandiri dengan nomor yang sama untuk mengaktifkan akun.',
+                    ] : null,
+                ], 201);
+            });
         } catch (\Exception $e) {
 
             return response()->json([

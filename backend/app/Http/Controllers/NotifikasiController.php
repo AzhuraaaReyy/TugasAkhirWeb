@@ -142,4 +142,24 @@ class NotifikasiController extends Controller
 
         return response()->json($users);
     }
+
+    public function kalender()
+    {
+        $events = Notifikasi::whereNotNull('tanggal')
+            ->orderBy('tanggal')
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'id'      => $n->id,
+                    'judul'   => $n->judul,
+                    'pesan'   => $n->pesan,
+                    'tipe'    => $n->tipe,
+                    // WAJIB 'Y-m-d' — kalender membandingkan string persis,
+                    // jadi "2026-06-10 00:00:00" tidak akan pernah cocok
+                    'tanggal' => \Carbon\Carbon::parse($n->tanggal)->format('Y-m-d'),
+                ];
+            });
+
+        return response()->json($events);
+    }
 }

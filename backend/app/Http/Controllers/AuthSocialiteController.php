@@ -43,15 +43,18 @@ class AuthSocialiteController extends Controller
                     'google_token' => $socialUser->token,
                     'google_refresh_token' => $socialUser->refreshToken,
                     'no_telp' => null,
-                    'role' => 'orangtua', // default role
+                    'role' => 'orangtua',
                     'alamat' => '-',
+                    'akun_aktif' => true,   // <-- TAMBAHAN: akun Google dikelola sendiri
                 ]);
             }
-
+            $perluHp = $user->no_telp ? 0 : 1;
             // 🔑 token Sanctum
             $token = $user->createToken('auth_token')->plainTextToken;
 
-            return redirect("http://localhost:5173/auth/callback?token=$token&role=$user->role");
+            return redirect(
+                "http://localhost:5173/auth/callback?token=$token&role={$user->role}&lengkapi_hp=$perluHp"
+            );
         } catch (\Exception $e) {
             return redirect("http://localhost:5173/login?error=google_login_failed");
         }

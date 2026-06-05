@@ -11,15 +11,23 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+            'login'    => 'required_without:email|string',
+            'email'    => 'required_without:login|string',
+            'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Ambil identitas dari field mana pun yang dikirim
+        $identifier = $request->input('login', $request->input('email'));
+
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+
+        $user = $isEmail
+            ? User::where('email', $identifier)->first()
+            : User::where('no_telp', $this->normalisasiNoTelp($identifier))->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message' => 'Email atau password salah'
+                'message' => 'Email/No. HP atau password salah'
             ], 401);
         }
 
@@ -29,12 +37,14 @@ class LoginController extends Controller
 
         return response()->json([
             'message' => 'Login berhasil',
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role
+            'token'   => $token,
+            'user'    => [
+                'id'         => $user->id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'no_telp'    => $user->no_telp,
+                'role'       => $user->role,
+                'akun_aktif' => $user->akun_aktif,
             ]
         ]);
     }
@@ -57,7 +67,8 @@ class LoginController extends Controller
     {
         $role = $request->query('role'); // ambil ?role=orangtua
         $users = User::when($role, fn($q) => $q->where('role', $role))
-            ->get(['id', 'name', 'email']); // hanya kirim field penting
+            ->get(['id', 'name', 'email', 'no_telp']);
+
         return response()->json(['data' => $users]);
     }
 }

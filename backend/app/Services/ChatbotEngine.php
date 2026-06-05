@@ -1063,13 +1063,13 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             case 'wasting':
                 $status = $lastData->status_tb_bb;
                 $zscore = $lastData->zscore_tb_bb;
-                $penjelasan = $this->keteranganBBU($status);
+                $penjelasan = $this->keteranganBBTB($status);
                 break;
 
             case 'underweight':
                 $status = $lastData->status_bb_u;
                 $zscore = $lastData->zscore_bb_u;
-                $penjelasan = $this->keteranganBBTB($status);
+                $penjelasan = $this->keteranganBBU($status);
                 break;
 
             default:

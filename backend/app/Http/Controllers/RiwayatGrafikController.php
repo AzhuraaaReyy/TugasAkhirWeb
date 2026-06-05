@@ -128,6 +128,7 @@ class RiwayatGrafikController extends Controller
 
     public function grafik($balita_id)
     {
+       
         $deteksisRaw = Deteksi::where('balita_id', $balita_id)
             ->with('balita')
             ->orderBy('tgl_deteksi', 'asc')

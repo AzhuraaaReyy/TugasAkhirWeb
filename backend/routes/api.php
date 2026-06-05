@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthSocialiteController;
 use App\Http\Controllers\BalitaController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DashboardOrangTuaController;
 use App\Http\Controllers\DetailDeteksiController;
 use App\Http\Controllers\DeteksiController;
 use App\Http\Controllers\LaporanController;
@@ -74,10 +75,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/notifikasi', [NotifikasiController::class, 'store']);
         Route::get('/notifikasi', [NotifikasiController::class, 'tampildata']);
+        Route::get('/kalender-notifikasi', [NotifikasiController::class, 'kalender']);
 
         Route::get('/orangtua', [NotifikasiController::class, 'getOrangTua']);
 
         //chart
+        Route::get('/heatmap', [DashboardController::class, 'heatmap']);
         Route::get('/grafikstunting', [DashboardController::class, 'grafikStunting']);
         Route::get('/grafiktahunan', [DashboardController::class, 'grafikPerbandinganTahunan']);
         Route::get('/grafikpersen', [DashboardController::class, 'grafikPieStatus']);
@@ -88,7 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/detailmonitoring/{balitaId}', [MonitoringController::class, 'detailMonitoringBalita']);
         Route::get('/monitoring/{balita}/{deteksi}', [MonitoringController::class, 'LihatMonitoring']);
-        Route::get('/grafik-snapshot/{deteksiId}', [MonitoringController::class, 'grafikSnapshot']);
+        Route::get('/grafik-snapshot/{deteksiId}', [MonitoringController::class, 'grafikSanpshot']);
 
         Route::get('/detailmonitoring-snapshot/{deteksiId}', [MonitoringController::class, 'detailMonitoringSnapshot']);
 
@@ -105,5 +108,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 'role' => 'orangtua'
             ]);
         });
+        Route::get('/balita-saya', [BalitaController::class, 'balitaSaya']);
+        Route::post('/lengkapi-no-telp', [DashboardOrangTuaController::class, 'lengkapiNoTelp']);
+        Route::get('/perkembangan-ortu/{id}', [DashboardOrangTuaController::class, 'getPerkembangan']);
+        Route::get('/detailmonitoring-ortu/{balitaId}', [DashboardOrangTuaController::class, 'detailMonitoringBalita']);
+        Route::get('/grafik-ortu/{id}', [DashboardOrangTuaController::class, 'grafik']);
+        Route::post('/ask-ortu', [DashboardOrangTuaController::class, 'ask']);
     });
 });

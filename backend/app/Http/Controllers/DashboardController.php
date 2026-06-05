@@ -7,6 +7,7 @@ use App\Models\Deteksi;
 use App\Models\Notifikasi;
 use App\Models\Posyandu;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -68,6 +69,10 @@ class DashboardController extends Controller
 
         //buat rujukan
         $listRujukan = Deteksi::with('balita')
+            // hanya deteksi TERBARU tiap anak
+            ->whereIn('id', function ($q) {
+                $q->selectRaw('MAX(id)')->from('deteksis')->groupBy('balita_id');
+            })
             ->where(function ($q) {
                 $q->where('zscore_tb_u', '<', -3)
                     ->orWhere('zscore_bb_u', '<', -3)
@@ -114,7 +119,8 @@ class DashboardController extends Controller
 
         //jadwal posyandu
         $jadwalNotif = Notifikasi::where('tipe', 'Jadwal Posyandu')
-            ->latest('tanggal')
+            ->whereDate('tanggal', '>=', Carbon::today())
+            ->orderBy('tanggal')   // yang paling dekat dari hari ini
             ->first();
 
         $jadwal = $jadwalNotif
@@ -365,5 +371,69 @@ class DashboardController extends Controller
         });
 
         return response()->json($result);
+    }
+
+    public function heatmap()
+    {
+        // 1) Total balita TERDAFTAR per posyandu
+        $totalBalita = DB::table('balitas')
+            ->select('posyandu_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('posyandu_id')
+            ->get()
+            ->keyBy('posyandu_id');
+
+        // 2) Status TERBARU tiap balita (MAX(id) per balita), rekap per posyandu.
+        //    Label status persis hasil deteksiTBU().
+        $rekap = DB::table('deteksis as d')
+            ->whereIn('d.id', function ($q) {
+                $q->selectRaw('MAX(id)')->from('deteksis')->groupBy('balita_id');
+            })
+            ->join('balitas as b', 'b.id', '=', 'd.balita_id')
+            ->select(
+                'b.posyandu_id',
+                DB::raw('COUNT(*) as terdeteksi'),
+                DB::raw("SUM(CASE WHEN d.status_tb_u = 'Sangat pendek (severely stunted)' THEN 1 ELSE 0 END) as stunting"),
+                DB::raw("SUM(CASE WHEN d.status_tb_u = 'Pendek (stunted)' THEN 1 ELSE 0 END) as berisiko")
+            )
+            ->groupBy('b.posyandu_id')
+            ->get()
+            ->keyBy('posyandu_id');
+
+        // 3) Gabungkan dengan data posyandu
+        $hasil = DB::table('posyandus')->get()->map(function ($p) use ($rekap, $totalBalita) {
+            $r          = $rekap->get($p->id);
+            $terdeteksi = (int) ($r->terdeteksi ?? 0);
+            $stunting   = (int) ($r->stunting ?? 0);  // sangat pendek
+            $berisiko   = (int) ($r->berisiko ?? 0);  // pendek
+            $normal     = max(0, $terdeteksi - $stunting - $berisiko);
+            $total      = (int) ($totalBalita->get($p->id)->total ?? 0);
+
+            // Skor keparahan 0..1 (bahan warna heatmap)
+            $intensitas = $terdeteksi > 0
+                ? round((1.0 * $stunting + 0.5 * $berisiko) / $terdeteksi, 3)
+                : 0;
+
+            return [
+                'posyandu_id'     => $p->id,
+                'wilayah'         => $p->nama_posyandu,
+                'alamat'          => $p->alamat,
+                'coordinates'     => [
+                    (float) ($p->latitude ?? 0),
+                    (float) ($p->longitude ?? 0),
+                ],
+                'balita'          => $total,
+                'terdeteksi'      => $terdeteksi,
+                'stunting'        => $stunting,   // sangat pendek (merah)
+                'berisiko'        => $berisiko,   // pendek (orange)
+                'normal'          => $normal,     // hijau
+                'persen_stunting' => $terdeteksi > 0 ? round($stunting / $terdeteksi * 100, 1) : 0,
+                'persen_berisiko' => $terdeteksi > 0 ? round($berisiko / $terdeteksi * 100, 1) : 0,
+                'intensitas'      => $intensitas, // 0..1
+            ];
+        })
+            ->filter(fn($x) => $x['coordinates'][0] != 0 && $x['coordinates'][1] != 0)
+            ->values();
+
+        return response()->json($hasil);
     }
 }

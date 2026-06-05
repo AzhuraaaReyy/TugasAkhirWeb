@@ -3,16 +3,91 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Carbon\Carbon;
-use App\Models\Deteksi;
-use App\Models\Balita;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use App\Models\Balita;
+use App\Models\Deteksi;
+use Illuminate\Support\Carbon;
+use App\Services\ChatbotEngine;
 
-class MonitoringController extends Controller
+class DashboardOrangTuaController extends Controller
 {
+    public function __construct(private ChatbotEngine $engine) {}
+
+    public function ask(Request $request)
+    {
+        $request->validate([
+            'question'   => 'required|string',
+            'balita_id'  => 'required|integer',
+            'session_id' => 'nullable|string',
+        ]);
+
+        //Generate session_id otomatis kalau frontend belum kirim
+        $sessionId = $request->session_id ?? 'sess_' . uniqid();
+
+        $response = $this->engine->process(
+            $sessionId,
+            $request->balita_id,
+            $request->question
+        );
+
+        return response()->json($response);
+    }
+
+
+    public function lengkapiNoTelp(Request $request)
+    {
+        $request->merge([
+            'no_telp' => $this->normalisasiNoTelp($request->no_telp),
+        ]);
+
+        $request->validate([
+            'no_telp' => 'required|regex:/^62[0-9]{9,13}$/',
+        ], [
+            'no_telp.regex' => 'Format nomor HP tidak valid. Contoh: 081234567890',
+        ]);
+
+        $user = $request->user();
+
+        $pemilikLama = User::where('no_telp', $request->no_telp)
+            ->where('id', '!=', $user->id)
+            ->first();
+
+        // nomor milik akun aktif lain -> bukan haknya
+        if ($pemilikLama && $pemilikLama->akun_aktif) {
+            return response()->json([
+                'message' => 'Nomor HP ini sudah digunakan akun lain. Bila ini nomor Anda, silakan login dengan nomor tersebut.',
+            ], 422);
+        }
+
+        $jumlahAnakPindah = 0;
+
+        DB::transaction(function () use ($user, $pemilikLama, $request, &$jumlahAnakPindah) {
+
+            // nomor milik akun PASIF buatan kader -> pindahkan anak-anaknya
+            if ($pemilikLama && !$pemilikLama->akun_aktif) {
+                $jumlahAnakPindah = Balita::where('user_id', $pemilikLama->id)
+                    ->update(['user_id' => $user->id]);
+
+                $pemilikLama->tokens()->delete();
+                $pemilikLama->delete();
+            }
+
+            $user->update(['no_telp' => $request->no_telp]);
+        });
+
+        return response()->json([
+            'message' => $jumlahAnakPindah > 0
+                ? "Nomor HP tersimpan. {$jumlahAnakPindah} data anak Anda berhasil terhubung ke akun ini."
+                : 'Nomor HP tersimpan.',
+            'anak_tertaut' => $jumlahAnakPindah,
+        ]);
+    }
+
+
     public function getPerkembangan($id)
     {
-       
+        $this->pastikanMilikOrangTua($id);
 
         $balita = Balita::find($id);
         if (!$balita) {
@@ -281,6 +356,7 @@ class MonitoringController extends Controller
 
     public function detailMonitoringBalita($balitaId)
     {
+        $this->pastikanMilikOrangTua($balitaId);
         // Ambil deteksi terbaru milik balita
         $deteksi = Deteksi::with([
             'user',
@@ -414,55 +490,10 @@ class MonitoringController extends Controller
         ]);
     }
 
-    public function LihatMonitoring($balitaId, $deteksiId)
+    public function grafik($balita_id)
     {
-        $deteksi = Deteksi::where('id', $deteksiId)
-            ->where('balita_id', $balitaId)
-            ->first();
-
-        if (!$deteksi) {
-            return response()->json([
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
-
-        return response()->json([
-            'balita_id' => $balitaId,
-            'deteksi_id' => $deteksiId,
-            'tanggal_snapshot' => $deteksi->tgl_deteksi
-        ]);
-    }
-
-
-    public function grafikSnapshot($deteksiId)
-    {
-        $deteksiDipilih = Deteksi::findOrFail($deteksiId);
-
-        $deteksisRaw = Deteksi::where(
-            'balita_id',
-            $deteksiDipilih->balita_id
-        )
-            ->where(function ($q) use ($deteksiDipilih) {
-
-                $q->where(
-                    'tgl_deteksi',
-                    '<',
-                    $deteksiDipilih->tgl_deteksi
-                )
-
-                    ->orWhere(function ($q2) use ($deteksiDipilih) {
-
-                        $q2->where(
-                            'tgl_deteksi',
-                            $deteksiDipilih->tgl_deteksi
-                        )
-                            ->where(
-                                'id',
-                                '<=',
-                                $deteksiDipilih->id
-                            );
-                    });
-            })
+        $this->pastikanMilikOrangTua($balita_id);
+        $deteksisRaw = Deteksi::where('balita_id', $balita_id)
             ->with('balita')
             ->orderBy('tgl_deteksi', 'asc')
             ->get();
@@ -663,6 +694,7 @@ class MonitoringController extends Controller
                 ->where('gender', $gender)
                 ->first();
 
+
             return [
                 'id' => $item->id,
 
@@ -727,443 +759,7 @@ class MonitoringController extends Controller
     }
 
 
-    public function detailMonitoringSnapshot($deteksiId)
-    {
-        $deteksi = Deteksi::with([
-            'user',
-            'balita.user',
-            'balita.posyandu'
-        ])->findOrFail($deteksiId);
-
-        $rekomendasidata = include storage_path('data/rekomendasi.php');
-
-        $z_bbu = $deteksi->zscore_bb_u;
-        $z_tbu = $deteksi->zscore_tb_u;
-        $z_bbtb = $deteksi->zscore_tb_bb;
-
-        $status_bbu = $this->deteksiBBU($z_bbu);
-        $status_tbu = $this->deteksiTBU($z_tbu);
-        $status_bbtb = $this->deteksiBBTB($z_bbtb);
-
-        $riwayat = Deteksi::where(
-            'balita_id',
-            $deteksi->balita_id
-        )
-            ->where(function ($q) use ($deteksi) {
-
-                $q->where(
-                    'tgl_deteksi',
-                    '<',
-                    $deteksi->tgl_deteksi
-                )
-
-                    ->orWhere(function ($q2) use ($deteksi) {
-
-                        $q2->where(
-                            'tgl_deteksi',
-                            $deteksi->tgl_deteksi
-                        )
-                            ->where(
-                                'id',
-                                '<=',
-                                $deteksi->id
-                            );
-                    });
-            })
-            ->orderBy('tgl_deteksi')
-            ->get();
-
-        return response()->json([
-            'data' => [
-
-                'id' => $deteksi->id,
-
-                'name' => $deteksi->balita->name,
-                'orang_tua' => $deteksi->balita?->user?->name ?? '-',
-                'jk' => $deteksi->balita->jk,
-
-                'umur' => $deteksi->umur,
-                'berat' => $deteksi->berat,
-                'tinggi' => $deteksi->tinggi,
-
-                'tgl_deteksi' => $deteksi->tgl_deteksi,
-
-                'zscore_bbu' => $z_bbu,
-                'zscore_tbu' => $z_tbu,
-                'zscore_bbtb' => $z_bbtb,
-
-                'total_deteksi' => $riwayat->count(),
-
-                'status' => [
-                    'bbu' => $status_bbu,
-                    'tbu' => $status_tbu,
-                    'bbtb' => $status_bbtb,
-                ],
-
-                'keterangangizi' => [
-                    'stunting' => $this->keteranganTBU($status_tbu),
-                    'wasting' => $this->keteranganBBTB($status_bbtb),
-                    'underweight' => $this->keteranganBBU($status_bbu),
-                ],
-
-                'rekomendasigizi' => [
-                    'stunting' => $rekomendasidata['tbu'][$status_tbu] ?? [],
-                    'wasting' => $rekomendasidata['bbtb'][$status_bbtb] ?? [],
-                    'underweight' => $rekomendasidata['bbu'][$status_bbu] ?? [],
-                ],
-
-                'riwayat' => $riwayat->map(function ($item) {
-                    return [
-                        'id' => $item->id,
-                        'tanggal' => $item->tgl_deteksi,
-                        'umur' => $item->umur,
-                        'berat' => (float) $item->berat,
-                        'tinggi' => (float) $item->tinggi,
-                    ];
-                }),
-            ]
-        ]);
-    }
-
-
-    public function perkembanganSnapshot($deteksiId)
-    {
-        $deteksiTerbaru = Deteksi::find($deteksiId);
-
-        if (!$deteksiTerbaru) {
-            return response()->json([
-                'message' => 'Data deteksi tidak ditemukan'
-            ], 404);
-        }
-
-        $balita = Balita::find($deteksiTerbaru->balita_id);
-
-        if (!$balita) {
-            return response()->json([
-                'message' => 'Data balita tidak ditemukan'
-            ], 404);
-        }
-
-        // Pembanding = data sebelum snapshot yang dipilih
-        $dataLalu = Deteksi::where('balita_id', $balita->id)
-            ->where(function ($q) use ($deteksiTerbaru) {
-
-                $q->where('tgl_deteksi', '<', $deteksiTerbaru->tgl_deteksi)
-
-                    ->orWhere(function ($q2) use ($deteksiTerbaru) {
-
-                        $q2->where('tgl_deteksi', $deteksiTerbaru->tgl_deteksi)
-                            ->where('id', '<', $deteksiTerbaru->id);
-                    });
-            })
-            ->orderByDesc('tgl_deteksi')
-            ->orderByDesc('id')
-            ->first();
-
-        $bbIni = (float) $deteksiTerbaru->berat;
-        $tbIni = (float) $deteksiTerbaru->tinggi;
-
-        $bbLalu = $dataLalu ? (float) $dataLalu->berat : null;
-        $tbLalu = $dataLalu ? (float) $dataLalu->tinggi : null;
-
-        $selisihBb = $bbLalu !== null
-            ? round($bbIni - $bbLalu, 2)
-            : null;
-
-        $selisihTb = $tbLalu !== null
-            ? round($tbIni - $tbLalu, 2)
-            : null;
-
-        $statusBb = $this->tentukanStatus($selisihBb);
-        $statusTb = $this->tentukanStatus($selisihTb);
-
-        $jk = $balita->jk;
-
-        $umurIni = (int) $deteksiTerbaru->umur;
-
-        $umurLalu = $dataLalu && $dataLalu->umur !== null
-            ? (int) $dataLalu->umur
-            : null;
-
-        $interval = $umurLalu !== null
-            ? max(1, $umurIni - $umurLalu)
-            : null;
-
-
-        // KBM & KPT
-        $kbm = $this->standarKenaikan(
-            'standar_kbm',
-            'kbm_kg',
-            $jk,
-            $umurLalu,
-            $interval
-        );
-
-        $kpt = $this->standarKenaikan(
-            'standar_kpt',
-            'kpt_cm',
-            $jk,
-            $umurLalu,
-            $interval
-        );
-
-        $targetBb = ($bbLalu !== null && $kbm['nilai'] !== null)
-            ? round($bbLalu + $kbm['nilai'], 2)
-            : null;
-
-        $targetTb = ($tbLalu !== null && $kpt['nilai'] !== null)
-            ? round($tbLalu + $kpt['nilai'], 2)
-            : null;
-
-        $memenuhiBb = ($selisihBb !== null && $kbm['nilai'] !== null)
-            ? $selisihBb >= $kbm['nilai']
-            : null;
-
-        $memenuhiTb = ($selisihTb !== null && $kpt['nilai'] !== null)
-            ? $selisihTb >= $kpt['nilai']
-            : null;
-
-
-        // PROYEKSI TARGET BERIKUTNYA
-        $intervalForward =
-            $kbm['interval']
-            ?? $kpt['interval']
-            ?? ($interval ?? 2);
-
-        $kbmNext = $this->standarKenaikan(
-            'standar_kbm',
-            'kbm_kg',
-            $jk,
-            $umurIni,
-            $intervalForward
-        );
-
-        $kptNext = $this->standarKenaikan(
-            'standar_kpt',
-            'kpt_cm',
-            $jk,
-            $umurIni,
-            $intervalForward
-        );
-
-        $ivNext =
-            $kbmNext['interval']
-            ?? $kptNext['interval']
-            ?? $intervalForward;
-
-        $tglTarget = Carbon::parse(
-            $deteksiTerbaru->tgl_deteksi
-        )
-            ->copy()
-            ->addMonths($ivNext)
-            ->toDateString();
-
-        $targetNextBb = $kbmNext['nilai'] !== null
-            ? round($bbIni + $kbmNext['nilai'], 2)
-            : null;
-
-        $targetNextTb = $kptNext['nilai'] !== null
-            ? round($tbIni + $kptNext['nilai'], 2)
-            : null;
-
-        if ($memenuhiBb === false && $targetBb !== null) {
-            $targetNextBb = $targetBb;
-        }
-
-        if ($memenuhiTb === false && $targetTb !== null) {
-            $targetNextTb = $targetTb;
-        }
-
-        return response()->json([
-
-            'snapshot' => [
-                'deteksi_id' => $deteksiTerbaru->id,
-                'tanggal'    => $deteksiTerbaru->tgl_deteksi,
-                'umur'       => $umurIni,
-            ],
-
-            'balita' => [
-                'nama'          => $balita->name,
-                'usia_bulan'    => $umurIni,
-                'jenis_kelamin' => $jk,
-            ],
-
-            'berat_badan' => [
-                'tanggal_lalu'        => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'         => $deteksiTerbaru->tgl_deteksi,
-
-                'bulan_lalu'          => $bbLalu,
-                'bulan_ini'           => $bbIni,
-
-                'perubahan'           => $selisihBb,
-
-                'status'              => $statusBb,
-
-                'pesan' => $this->pesan(
-                    'Berat badan',
-                    $statusBb,
-                    $selisihBb,
-                    'kg'
-                ),
-
-                'target'              => $targetBb,
-                'kenaikan_dibutuhkan' => $kbm['nilai'],
-                'interval_bulan'      => $kbm['interval'],
-
-                'memenuhi_standar'    => $memenuhiBb,
-                'status_kenaikan'     => $this->statusKenaikan($memenuhiBb),
-
-                'target_berikutnya'   => $targetNextBb,
-                'kenaikan_berikutnya' => $kbmNext['nilai'],
-                'interval_target'     => $ivNext,
-                'tanggal_target'      => $tglTarget,
-
-                'zscore'            => $deteksiTerbaru->zscore_bb_u,
-                'status_gizi'       => $deteksiTerbaru->status_bb_u,
-                'status_gizi_level' => $this->level(
-                    $deteksiTerbaru->status_bb_u
-                ),
-            ],
-
-            'tinggi_badan' => [
-                'tanggal_lalu'        => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'         => $deteksiTerbaru->tgl_deteksi,
-
-                'bulan_lalu'          => $tbLalu,
-                'bulan_ini'           => $tbIni,
-
-                'perubahan'           => $selisihTb,
-
-                'status'              => $statusTb,
-
-                'pesan' => $this->pesan(
-                    'Tinggi badan',
-                    $statusTb,
-                    $selisihTb,
-                    'cm'
-                ),
-
-                'target'              => $targetTb,
-                'kenaikan_dibutuhkan' => $kpt['nilai'],
-                'interval_bulan'      => $kpt['interval'],
-
-                'memenuhi_standar'    => $memenuhiTb,
-                'status_kenaikan'     => $this->statusKenaikan($memenuhiTb),
-
-                'target_berikutnya'   => $targetNextTb,
-                'kenaikan_berikutnya' => $kptNext['nilai'],
-                'interval_target'     => $ivNext,
-                'tanggal_target'      => $tglTarget,
-
-                'zscore'            => $deteksiTerbaru->zscore_tb_u,
-                'status_gizi'       => $deteksiTerbaru->status_tb_u,
-                'status_gizi_level' => $this->level(
-                    $deteksiTerbaru->status_tb_u
-                ),
-            ],
-
-            'wasting' => [
-                'zscore'            => $deteksiTerbaru->zscore_tb_bb,
-                'status_gizi'       => $deteksiTerbaru->status_tb_bb,
-                'status_gizi_level' => $this->level(
-                    $deteksiTerbaru->status_tb_bb
-                ),
-            ]
-        ]);
-    }
-
-
-
-    private function deteksiBBU($z)
-    {
-        if ($z < -3) return "Berat badan sangat kurang (severely underweight)";
-        if ($z < -2) return "Berat badan kurang (underweight)";
-        if ($z <= 2) return "Berat badan normal";
-        return "Risiko berat badan lebih";
-    }
-
-    private function deteksiTBU($z)
-    {
-        if ($z < -3) return "Sangat pendek (severely stunted)";
-        if ($z < -2) return "Pendek (stunted)";
-        if ($z <= 3) return "Normal";
-        return "Tinggi";
-    }
-
-    private function deteksiBBTB($z)
-    {
-        if ($z < -3) return "Gizi buruk (severely wasted)";
-        if ($z < -2) return "Gizi kurang (wasted)";
-        if ($z <= 1) return "Gizi baik (normal)";
-        if ($z <= 2) return "Berisiko gizi lebih (possible risk of overweight)";
-        if ($z <= 3) return "Gizi lebih (overweight)";
-        return "Obesitas (obese)";
-    }
-
-    private function keteranganBBU($status)
-    {
-        return match ($status) {
-            "Berat badan sangat kurang (severely underweight)" =>
-            "z-score berat badan anak sangat rendah dibandingkan standar usianya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan kemungkinan kekurangan gizi berat dan perlu penanganan segera.",
-
-            "Berat badan kurang (underweight)" =>
-            "z-score berat badan anak berada di bawah standar usianya (z-score antara -3 SD hingga -2 SD). Hal ini mengindikasikan adanya masalah gizi yang perlu diperhatikan.",
-
-            "Berat badan normal" =>
-            "z-score berat badan anak berada dalam rentang normal sesuai standar WHO (z-score antara -2 SD hingga +1 SD), menunjukkan kondisi gizi yang baik.",
-
-            "Risiko berat badan lebih" =>
-            "z-score berat badan anak berada di atas standar usianya (z-score > +1 SD), sehingga berisiko mengalami kelebihan berat badan jika tidak dikontrol.",
-
-            default => "-",
-        };
-    }
-
-    private function keteranganTBU($status)
-    {
-        return match ($status) {
-            "Sangat pendek (severely stunted)" =>
-            "z-score tinggi badan anak sangat rendah dibandingkan standar usianya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan stunting berat akibat kekurangan gizi kronis dalam jangka panjang.",
-
-            "Pendek (stunted)" =>
-            "z-score tinggi badan anak berada di bawah standar usianya (z-score antara -3 SD hingga -2 SD). Anak terindikasi stunting yang menandakan adanya gangguan pertumbuhan kronis.",
-
-            "Normal" =>
-            "z-score tinggi badan anak berada dalam rentang normal sesuai standar WHO (z-score antara -2 SD hingga +3 SD), menunjukkan pertumbuhan yang baik.",
-
-            "Tinggi" =>
-            "z-score tinggi badan anak berada di atas rata-rata usianya (z-score > +3 SD), namun masih perlu dipantau agar tetap proporsional.",
-
-            default => "-",
-        };
-    }
-
-    private function keteranganBBTB($status)
-    {
-        return match ($status) {
-            "Gizi buruk (severely wasted)" =>
-            "z-score berat badan anak sangat rendah dibandingkan tinggi badannya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan gizi buruk akut yang memerlukan penanganan segera.",
-
-            "Gizi kurang (wasted)" =>
-            "z-score berat badan anak berada di bawah standar tinggi badannya (z-score antara -3 SD hingga -2 SD), menandakan adanya kekurangan gizi akut.",
-
-            "Gizi baik (normal)" =>
-            "z-score berat badan anak proporsional dengan tinggi badannya (z-score antara -2 SD hingga +1 SD), menunjukkan kondisi gizi yang baik.",
-
-            "Berisiko gizi lebih (possible risk of overweight)" =>
-            "z-score berat badan anak mulai melebihi proporsi ideal terhadap tinggi badan (z-score > +1 SD), sehingga berisiko mengalami kelebihan berat badan.",
-
-            "Gizi lebih (overweight)" =>
-            "z-score berat badan anak lebih tinggi dibandingkan standar tinggi badannya (z-score > +2 SD), menunjukkan kondisi gizi lebih.",
-
-            "Obesitas (obese)" =>
-            "z-score berat badan anak sangat berlebih dibandingkan tinggi badannya (z-score > +3 SD), termasuk dalam kategori obesitas dan perlu perhatian khusus.",
-
-            default => "-",
-        };
-    }
-
-    
+    //helper
     private function tentukanStatus($selisih)
     {
         if ($selisih === null) return null;
@@ -1307,5 +903,96 @@ class MonitoringController extends Controller
             return $nilai;
         }
         return round($nilai * ($intervalAktual / $intervalStandar), 3);
+    }
+
+
+    private function deteksiBBU($z)
+    {
+        if ($z < -3) return "Berat badan sangat kurang (severely underweight)";
+        if ($z < -2) return "Berat badan kurang (underweight)";
+        if ($z <= 2) return "Berat badan normal";
+        return "Risiko berat badan lebih";
+    }
+
+    private function deteksiTBU($z)
+    {
+        if ($z < -3) return "Sangat pendek (severely stunted)";
+        if ($z < -2) return "Pendek (stunted)";
+        if ($z <= 3) return "Normal";
+        return "Tinggi";
+    }
+
+    private function deteksiBBTB($z)
+    {
+        if ($z < -3) return "Gizi buruk (severely wasted)";
+        if ($z < -2) return "Gizi kurang (wasted)";
+        if ($z <= 1) return "Gizi baik (normal)";
+        if ($z <= 2) return "Berisiko gizi lebih (possible risk of overweight)";
+        if ($z <= 3) return "Gizi lebih (overweight)";
+        return "Obesitas (obese)";
+    }
+
+
+    private function keteranganBBU($status)
+    {
+        return match ($status) {
+            "Berat badan sangat kurang (severely underweight)" =>
+            "z-score berat badan anak sangat rendah dibandingkan standar usianya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan kemungkinan kekurangan gizi berat dan perlu penanganan segera.",
+
+            "Berat badan kurang (underweight)" =>
+            "z-score berat badan anak berada di bawah standar usianya (z-score antara -3 SD hingga -2 SD). Hal ini mengindikasikan adanya masalah gizi yang perlu diperhatikan.",
+
+            "Berat badan normal" =>
+            "z-score berat badan anak berada dalam rentang normal sesuai standar WHO (z-score antara -2 SD hingga +1 SD), menunjukkan kondisi gizi yang baik.",
+
+            "Risiko berat badan lebih" =>
+            "z-score berat badan anak berada di atas standar usianya (z-score > +1 SD), sehingga berisiko mengalami kelebihan berat badan jika tidak dikontrol.",
+
+            default => "-",
+        };
+    }
+
+    private function keteranganTBU($status)
+    {
+        return match ($status) {
+            "Sangat pendek (severely stunted)" =>
+            "z-score tinggi badan anak sangat rendah dibandingkan standar usianya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan stunting berat akibat kekurangan gizi kronis dalam jangka panjang.",
+
+            "Pendek (stunted)" =>
+            "z-score tinggi badan anak berada di bawah standar usianya (z-score antara -3 SD hingga -2 SD). Anak terindikasi stunting yang menandakan adanya gangguan pertumbuhan kronis.",
+
+            "Normal" =>
+            "z-score tinggi badan anak berada dalam rentang normal sesuai standar WHO (z-score antara -2 SD hingga +3 SD), menunjukkan pertumbuhan yang baik.",
+
+            "Tinggi" =>
+            "z-score tinggi badan anak berada di atas rata-rata usianya (z-score > +3 SD), namun masih perlu dipantau agar tetap proporsional.",
+
+            default => "-",
+        };
+    }
+
+    private function keteranganBBTB($status)
+    {
+        return match ($status) {
+            "Gizi buruk (severely wasted)" =>
+            "z-score berat badan anak sangat rendah dibandingkan tinggi badannya (z-score < -3 SD menurut WHO). Kondisi ini menunjukkan gizi buruk akut yang memerlukan penanganan segera.",
+
+            "Gizi kurang (wasted)" =>
+            "z-score berat badan anak berada di bawah standar tinggi badannya (z-score antara -3 SD hingga -2 SD), menandakan adanya kekurangan gizi akut.",
+
+            "Gizi baik (normal)" =>
+            "z-score berat badan anak proporsional dengan tinggi badannya (z-score antara -2 SD hingga +1 SD), menunjukkan kondisi gizi yang baik.",
+
+            "Berisiko gizi lebih (possible risk of overweight)" =>
+            "z-score berat badan anak mulai melebihi proporsi ideal terhadap tinggi badan (z-score > +1 SD), sehingga berisiko mengalami kelebihan berat badan.",
+
+            "Gizi lebih (overweight)" =>
+            "z-score berat badan anak lebih tinggi dibandingkan standar tinggi badannya (z-score > +2 SD), menunjukkan kondisi gizi lebih.",
+
+            "Obesitas (obese)" =>
+            "z-score berat badan anak sangat berlebih dibandingkan tinggi badannya (z-score > +3 SD), termasuk dalam kategori obesitas dan perlu perhatian khusus.",
+
+            default => "-",
+        };
     }
 }
