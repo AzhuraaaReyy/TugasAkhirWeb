@@ -6,17 +6,16 @@ import api from "@/services/api";
 import Pagination from "@/components/Pagination/pagination";
 import { exportExcel } from "@/utils/exportExcel";
 import { exportPDF } from "@/utils/exportPDF";
+import { Atom } from "react-loading-indicators";
 export default function Laporan() {
-  const [data, setData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const [search, setSearch] = useState("");
   const [tanggal, setTanggal] = useState("");
-  const [, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [balita, setBalita] = useState([]);
-  const [penimbangan, setPenimbangan] = useState([]);
   const [deteksi, setDeteksi] = useState([]);
 
   useEffect(() => {
@@ -31,14 +30,13 @@ export default function Laporan() {
           },
         });
 
-        const result = res.data.penimbangan;
+        // Controller hanya mengembalikan { balita, deteksi } (paginator)
+        const balitaPg = res.data.balita;
 
-        setData(result.data);
-        setCurrentPage(result.current_page);
-        setTotalPages(result.last_page);
-        setBalita(res.data.balita.data);
-        setPenimbangan(res.data.penimbangan.data);
-        setDeteksi(res.data.deteksi.data);
+        setBalita(balitaPg?.data || []);
+        setDeteksi(res.data.deteksi?.data || []);
+        setCurrentPage(balitaPg?.current_page || 1);
+        setTotalPages(balitaPg?.last_page || 1);
       } catch (error) {
         console.error(error);
       } finally {
@@ -64,7 +62,7 @@ export default function Laporan() {
     "Berat badan sangat kurang (severely underweight)": "bg-red-600 text-white",
     "Berat badan kurang (underweight)": "bg-yellow-400 text-white",
     "Berat badan normal": "bg-green-500 text-white",
-    "Risiko Berat badan lebih": "bg-blue-500 text-white",
+    "Risiko berat badan lebih": "bg-blue-500 text-white",
     default: "bg-gray-300 text-black",
   };
   const statusWarnaBBTB = {
@@ -72,17 +70,22 @@ export default function Laporan() {
     "Gizi kurang (wasted)": "bg-yellow-400 text-white",
     "Gizi baik (normal)": "bg-green-500 text-white",
     "Berisiko gizi lebih (possible risk of overweight)":
-      "bg-blue-300 text-white",
+      "bg-blue-500 text-white",
     "Gizi lebih (overweight)": "bg-blue-500 text-white",
     "Obesitas (obese)": "bg-purple-600 text-white",
     default: "bg-gray-300 text-black",
   };
 
   const baseStyle =
-    "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
+    "inline-block max-w-[180px] whitespace-normal break-words text-center leading-snug px-4 py-1.5 rounded-2xl text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
 
   return (
     <MainLayouts type="laporan">
+      {loading && (
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+          <Atom color="#10b981" size="medium" text="Memuat..." />
+        </div>
+      )}
       <div className="p-6  min-h-screen">
         <div className="bg-white rounded-2xl shadow-md p-6">
           <div className="print-area">
@@ -114,14 +117,14 @@ export default function Laporan() {
               )}
 
               <button
-                onClick={() => exportExcel(balita, penimbangan, deteksi)}
+                onClick={() => exportExcel(balita, [], deteksi)}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg"
               >
                 Export Excel
               </button>
 
               <button
-                onClick={() => exportPDF(balita, penimbangan, deteksi)}
+                onClick={() => exportPDF(balita, [], deteksi)}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg"
               >
                 Export PDF
@@ -152,7 +155,7 @@ export default function Laporan() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 text-center">
-                    {data.length > 0 ? (
+                    {balita.length > 0 ? (
                       balita.map((item, index) => (
                         <tr
                           key={item.id}
@@ -173,97 +176,17 @@ export default function Laporan() {
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.tmp_lahir},{" "}
-                            {new Date(item.tgl_lahir).toLocaleDateString(
-                              "id-ID",
-                            )}
+                            {item.tgl_lahir
+                              ? new Date(item.tgl_lahir).toLocaleDateString(
+                                  "id-ID",
+                                )
+                              : "-"}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.alamat}
+                            {item.alamat || "-"}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.posyandu}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="6"
-                          className="text-center py-6 text-gray-400"
-                        >
-                          Data tidak ditemukan
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              {/* PAGINATION */}
-              <div className="flex justify-between items-center mt-6">
-                <p className="text-sm text-gray-500 ml-3 ">
-                  Halaman {currentPage} dari {totalPages}
-                </p>
-
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={(page) => setCurrentPage(page)}
-                />
-              </div>
-            </div>
-            <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
-              <h2 className="font-extrabold text-lg">
-                Laporan Data Penimbangan
-              </h2>
-              <p className="text-gray-500 text-sm mb-5">
-                Data monitoring berat dan tinggi badan balita.
-              </p>
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm text-left border-collapse">
-                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3">No</th>
-                      <th className="px-4 py-3">Nama Balita</th>
-                      <th className="px-4 py-3">Umur Balita</th>
-                      <th className="px-4 py-3">Tanggal Penimbangan</th>
-                      <th className="px-4 py-3">Berat Badan(kg)</th>
-                      <th className="px-4 py-3">Tinggi Badan(cm)</th>
-                      <th className="px-4 py-3">Lingkar Lengan Atas(cm)</th>
-                      <th className="px-4 py-3">Lingkar Kepala(cm)</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-gray-200 text-center">
-                    {data.length > 0 ? (
-                      penimbangan.map((item, index) => (
-                        <tr
-                          key={item.id}
-                          className="hover:bg-gray-50 transition"
-                        >
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {(currentPage - 1) * 10 + index + 1}
-                          </td>
-
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.balita}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.umur} Bulan
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {new Date(item.tanggal).toLocaleDateString("id-ID")}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.berat}kg
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.tinggi}cm
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.lingkar_lengan}cm
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.lingkar_kepala}cm
                           </td>
                         </tr>
                       ))
@@ -293,6 +216,83 @@ export default function Laporan() {
                 />
               </div>
             </div>
+
+            <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
+              <h2 className="font-extrabold text-lg">
+                Laporan Data Penimbangan
+              </h2>
+              <p className="text-gray-500 text-sm mb-5">
+                Data monitoring umur, berat, dan tinggi badan balita dari hasil
+                pemeriksaan.
+              </p>
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3">No</th>
+                      <th className="px-4 py-3">Nama Balita</th>
+                      <th className="px-4 py-3">Umur Balita</th>
+                      <th className="px-4 py-3">Tanggal Penimbangan</th>
+                      <th className="px-4 py-3">Berat Badan(kg)</th>
+                      <th className="px-4 py-3">Tinggi Badan(cm)</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-200 text-center">
+                    {deteksi.length > 0 ? (
+                      deteksi.map((item, index) => (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {(currentPage - 1) * 10 + index + 1}
+                          </td>
+
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.balitaname}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.umur} Bulan
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.berat}kg
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tinggi}cm
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="6"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Data tidak ditemukan
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {/* PAGINATION */}
+              <div className="flex justify-between items-center mt-6">
+                <p className="text-sm text-gray-500 ml-3 ">
+                  Halaman {currentPage} dari {totalPages}
+                </p>
+
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(page) => setCurrentPage(page)}
+                />
+              </div>
+            </div>
+
             <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
               <h2 className="font-extrabold text-lg">Laporan Data Deteksi</h2>
               <p className="text-gray-500 text-sm mb-5">
@@ -322,7 +322,7 @@ export default function Laporan() {
                   </thead>
 
                   <tbody className="divide-y divide-gray-200 ">
-                    {data.length > 0 ? (
+                    {deteksi.length > 0 ? (
                       deteksi.map((item, index) => (
                         <tr
                           key={item.id}
@@ -347,32 +347,23 @@ export default function Laporan() {
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.zscore_tb_bb}
                           </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                          <td className="px-4 py-3 align-top">
                             <span
-                              className={`${baseStyle} ${
-                                statusWarnaTBU[item.status_tb_u] ||
-                                "bg-gray-300 text-black"
-                              }`}
+                              className={`${baseStyle} ${statusWarnaTBU[item.status_tb_u] || "..."}`}
                             >
                               {item.status_tb_u || "-"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                          <td className="px-4 py-3 align-top">
                             <span
-                              className={`${baseStyle} ${
-                                statusWarnaBBTB[item.status_tb_bb] ||
-                                "bg-gray-300 text-black"
-                              }`}
+                              className={`${baseStyle} ${statusWarnaBBTB[item.status_tb_bb] || "..."}`}
                             >
                               {item.status_tb_bb || "-"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                          <td className="px-4 py-3 align-top">
                             <span
-                              className={`${baseStyle} ${
-                                statusWarnaBBU[item.status_bb_u] ||
-                                "bg-gray-300 text-black"
-                              }`}
+                              className={`${baseStyle} ${statusWarnaBBU[item.status_bb_u] || "..."}`}
                             >
                               {item.status_bb_u || "-"}
                             </span>

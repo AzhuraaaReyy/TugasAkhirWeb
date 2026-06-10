@@ -111,6 +111,7 @@ export default function LihatMonitoring() {
           orang_tua: item.orang_tua,
           umur: item.umur,
           jk: item.jk,
+          tgl_lahir: item.tgl_lahir,
           ZscoreTBU: item.zscore_tbu,
           ZscoreBBU: item.zscore_bbu,
           ZscoreBBTB: item.zscore_bbtb,
@@ -131,6 +132,7 @@ export default function LihatMonitoring() {
           rekomendasiWasting: item.rekomendasigizi.wasting,
           rekomendasiUnderweight: item.rekomendasigizi.underweight,
           riwayat: item.riwayat,
+          kebutuhanGizi: item.kebutuhan_gizi,
         };
         setDetail(formattedData);
         console.log("DEBUG DETAIL:", formattedData);
@@ -185,7 +187,7 @@ export default function LihatMonitoring() {
     <MainLayouts type="lihatmonitoring">
       <div className="min-h-screen w-full overflow-x-hidden bg-emerald-50 p-4 sm:p-6 mt-5">
         <div className="space-y-8">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
             {/* Profil (sidebar kiri) */}
             <div className="min-w-0 lg:col-span-3">
               <Profile data={detail} />

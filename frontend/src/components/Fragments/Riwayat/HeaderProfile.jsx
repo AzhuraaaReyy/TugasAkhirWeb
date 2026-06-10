@@ -2,6 +2,7 @@ import React from "react";
 import { Plus, ArrowUpRight } from "lucide-react";
 import gambar1 from "../../../assets/images/lanang.png";
 import gambar2 from "../../../assets/images/wedok.png";
+import { NavLink } from "react-router-dom";
 export default function HeaderProfile({ form }) {
   const statusColor = {
     // TBU
@@ -85,11 +86,12 @@ export default function HeaderProfile({ form }) {
             </span>
           </div>
         </div>
-
-        <button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm shadow-emerald-200">
-          <Plus size={18} />
-          Input Pemeriksaan Baru
-        </button>
+        <NavLink to="/kader/deteksidini">
+          <button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm shadow-emerald-200">
+            <Plus size={18} />
+            Input Pemeriksaan Baru
+          </button>
+        </NavLink>
       </div>
     </div>
   );

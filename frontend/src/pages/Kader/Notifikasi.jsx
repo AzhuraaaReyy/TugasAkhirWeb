@@ -4,7 +4,7 @@ import TerkirimCard from "../../components/Fragments/Notifikasi/TerkirimCard";
 import TotalNotifikasiCard from "../../components/Fragments/Notifikasi/TotalNotifikasiCard";
 import PendingCard from "../../components/Fragments/Notifikasi/PendingCard";
 import api from "@/services/api";
-
+import { Atom } from "react-loading-indicators";
 const FORM_KOSONG = {
   judul: "",
   tipe: "",
@@ -12,6 +12,7 @@ const FORM_KOSONG = {
   target: "",
   user_id: "",
   tanggal: "",
+  lokasi: "", // NEW: dipakai untuk lokasi event di kalender
   pesan: "",
 };
 
@@ -20,7 +21,7 @@ export default function Notifikasi() {
   const [listOrangTua, setListOrangTua] = useState([]);
   const [form, setForm] = useState(FORM_KOSONG);
   const [editingId, setEditingId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get("/orangtua").then((res) => {
@@ -33,9 +34,6 @@ export default function Notifikasi() {
     try {
       const res = await api.get("/notifikasi");
 
-      // Mapping defensif: mendukung dua bentuk response —
-      // (a) hasil tampildata() yang sudah rata: item.judul
-      // (b) hasil index() UserNotifikasi: item.notifikasi.judul
       const data = (res.data || []).map((item) => ({
         id: item.id,
         judul: item.judul ?? item.notifikasi?.judul ?? "-",
@@ -45,6 +43,9 @@ export default function Notifikasi() {
           0,
           10,
         ),
+        // ikut diambil supaya bisa di-prefill saat edit
+        pesan: item.pesan ?? item.notifikasi?.pesan ?? "",
+        lokasi: item.lokasi ?? item.notifikasi?.lokasi ?? "",
         status_kirim: item.status_kirim ?? "-",
         status_baca: item.status_baca ?? "-",
       }));
@@ -52,6 +53,8 @@ export default function Notifikasi() {
       setNotifikasiList(data);
     } catch (err) {
       console.error(err.response?.data || err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,50 +70,55 @@ export default function Notifikasi() {
     });
   };
 
-  // SUBMIT
+  // SUBMIT (buat baru ATAU perbarui jika sedang edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validasi ringan di frontend agar pesan errornya jelas
-    if (
-      !form.judul ||
-      !form.tipe ||
-      !form.metode ||
-      !form.target ||
-      !form.pesan
-    ) {
-      alert("Judul, jenis, metode, target, dan isi pesan wajib diisi.");
+    // Validasi inti selalu wajib
+    if (!form.judul || !form.tipe || !form.pesan) {
+      alert("Judul, jenis, dan isi pesan wajib diisi.");
       return;
     }
-    if (form.target === "tertentu" && !form.user_id) {
-      alert("Pilih orang tua tujuan terlebih dahulu.");
-      return;
+    // Metode & target hanya wajib saat membuat notifikasi baru
+    if (!editingId) {
+      if (!form.metode || !form.target) {
+        alert("Metode dan target penerima wajib diisi.");
+        return;
+      }
+      if (form.target === "tertentu" && !form.user_id) {
+        alert("Pilih orang tua tujuan terlebih dahulu.");
+        return;
+      }
     }
 
     try {
       setLoading(true);
 
-      await api.post("/notifikasi", form);
-
-      alert("Notifikasi berhasil dikirim");
+      if (editingId) {
+        // UPDATE
+        await api.put(`/notifikasi/${editingId}`, form);
+        alert("Notifikasi berhasil diperbarui");
+      } else {
+        // CREATE
+        await api.post("/notifikasi", form);
+        alert("Notifikasi berhasil dikirim");
+      }
 
       setForm(FORM_KOSONG);
       setEditingId(null);
-
-      // refresh riwayat
       fetchNotifikasi();
     } catch (err) {
       console.error(err.response?.data || err.message);
       alert(
         err.response?.data?.message ||
-          "Gagal kirim notifikasi. Periksa kembali isian formulir.",
+          "Gagal menyimpan notifikasi. Periksa kembali isian formulir.",
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // EDIT (prefill form dengan data yang ada)
+  // EDIT (prefill form dengan data yang ada, termasuk pesan & lokasi)
   const handleEdit = (item) => {
     setForm({
       ...FORM_KOSONG,
@@ -118,34 +126,48 @@ export default function Notifikasi() {
       tipe: item.tipe !== "-" ? item.tipe : "",
       metode: item.metode !== "-" ? item.metode : "",
       tanggal: item.tanggal !== "-" ? item.tanggal : "",
+      lokasi: item.lokasi || "",
+      pesan: item.pesan || "",
     });
 
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // HAPUS (sementara hanya di tampilan)
-  const handleDelete = (id) => {
-    if (confirm("Hapus notifikasi ini?")) {
-      setNotifikasiList(notifikasiList.filter((n) => n.id !== id));
+  // HAPUS (ke server, lalu update tampilan)
+  const handleDelete = async (id) => {
+    if (!confirm("Hapus notifikasi ini?")) return;
+
+    try {
+      await api.delete(`/notifikasi/${id}`);
+      setNotifikasiList((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("Gagal menghapus notifikasi.");
     }
   };
 
-  // STATISTIK — pakai field status_kirim (bukan n.status yang tidak ada)
+  // STATISTIK
   const totalNotif = notifikasiList.length;
 
   const terkirim = notifikasiList.filter(
     (n) => n.status_kirim === "terkirim",
   ).length;
 
+  // diperbaiki: hitung yang benar-benar 'pending'
   const pending = notifikasiList.filter(
-    (n) => n.status_kirim === "gagal",
+    (n) => n.status_kirim === "pending",
   ).length;
 
   return (
     <MainLayouts type="notifikasi">
       <div className="p-6 min-h-screen">
         <div className="bg-white rounded-2xl shadow-md p-6">
+          {loading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+              <Atom color="#10b981" size="medium" text="Memuat..." />
+            </div>
+          )}
           {/* TITLE */}
           <h1 className="text-2xl font-bold mb-8">
             Manajemen Notifikasi Orang Tua
@@ -160,7 +182,9 @@ export default function Notifikasi() {
 
           {/* FORM BUAT NOTIFIKASI */}
           <div className="bg-white shadow-lg rounded-2xl p-6 mb-10 border border-gray-200 border-2">
-            <h2 className="text-lg font-extrabold mb-1">Buat Notifikasi</h2>
+            <h2 className="text-lg font-extrabold mb-1">
+              {editingId ? "Edit Notifikasi" : "Buat Notifikasi"}
+            </h2>
             <p className="text-sm text-gray-500 mb-6">
               Notifikasi dengan tanggal akan otomatis tampil di Kalender
               Monitoring orang tua.
@@ -281,6 +305,24 @@ export default function Notifikasi() {
                 </p>
               </div>
 
+              {/* LOKASI (NEW) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lokasi Kegiatan
+                </label>
+                <input
+                  type="text"
+                  name="lokasi"
+                  value={form.lokasi}
+                  onChange={handleChange}
+                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="Contoh: Balai RW 03 / Puskesmas Tlogosari"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Opsional. Akan tampil di kalender orang tua bila diisi.
+                </p>
+              </div>
+
               {/* PESAN */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -307,7 +349,13 @@ export default function Notifikasi() {
                       : "bg-blue-600 hover:bg-blue-700"
                   }`}
                 >
-                  {loading ? "Mengirim..." : "Kirim Notifikasi"}
+                  {loading
+                    ? editingId
+                      ? "Memperbarui..."
+                      : "Mengirim..."
+                    : editingId
+                      ? "Perbarui Notifikasi"
+                      : "Kirim Notifikasi"}
                 </button>
 
                 {editingId && (
@@ -339,6 +387,7 @@ export default function Notifikasi() {
                     <th className="px-4 py-3">Jenis</th>
                     <th className="px-4 py-3">Metode</th>
                     <th className="px-4 py-3">Tanggal</th>
+                    <th className="px-4 py-3">Lokasi</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Aksi</th>
                   </tr>
@@ -353,13 +402,15 @@ export default function Notifikasi() {
                         <td>{item.tipe}</td>
                         <td>{item.metode}</td>
                         <td>{item.tanggal}</td>
-
+                        <td>{item.lokasi || "-"}</td>
                         <td>
                           <span
                             className={`px-3 py-1 rounded-full text-xs ${
                               item.status_kirim === "terkirim"
                                 ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
+                                : item.status_kirim === "pending"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-red-100 text-red-700"
                             }`}
                           >
                             {item.status_kirim}
@@ -386,7 +437,7 @@ export default function Notifikasi() {
                   ) : (
                     <tr>
                       <td
-                        colSpan="7"
+                        colSpan="8"
                         className="text-center py-8 text-gray-400"
                       >
                         Belum ada notifikasi

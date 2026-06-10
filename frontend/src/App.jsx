@@ -4,36 +4,26 @@ import {
   RouterProvider,
   Navigate,
 } from "react-router-dom";
+import { useAuth } from "./context/useAuth";
+import Homepage from "./pages/Homepage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AuthCallback from "./pages/Callback";
+import Chatbot from "./pages/Chatbot";
 import Dashboard from "./pages/Kader/Dashboard";
-import Homepage from "./pages/homepage";
-import ManajemenBalita from "./pages/Kader/ManajemenBalita/ManajemenBalita";
-import UpdateFormBalita from "./pages/Kader/ManajemenBalita/Update";
-import DetailFormBalita from "./pages/Kader/ManajemenBalita/Detail";
-import Penimbangan from "./pages/Kader/ManajemenPenimbangan";
-import CreatePenimbangan from "./pages/Kader/ManajemenPenimbangan/Create";
-import DetailPenimbangan from "./pages/Kader/ManajemenPenimbangan/Detail";
-import UpdatePenimbangan from "./pages/Kader/ManajemenPenimbangan/Update";
-import DeteksiStunting from "./pages/Kader/Deteksi";
-import Riwayat from "./pages/Kader/RiwayatGrafik";
-import { useAuth } from "./context/useAuth";
-import DashboardOrangTua from "./pages/OrangTua/Dashboard";
+import DeteksiDini from "./pages/Kader/Deteksi";
 import Laporan from "./pages/Kader/Laporan";
 import Notifikasi from "./pages/Kader/Notifikasi";
-import EdukasiKesehatanAnak from "./pages/OrangTua/Edukasi";
-import RiwayatPemeriksaan from "./pages/OrangTua/Riwayat";
-import Deteksi from "./pages/OrangTua/Deteksi";
-import NotifikasiOrtu from "./pages/OrangTua/Notifikasi";
 import DetailDeteksi from "./pages/Kader/DetailDeteksi";
-import CreateFormOrangtua from "./pages/Kader/ManajemenBalita/CreateOrtu";
-import CreateFormBalita from "./pages/Kader/ManajemenBalita/Create";
-import AuthCallback from "./pages/Callback";
 import LihatRiwayat from "./pages/Kader/LihatRiwayat";
 import LihatMonitoring from "./pages/Kader/LihatMonitoring";
-import Chatbot from "./pages/Chatbot";
 import TrenMonitoring from "./components/Fragments/Riwayat/TrenMonitoring";
-import LengkapiNoTelp from "./pages/LengkapinoTelp";
+import DashboardOrtu from "./pages/OrangTua/Dashboard";
+import EdukasiStunting from "./pages/OrangTua/Edukasi";
+import RiwayatOrtu from "./pages/OrangTua/Riwayat";
+import LengkapiNoTelp from "./pages/Lengkapinotelp";
+import RiwayatdanGrafik from "./pages/Kader/RiwayatGrafik";
+import KeteranganWarna from "./components/Fragments/Monitoring/CardLegend";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
@@ -55,6 +45,10 @@ const App = () => {
       element: <Homepage />,
     },
     {
+      path: "/warna",
+      element: <KeteranganWarna />,
+    },
+    {
       path: "/login",
       element: <Login />,
     },
@@ -62,11 +56,9 @@ const App = () => {
       path: "/register",
       element: <Register />,
     },
-    {
-      path: "/lihatmonitoringsaja",
-      element: <LihatMonitoring />,
-    },
     { path: "/auth/callback", element: <AuthCallback /> },
+    { path: "chatbot/:id", element: <Chatbot /> },
+    { path: "chatbot/:id/snapshot/:deteksiId", element: <Chatbot /> },
 
     //kader posyandu
     {
@@ -78,27 +70,17 @@ const App = () => {
       ),
       children: [
         { path: "dashboard", element: <Dashboard /> },
-        { path: "manajemenbalita", element: <ManajemenBalita /> },
-        { path: "createmanajemenbalita", element: <CreateFormBalita /> },
-        { path: "createorangtuabalita", element: <CreateFormOrangtua /> },
-        { path: "detailmanajemenbalita/:id", element: <DetailFormBalita /> },
-        { path: "updatemanajemenbalita/:id", element: <UpdateFormBalita /> },
-        { path: "manajemenpenimbangan", element: <Penimbangan /> },
-        { path: "createpenimbangan", element: <CreatePenimbangan /> },
-        { path: "detailpenimbangan/:id", element: <DetailPenimbangan /> },
-        { path: "updatepenimbangan/:id", element: <UpdatePenimbangan /> },
-        { path: "deteksidini", element: <DeteksiStunting /> },
-        { path: "riwayat", element: <Riwayat /> },
+        { path: "deteksidini", element: <DeteksiDini /> },
         { path: "laporan", element: <Laporan /> },
         { path: "notif", element: <Notifikasi /> },
         { path: "detaildeteksi/:id", element: <DetailDeteksi /> },
         { path: "lihatriwayat/:id", element: <LihatRiwayat /> },
         { path: "lihatmonitoring/:id", element: <LihatMonitoring /> },
+        { path: "riwayat", element: <RiwayatdanGrafik /> },
         {
           path: "monitoring/:balitaId/:deteksiId",
           element: <TrenMonitoring />,
         },
-        { path: "chatbot", element: <Chatbot /> },
       ],
     },
 
@@ -111,12 +93,15 @@ const App = () => {
         </RequireAuth>
       ),
       children: [
-        { path: "dashboard/:id?", element: <DashboardOrangTua /> },
-        { path: "edukasi", element: <EdukasiKesehatanAnak /> },
-        { path: "riwayat", element: <RiwayatPemeriksaan /> },
-        { path: "deteksi", element: <Deteksi /> },
-        { path: "notifikasi", element: <NotifikasiOrtu /> },
+        { path: "dashboard/:id?", element: <DashboardOrtu /> },
+        { path: "edukasi", element: <EdukasiStunting /> },
+        { path: "riwayat", element: <RiwayatOrtu /> },
         { path: "lengkapinotelp", element: <LengkapiNoTelp /> },
+        { path: "riwayat/:id", element: <RiwayatOrtu /> },
+        {
+          path: "monitoring/:balitaId/:deteksiId",
+          element: <TrenMonitoring />,
+        },
       ],
     },
 

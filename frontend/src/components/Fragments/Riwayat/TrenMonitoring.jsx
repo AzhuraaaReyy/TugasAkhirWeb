@@ -26,12 +26,15 @@ export default function TrenMonitoring() {
   const navigate = useNavigate();
   const [perkembangan, setPerkembangan] = useState(null);
   const [showChatHint, setShowChatHint] = useState(false);
-  console.log("BALITA ID:", balitaId);
-  console.log("DETEKSI ID:", deteksiId);
+  //Halaman ini dipakai bersama kader & orang tua. Pilih endpoint sesuai
+  // dari mana dibuka: /orangtua/... -> varian -snapshot-ortu,
+  const isOrtu = location.pathname.startsWith("/orangtua");
+  const sufiks = isOrtu ? "-snapshot-ortu" : "-snapshot";
+
   useEffect(() => {
     const fetchGrafik = async () => {
       try {
-        const res = await api.get(`/grafik-snapshot/${deteksiId}`);
+        const res = await api.get(`/grafik${sufiks}/${deteksiId}`);
         console.log("API GRAFIK:", res.data);
         const formattedData = res.data.map((item) => ({
           id: item.id,
@@ -88,7 +91,7 @@ export default function TrenMonitoring() {
   useEffect(() => {
     const fetchPerkembangan = async () => {
       try {
-        const res = await api.get(`/perkembangan-snapshot/${deteksiId}`);
+        const res = await api.get(`/perkembangan${sufiks}/${deteksiId}`);
         setPerkembangan(res.data);
         console.log("Debug Perkembangan:", res.data);
       } catch (err) {
@@ -103,7 +106,7 @@ export default function TrenMonitoring() {
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        const res = await api.get(`/detailmonitoring-snapshot/${deteksiId}`);
+        const res = await api.get(`/detailmonitoring${sufiks}/${deteksiId}`);
         console.log("API DETAIL:", res.data);
         const item = res.data.data;
 
@@ -112,6 +115,7 @@ export default function TrenMonitoring() {
           orang_tua: item.orang_tua,
           umur: item.umur,
           jk: item.jk,
+          tgl_lahir: item.tgl_lahir,
           ZscoreTBU: item.zscore_tbu,
           ZscoreBBU: item.zscore_bbu,
           ZscoreBBTB: item.zscore_bbtb,
@@ -132,6 +136,7 @@ export default function TrenMonitoring() {
           rekomendasiWasting: item.rekomendasigizi.wasting,
           rekomendasiUnderweight: item.rekomendasigizi.underweight,
           riwayat: item.riwayat,
+          kebutuhanGizi: item.kebutuhan_gizi,
         };
         setDetail(formattedData);
         console.log("DEBUG DETAIL:", formattedData);
@@ -361,7 +366,7 @@ export default function TrenMonitoring() {
 
         {/* Tombol Bot */}
         <button
-          onClick={() => navigate(`/chatbot/${deteksiId}`)}
+          onClick={() => navigate(`/chatbot/${balitaId}/snapshot/${deteksiId}`)}
           className="
            group
            relative

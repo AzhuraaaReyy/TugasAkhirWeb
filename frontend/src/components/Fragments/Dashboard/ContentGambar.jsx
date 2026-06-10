@@ -232,7 +232,7 @@ const Content = () => {
               Belum ada event atau acara pada tanggal ini.
             </p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-[360px] overflow-y-auto hide-scrollbar pr-1">
               {eventTerpilih.map((event) => (
                 <div
                   key={event.id}

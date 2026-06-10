@@ -10,29 +10,31 @@ import { useState, useEffect } from "react";
 import api from "@/services/api";
 import { OrbitProgress } from "react-loading-indicators";
 
+// Tinggi area donut disamakan dengan LineChart & BarChart.
+const TINGGI_GRAFIK = 320;
+
 const StatusChart = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true); // mulai loading
+        setLoading(true);
         const res = await api.get("/grafikpersen");
 
         const normal = res.data.normal ?? 0;
         const stunting = res.data.stunting ?? 0;
-
         const total = normal + stunting;
 
-        // ❗ Hindari NaN
         if (total === 0) {
           setData([]);
           return;
         }
 
-        const formatted = [
+        setData([
           {
-            name: "Normal",
+            name: "Tidak Stunting",
             value: Math.round((normal / total) * 100),
             jumlah: normal,
           },
@@ -41,13 +43,11 @@ const StatusChart = () => {
             value: Math.round((stunting / total) * 100),
             jumlah: stunting,
           },
-        ];
-
-        setData(formatted);
+        ]);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false); // selesai loading
+        setLoading(false);
       }
     };
 
@@ -57,11 +57,11 @@ const StatusChart = () => {
   const COLORS = ["#10B981", "#EF4444"];
 
   return (
-    <div className="bg-white rounded-2xl border border-emerald-500 p-6 w-full">
+    <div className="w-full">
       {/* Chart */}
-      <div className="w-full h-80">
+      <div className="w-full" style={{ height: TINGGI_GRAFIK }}>
         {loading ? (
-          <div className="flex justify-center items-center h-[350px]">
+          <div className="flex justify-center items-center h-full">
             <OrbitProgress
               dense
               color="#32cd32"

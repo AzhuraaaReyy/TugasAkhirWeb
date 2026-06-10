@@ -19,18 +19,6 @@ export const kaderMenu = [
     icon: <Icon.Riwayat />,
     label: "Riwayat Deteksi",
   },
-  {
-    id: "manajemenbalita",
-    link: "/kader/manajemenbalita",
-    icon: <Icon.Manajemen />,
-    label: "Manajemen Balita",
-  },
-  {
-    id: "inputdatapenimbangan",
-    link: "/kader/manajemenpenimbangan",
-    icon: <Icon.InputPenimbangan />,
-    label: "Manajemen Penimbangan",
-  },
 
   {
     id: "laporan",

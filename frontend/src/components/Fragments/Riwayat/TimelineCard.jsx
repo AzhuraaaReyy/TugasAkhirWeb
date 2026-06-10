@@ -7,7 +7,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-export default function TimelineCard({ form, metode = "stunting" }) {
+export default function TimelineCard({
+  form,
+  metode = "stunting",
+  onLihatMonitoring,
+}) {
   const riwayatMentah = form?.riwayat || [];
   const [limit, setLimit] = useState(4);
   const [idCardAktif, setIdCardAktif] = useState(null);
@@ -19,6 +23,18 @@ export default function TimelineCard({ form, metode = "stunting" }) {
     };
     return byMetode[metode] || item.status || "Pemeriksaan Rutin Selesai";
   };
+
+  // Tujuan tombol "Lihat Tren Monitoring".
+  // Bila parent mengirim onLihatMonitoring (mis. halaman orang tua), pakai itu.
+  // Bila tidak, default ke rute kader seperti semula.
+  const bukaMonitoring = (balitaId, deteksiId) => {
+    if (typeof onLihatMonitoring === "function") {
+      onLihatMonitoring(balitaId, deteksiId);
+      return;
+    }
+    window.location.assign(`/kader/monitoring/${balitaId}/${deteksiId}`);
+  };
+
   if (!riwayatMentah.length) {
     return (
       <div className="bg-white rounded-[24px] border border-gray-100 p-8 shadow-sm text-center text-sm text-gray-400 mt-6">
@@ -225,11 +241,7 @@ export default function TimelineCard({ form, metode = "stunting" }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation(); // Mencegah klik tombol menutup/reset card
-                          // Arahkan ke halaman monitoring atau buka modal
-                          console.log("FORM =", form);
-                          console.log("BALITA ID =", form.balita_id);
-                          console.log("LOG ID =", log.id);
-                          window.location.href = `/kader/monitoring/${form.balita_id}/${log.id}`;
+                          bukaMonitoring(form.balita_id, log.id);
                         }}
                         className="flex items-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 px-4 py-2 rounded-lg transition-colors"
                       >

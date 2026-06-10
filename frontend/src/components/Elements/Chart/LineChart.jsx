@@ -1,177 +1,154 @@
 import { LineChart } from "@mui/x-charts/LineChart";
-import { useState, useMemo } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import api from "@/services/api";
 import { OrbitProgress } from "react-loading-indicators";
+
+// Tinggi grafik dibuat sama dengan BarChart & PieChart.
+const TINGGI_GRAFIK = 320;
+
+const fmtAngka = new Intl.NumberFormat("id-ID");
+const fmtRingkas = new Intl.NumberFormat("id-ID", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
 const Linechart = () => {
-  const [selectedPosyandu, setSelectedPosyandu] = useState("Semua");
   const [rawData, setRawData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true); // mulai loading
+        setLoading(true);
         const res = await api.get("/grafikstunting");
-        setRawData(res.data);
+        setRawData(res.data || []);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false); // selesai loading
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  const filteredData = useMemo(() => {
-    if (selectedPosyandu === "Semua") {
-      const grouped = {};
+  const formatSeri = (v, ctx) => {
+    const row = rawData[ctx?.dataIndex];
+    const total = row?.total ?? 0;
+    const persen = total > 0 ? Math.round(((v ?? 0) / total) * 100) : 0;
+    return `${fmtAngka.format(v ?? 0)} anak (${persen}%)`;
+  };
 
-      rawData.forEach((item) => {
-        if (!grouped[item.month]) {
-          grouped[item.month] = {
-            month: item.month,
-            stunting: 0,
-            tidakStunting: 0,
-          };
-        }
+  const lebarPerTitik = 90;
+  const banyakData = rawData.length > 8;
+  const lebarChart = banyakData ? rawData.length * lebarPerTitik : undefined;
 
-        grouped[item.month].stunting += item.stunting;
-        grouped[item.month].tidakStunting += item.tidakStunting;
-      });
-
-      return Object.values(grouped);
-    }
-
-    return rawData.filter((item) => item.posyandu === selectedPosyandu);
-  }, [selectedPosyandu, rawData]);
+  if (loading) {
+    return (
+      <div
+        className="flex justify-center items-center"
+        style={{ height: TINGGI_GRAFIK }}
+      >
+        <OrbitProgress
+          dense
+          color="#32cd32"
+          size="medium"
+          text=""
+          textColor=""
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white rounded-3xl ">
-      <div className="rounded-3xl p-6 bg-white border border-emerald-500 ">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-gray-800 text-xl font-semibold tracking-wide"></h2>
-
-          <select
-            value={selectedPosyandu}
-            onChange={(e) => setSelectedPosyandu(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm"
-          >
-            <option value="Semua">Semua Posyandu</option>
-            <option value="Melati">Posyandu Melati</option>
-            <option value="Anggrek">Posyandu Anggrek</option>
-          </select>
-        </div>
-        {loading ? (
-          <div className="flex justify-center items-center h-[350px]">
-            <OrbitProgress
-              dense
-              color="#32cd32"
-              size="medium"
-              text=""
-              textColor=""
-            />
-          </div>
-        ) : (
-          <LineChart
-            height={350}
-            dataset={filteredData}
-            xAxis={[
-              {
-                scaleType: "point",
-                dataKey: "month",
-                tickLabelStyle: {
-                  fill: "#64748b",
-                  fontSize: 11,
-                },
-              },
-            ]}
-            yAxis={[
-              {
-                tickLabelStyle: {
-                  fill: "#64748b",
-                  fontSize: 11,
-                },
-                valueFormatter: (value) => `${value} anak`,
-              },
-            ]}
-            series={[
-              {
-                dataKey: "stunting",
-                label: "Anak Stunting",
-                curve: "natural",
-                showMark: true,
-                area: true,
-                color: "#ff0000",
-                valueFormatter: (v) => `${v} anak`,
-              },
-              {
-                dataKey: "tidakStunting",
-                label: "Tidak Stunting",
-                curve: "natural",
-                showMark: true,
-                area: true,
-                color: "#00cf8a",
-                valueFormatter: (v) => `${v} anak`,
-              },
-            ]}
-            grid={{ horizontal: true, vertical: false }}
-            margin={{ top: 20, bottom: 20, left: 20, right: 20 }}
-            slotProps={{
-              legend: {
-                direction: "row",
-                position: { vertical: "top", horizontal: "right" },
-                labelStyle: {
-                  fill: "#334155",
-                  fontSize: 12,
-                  fontWeight: 500,
-                },
-              },
-              tooltip: {
-                trigger: "axis", // tampil semua data di bulan yg sama
-              },
-            }}
-            sx={{
-              "& .MuiMarkElement-root": {
-                strokeWidth: 2,
-                r: 4, // ukuran titik
-              },
-              "& .MuiChartsAxis-line": {
-                stroke: "#e2e8f0",
-              },
-              "& .MuiChartsGrid-line": {
-                stroke: "#f1f5f9",
-              },
-              "& .MuiAreaElement-root:nth-of-type(1)": {
-                fill: "url(#gradientEmerald1)",
-              },
-              "& .MuiAreaElement-root:nth-of-type(2)": {
-                fill: "url(#gradientEmerald2)",
-              },
-              "& .MuiLineElement-root:nth-of-type(1)": {
-                strokeWidth: 3,
-                filter: "drop-shadow(0px 0px 8px rgba(5,150,105,0.5))",
-              },
-              "& .MuiLineElement-root:nth-of-type(2)": {
-                strokeWidth: 3,
-                filter: "drop-shadow(0px 0px 10px rgba(16,185,129,0.5))",
-              },
-            }}
-          >
-            <defs>
-              <linearGradient id="gradientEmerald1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(5,150,105,0.4)" />
-                <stop offset="100%" stopColor="rgba(5,150,105,0)" />
-              </linearGradient>
-
-              <linearGradient id="gradientEmerald2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(16,185,129,0.4)" />
-                <stop offset="100%" stopColor="rgba(16,185,129,0)" />
-              </linearGradient>
-            </defs>
-          </LineChart>
-        )}
+    <div
+      className={
+        banyakData ? "w-full overflow-x-auto" : "w-full overflow-hidden"
+      }
+    >
+      <div style={banyakData ? { minWidth: lebarChart } : undefined}>
+        <LineChart
+          height={TINGGI_GRAFIK}
+          {...(banyakData ? { width: lebarChart } : {})}
+          dataset={rawData}
+          xAxis={[
+            {
+              scaleType: "point",
+              dataKey: "month",
+              tickLabelStyle: { fill: "#64748b", fontSize: 11 },
+            },
+          ]}
+          yAxis={[
+            {
+              min: 0,
+              tickMinStep: 1,
+              tickLabelStyle: { fill: "#64748b", fontSize: 11 },
+              valueFormatter: (value) => fmtRingkas.format(value),
+            },
+          ]}
+          series={[
+            {
+              id: "stunting",
+              dataKey: "stunting",
+              label: "Anak Stunting",
+              curve: "natural",
+              showMark: true,
+              area: true,
+              color: "#ef4444",
+              valueFormatter: formatSeri,
+            },
+            {
+              id: "tidakStunting",
+              dataKey: "tidakStunting",
+              label: "Tidak Stunting",
+              curve: "natural",
+              showMark: true,
+              area: true,
+              color: "#10b981",
+              valueFormatter: formatSeri,
+            },
+          ]}
+          grid={{ horizontal: true, vertical: false }}
+          margin={{ top: 24, bottom: 24, left: 56, right: 24 }}
+          slotProps={{
+            legend: {
+              direction: "row",
+              position: { vertical: "top", horizontal: "right" },
+              labelStyle: { fill: "#334155", fontSize: 12, fontWeight: 500 },
+            },
+            tooltip: { trigger: "axis" },
+          }}
+          sx={{
+            "& .MuiMarkElement-root": { strokeWidth: 2, r: 4 },
+            "& .MuiChartsAxis-line": { stroke: "#e2e8f0" },
+            "& .MuiChartsGrid-line": { stroke: "#f1f5f9" },
+            "& .MuiAreaElement-series-stunting": {
+              fill: "url(#gradientStunting)",
+            },
+            "& .MuiAreaElement-series-tidakStunting": {
+              fill: "url(#gradientNormal)",
+            },
+            "& .MuiLineElement-series-stunting": {
+              strokeWidth: 3,
+              filter: "drop-shadow(0px 0px 8px rgba(239,68,68,0.45))",
+            },
+            "& .MuiLineElement-series-tidakStunting": {
+              strokeWidth: 3,
+              filter: "drop-shadow(0px 0px 10px rgba(16,185,129,0.45))",
+            },
+          }}
+        >
+          <defs>
+            <linearGradient id="gradientStunting" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(239,68,68,0.40)" />
+              <stop offset="100%" stopColor="rgba(239,68,68,0)" />
+            </linearGradient>
+            <linearGradient id="gradientNormal" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(16,185,129,0.40)" />
+              <stop offset="100%" stopColor="rgba(16,185,129,0)" />
+            </linearGradient>
+          </defs>
+        </LineChart>
       </div>
     </div>
   );

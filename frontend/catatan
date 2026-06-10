@@ -461,3 +461,35 @@ export default function CardPerkembangan({ data }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+{
+      path: "/admin",
+      element: (
+        <RequireAuth role="admin">
+          <Outlet />
+        </RequireAuth>
+      ),
+      children: [
+        { path: "dashboard", element: <DashboardOrangTua /> },
+        { path: "Manajemen Balita", element: <EdukasiKesehatanAnak /> },
+        { path: "Manajemen Penimbangan", element: <RiwayatPemeriksaan /> },
+        { path: "Manajemen Artikel", element: <Deteksi /> },
+        { path: "manajemenbalita", element: <ManajemenBalita /> },
+        { path: "createmanajemenbalita", element: <CreateFormBalita /> },
+        { path: "createorangtuabalita", element: <CreateFormOrangtua /> },
+        { path: "detailmanajemenbalita/:id", element: <DetailFormBalita /> },
+        { path: "updatemanajemenbalita/:id", element: <UpdateFormBalita /> },
+        { path: "manajemenpenimbangan", element: <Penimbangan /> },
+        { path: "createpenimbangan", element: <CreatePenimbangan /> },
+        { path: "detailpenimbangan/:id", element: <DetailPenimbangan /> },
+        { path: "updatepenimbangan/:id", element: <UpdatePenimbangan /> },
+      ],
+    },

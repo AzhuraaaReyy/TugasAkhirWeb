@@ -56,6 +56,18 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Footer "update terakhir" dipakai 3x — komponen kecil agar konsisten & menempel ke bawah.
+  const FooterUpdate = () => (
+    <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
+      <Icon.Waktu className="w-4 h-4 text-gray-400" />
+      <span className="text-sm text-gray-400">
+        {lastUpdate
+          ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
+          : "Memuat..."}
+      </span>
+    </div>
+  );
+
   return (
     <MainLayouts type="dashboard">
       <div className="bg-emerald-50 rounded-2xl shadow-md p-6">
@@ -65,12 +77,12 @@ const Dashboard = () => {
             <Atom color="#10b981" size="medium" text="Memuat..." />
           </div>
         )}
+
         {/* ================= HEADER ================= */}
         <div className="mb-8 mt-6">
           <h1 className="text-2xl font-bold text-gray-800">
             Selamat Datang, Kader {user?.name || "User"}
           </h1>
-
           <p className="text-sm text-gray-500 mt-1">
             Pantau perkembangan pertumbuhan, status gizi, dan kondisi kesehatan
             balita secara real-time.
@@ -80,90 +92,63 @@ const Dashboard = () => {
         {/* ================= CARD TOTAL ================= */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
           <CardTotal total={summary.total_balita} />
-
           <CardTidakStunting total={summary.tidak_stunting} />
-
           <CardStunting total={summary.stunting} />
         </div>
 
         {/* ================= CHART SECTION ================= */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10">
+        {/* items-stretch (default) + setiap kartu flex-col + footer mt-auto = tinggi kartu sejajar */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-10 items-stretch">
           {/* ================= LINE CHART ================= */}
-          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px]">
+          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px] flex flex-col">
             <h2 className="text-xl font-bold text-gray-800 mb-1">
               Monitoring Pertumbuhan
             </h2>
-
             <p className="text-gray-500 text-sm mb-6">Status Gizi Tahun Ini</p>
 
             <LineChart />
 
-            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-              <Icon.Waktu className="w-4 h-4 text-gray-400" />
-
-              <span className="text-sm text-gray-400">
-                {lastUpdate
-                  ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
-                  : "Memuat..."}
-              </span>
+            <div className="mt-auto">
+              <FooterUpdate />
             </div>
           </div>
 
           {/* ================= BAR CHART ================= */}
-          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px]">
+          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px] flex flex-col">
             <h2 className="text-xl font-bold text-gray-800 mb-1">
               Perbandingan Status Gizi
             </h2>
-
             <p className="text-gray-500 text-sm mb-6">
               Tahun Lalu vs Tahun Ini
             </p>
 
             <Barchart />
 
-            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-              <Icon.Waktu className="w-4 h-4 text-gray-400" />
-
-              <span className="text-sm text-gray-400">
-                {lastUpdate
-                  ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
-                  : "Memuat..."}
-              </span>
+            <div className="mt-auto">
+              <FooterUpdate />
             </div>
           </div>
 
           {/* ================= STATUS CHART ================= */}
-          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px]">
+          <div className="bg-white rounded-2xl hover:shadow-xl hover:-translate-y-1 duration-300 transition p-6 border border-gray-100 min-h-[450px] flex flex-col">
             <h2 className="text-xl font-bold text-gray-800 mb-1">
               Persentase Status Gizi
             </h2>
-
             <p className="text-gray-500 text-sm mb-6">Grafik Status Gizi (%)</p>
 
-            <div className="flex justify-center items-center">
-              <Status />
-            </div>
+            <Status />
 
-            <div className="border-t border-gray-100 mt-6 pt-4 flex items-center gap-2 text-xs text-gray-500">
-              <Icon.Waktu className="w-4 h-4 text-gray-400" />
-
-              <span className="text-sm text-gray-400">
-                {lastUpdate
-                  ? `Update terakhir ${dayjs(lastUpdate).fromNow()}`
-                  : "Memuat..."}
-              </span>
+            <div className="mt-auto">
+              <FooterUpdate />
             </div>
           </div>
         </div>
 
         {/* ================= CONTENT & MAP ================= */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {/* ================= CONTENT ================= */}
           <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 hover:shadow-md transition">
             <Content />
           </div>
-
-          {/* ================= MAP ================= */}
           <div className="bg-white rounded-2xl shadow-xl hover:shadow-md transition overflow-hidden">
             <ContentMap />
           </div>

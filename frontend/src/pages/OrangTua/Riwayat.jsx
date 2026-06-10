@@ -1,216 +1,390 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import MainLayouts from "../../layouts/MainLayouts";
+import HeaderProfile from "@/components/Fragments/Riwayat/HeaderProfile";
+import TimelineCard from "@/components/Fragments/Riwayat/TimelineCard";
+import MainLayouts from "@/layouts/MainLayouts";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import api from "@/services/api";
+import { Baby } from "lucide-react";
+import EvaluasiKenaikanBulanan from "@/components/Fragments/Riwayat/EvaluasiBulananCard";
 
-const RiwayatPemeriksaan = () => {
-  // =========================
-  // DATA BALITA (MULTIPLE)
-  // =========================
-  const dataRiwayat = [
-    {
-      tanggal: "2024-01-10",
-      usia: 12,
-      berat: 7.5,
-      tinggi: 68,
-      status: "Normal",
-      petugas: "Bidan Siti",
-      catatan: "Perkembangan baik",
-    },
-    {
-      tanggal: "2024-02-10",
-      usia: 13,
-      berat: 7.8,
-      tinggi: 69,
-      status: "Stunting",
-      petugas: "Bidan Siti",
-      catatan: "Perlu tambahan protein",
-    },
-    {
-      tanggal: "2024-03-10",
-      usia: 14,
-      berat: 8.0,
-      tinggi: 70,
-      status: "Risiko",
-      petugas: "Bidan Ani",
-      catatan: "Pantau pola makan",
-    },
-  ];
+// Daftarkan DUA route ke komponen ini (sama seperti dashboard ortu):
+//   <Route path="/orangtua/riwayat" element={<RiwayatOrtu />} />
+//   <Route path="/orangtua/riwayat/:id" element={<RiwayatOrtu />} />
+const BASE_PATH = "/orangtua/riwayat";
 
-  const [filterTanggal, setFilterTanggal] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const dataPerPage = 5;
+// Hitung umur ringkas dari tgl_lahir (untuk kartu pemilih anak)
+const hitungUmur = (tglLahir) => {
+  if (!tglLahir) return "-";
+  const lahir = new Date(tglLahir);
+  const now = new Date();
+  let bulan =
+    (now.getFullYear() - lahir.getFullYear()) * 12 +
+    (now.getMonth() - lahir.getMonth());
+  if (now.getDate() < lahir.getDate()) bulan -= 1;
+  if (bulan < 0) return "-";
+  return bulan < 24
+    ? `${bulan} bulan`
+    : `${Math.floor(bulan / 12)} tahun ${bulan % 12} bulan`;
+};
 
-  const filteredData = dataRiwayat.filter((item) => {
-    if (!filterTanggal) return true;
-    return item.tanggal === filterTanggal;
+export default function RiwayatOrtu() {
+  
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [loading, setLoading] = useState(true);
+
+  // Daftar anak milik orang tua yang login (null = masih dimuat)
+  const [anakSaya, setAnakSaya] = useState(null);
+
+  const [form, setForm] = useState({
+    name: "",
+    umur: "",
+    jk: "",
+    tgl_deteksi: "",
+    tinggi: "",
+    berat: "",
+    zscore_tbu: "",
+    zscore_bbu: "",
+    zscore_bbtb: "",
+    status_tbu: "",
+    status_bbu: "",
+    status_bbtb: "",
+    keterangan: "",
+    rekomendasi: "",
+    total_deteksi: "",
+    berat_sekarang: "",
+    berat_sebelumnya: "",
+    tinggi_sekarang: "",
+    tinggi_sebelumnya: "",
+    orang_tua: "",
+    status: "",
+    riwayat: [],
+    lokasi_posyandu: "",
+    kader_pemeriksa: "",
+    balita_id: "",
   });
 
-  const totalPages = Math.ceil(filteredData.length / dataPerPage);
-  const indexOfLast = currentPage * dataPerPage;
-  const indexOfFirst = indexOfLast - dataPerPage;
-  const currentData = filteredData.slice(indexOfFirst, indexOfLast);
+  const metode = location.state?.metode || "stunting";
+  const hasil = location.state?.hasil || "";
 
-  const statusStyle = {
-    Normal: "bg-emerald-100 text-emerald-700",
-    Risiko: "bg-yellow-100 text-yellow-700",
-    Stunting: "bg-red-100 text-red-700",
-  };
+  /* ============ AMBIL DAFTAR ANAK MILIK SENDIRI ============
+     Menentukan balita milik orang tua yang login. Bila URL tidak membawa
+     :id dan orang tua hanya punya 1 anak, langsung diarahkan ke anak itu.
+     Daftar ini juga dipakai untuk memastikan id yang dibuka memang miliknya. */
+  useEffect(() => {
+    api
+      .get("/balita-saya")
+      .then((res) => {
+        const anak = res.data || [];
+        setAnakSaya(anak);
 
-  // ================= PAGINATION =================
+        if (!id && anak.length === 1) {
+          navigate(`${BASE_PATH}/${anak[0].id}`, { replace: true });
+        }
+      })
+      .catch((err) => {
+        console.error("Error ambil daftar anak:", err);
+        setAnakSaya([]);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const indexOfLastData = currentPage * dataPerPage;
-  const indexOfFirstData = indexOfLastData - dataPerPage;
+  /* ============ TIMELINE + DETAIL DETEKSI (API SEMULA) ============ */
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
 
-  return (
-    <MainLayouts type="riwayatdangrafik">
-      <div className="min-h-screen bg-emerald-50 p-8 space-y-8">
-        {/* ================= PILIH BALITA ================= */}
+        // 1) Timeline dulu (berbasis balita_id) -> sumber deteksi_id yang benar
+        const resRiwayat = await api.get(`/ambilstatustimeline-ortu/${id}`);
+        const dataRiwayat = resRiwayat.data?.data || [];
 
-        {/* ================= TABEL ================= */}
-        <h2 className="font-extrabold mb-4 text-gray-700 text-2xl mt-5">
-          Riwayat Penimbangan
-        </h2>
-        <p className="text-gray-500 text-sm mb-5">
-          Data berikut menunjukkan riwayat pertumbuhan anak berdasarkan hasil
-          penimbangan di posyandu. Orang tua dapat melihat apakah pertumbuhan
-          anak sudah sesuai dengan usianya atau perlu perhatian lebih lanjut.
-        </p>
-        <div className="bg-white rounded-3xl shadow-lg p-6">
-          {/* FILTER SECTION */}
-          <div className="bg-gray-50 rounded-xl p-4 flex flex-wrap items-center gap-4 mb-6">
-            <input
-              type="date"
-              value={filterTanggal}
-              onChange={(e) => {
-                setFilterTanggal(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        const terbaru = dataRiwayat[dataRiwayat.length - 1] || {};
+        const sebelumnya = dataRiwayat[dataRiwayat.length - 2] || {};
 
-            {filterTanggal && (
-              <button
-                onClick={() => setFilterTanggal("")}
-                className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition"
-              >
-                Reset Filter
-              </button>
-            )}
+        // 2) Detail dipanggil dgn DETEKSI_ID terbaru (bukan balita_id)
+        let data = {};
+        if (terbaru.id) {
+          const res = await api.get(`/detaildeteksi-ortu/${terbaru.id}`);
+          data = res.data?.data || {};
+        }
+
+        // status: prioritaskan hasil deteksi baru, lalu data terbaru di timeline
+        const statusMapping = {
+          stunting: hasil?.status_tbu?.status || data.status?.tbu,
+          wasting: hasil?.status_bb_tb?.status || data.status?.bbtb,
+          underweight: hasil?.status_bbu?.status || data.status?.bbu,
+        };
+        const statusByMetode = {
+          stunting: terbaru.status_tbu,
+          wasting: terbaru.status_bbtb,
+          underweight: terbaru.status_bbu,
+        };
+
+        setForm((prev) => ({
+          ...prev,
+          balita_id: id,
+          // angka inti diambil dari timeline (sudah dihitung & konsisten)
+          umur: terbaru.umur ?? data.umur ?? "",
+          tgl_deteksi: terbaru.tgl_deteksi ?? data.tgl_deteksi ?? "",
+          status: statusMapping[metode] || statusByMetode[metode] || "-",
+
+          berat_sekarang: terbaru.berat ?? data.berat ?? "",
+          berat_sebelumnya: sebelumnya.berat ?? data.berat_sebelumnya ?? "",
+          tinggi_sekarang: terbaru.tinggi ?? data.tinggi ?? "",
+          tinggi_sebelumnya: sebelumnya.tinggi ?? data.tinggi_sebelumnya ?? "",
+
+          // info tambahan dari detail (yang tidak ada di timeline)
+          keterangan: data.keterangan ?? "",
+          rekomendasi: data.rekomendasi ?? "",
+          lokasi_posyandu:
+            data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
+          kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
+
+          riwayat: dataRiwayat,
+        }));
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchData();
+  }, [id, metode, hasil]);
+
+  /* ============ DATA BALITA (nama, jk, dst.) — API SEMULA ============ */
+  useEffect(() => {
+    const fetchBalitas = async () => {
+      try {
+        const res = await api.get(`/balitas-ortu/${id}`);
+        const data = res.data.data;
+
+        setForm((prev) => ({
+          ...prev,
+          balita_id: data.id,
+          name: data.name || "",
+          jk:
+            data.jk === "L" || data.jk?.toLowerCase() === "laki-laki"
+              ? "L"
+              : data.jk === "P" || data.jk?.toLowerCase() === "perempuan"
+                ? "P"
+                : "",
+          orang_tua: data.orangtua || "",
+          tgl_lahir: data.tgl_lahir || "",
+          lokasi_posyandu:
+            data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
+          kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
+        }));
+      } catch (err) {
+        console.error(err.response?.data || err.message);
+      }
+    };
+
+    if (id) fetchBalitas();
+  }, [id]);
+
+  /* ============================================================
+     TAHAP 1 — BELUM ADA ANAK DIPILIH (tanpa :id di URL)
+     ============================================================ */
+  if (!id) {
+    if (anakSaya === null) {
+      return (
+        <MainLayouts type="riwayatortu">
+          <div className="flex min-h-[70vh] items-center justify-center">
+            <p>Memuat data anak Anda...</p>
           </div>
-          {/* FILTER */}
+        </MainLayouts>
+      );
+    }
 
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
-            <table className="w-full text-sm text-left border-collapse">
-              <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
-                <tr>
-                  <th className="px-4 py-3">No</th>
-                  <th className="px-4 py-3">Tanggal Penimbangan</th>
-                  <th className="px-4 py-3">Usia</th>
-                  <th className="px-4 py-3">Berat Badan (kg)</th>
-                  <th className="px-4 py-3">Tinggi Badan (cm)</th>
-                  <th className="px-4 py-3">Status Gizi</th>
-                  <th className="px-4 py-3">Aksi</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-200 text-center">
-                {filteredData.length > 0 ? (
-                  currentData.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-gray-500">
-                        {indexOfFirstData + index + 1}
-                      </td>
-
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.tanggal}
-                      </td>
-
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.usia} bulan
-                      </td>
-
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.berat} kg
-                      </td>
-
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.tinggi} cm
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            statusStyle[item.status]
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Link to="/">
-                          <button className="px-3 py-1.5 rounded-lg bg-gray-200 text-gray-600 text-xs font-medium hover:bg-emerald-100 hover:text-emerald-700 transition duration-200">
-                            Lihat Detail
-                          </button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center py-6 text-gray-400">
-                      Data tidak ditemukan
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            <div className="flex justify-between items-center mt-6 p-6">
-              <p className="text-sm text-gray-500">
-                Menampilkan {indexOfFirstData + 1} -{" "}
-                {Math.min(indexOfLastData, filteredData.length)} dari{" "}
-                {filteredData.length} data
+    if (anakSaya.length === 0) {
+      return (
+        <MainLayouts type="riwayatortu">
+          <div className="flex min-h-[70vh] items-center justify-center p-6">
+            <div className="max-w-lg text-center">
+              <div className="mb-4 text-6xl">👶</div>
+              <h2 className="text-2xl font-bold text-gray-800">
+                Belum Ada Data Anak
+              </h2>
+              <p className="mt-3 text-gray-600">
+                Akun Anda belum terhubung dengan data balita. Silakan hubungi
+                kader Posyandu untuk mendaftarkan anak Anda.
               </p>
+            </div>
+          </div>
+        </MainLayouts>
+      );
+    }
 
-              <div className="flex gap-2">
+    if (anakSaya.length === 1) {
+      return (
+        <MainLayouts type="riwayatortu">
+          <div className="flex min-h-[70vh] items-center justify-center">
+            <p>Membuka riwayat {anakSaya[0].name}...</p>
+          </div>
+        </MainLayouts>
+      );
+    }
+
+    // 2 anak atau lebih -> KARTU PILIH ANAK
+    return (
+      <MainLayouts type="riwayatortu">
+        <div className="min-h-[80vh] bg-[#F4F7F4] p-6 flex items-center justify-center">
+          <div className="w-full max-w-3xl">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-extrabold text-gray-800">
+                Pilih Anak
+              </h1>
+              <p className="mt-2 text-sm text-gray-600">
+                Anda memiliki {anakSaya.length} anak terdaftar. Pilih salah satu
+                untuk melihat riwayat pemeriksaannya.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {anakSaya.map((anak) => (
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 rounded-md border text-sm disabled:opacity-40"
+                  key={anak.id}
+                  onClick={() => navigate(`${BASE_PATH}/${anak.id}`)}
+                  className="group bg-white rounded-3xl border-2 border-gray-100 p-6 text-left shadow-sm hover:shadow-xl hover:border-emerald-400 hover:-translate-y-1 transition-all duration-300"
                 >
-                  Prev
-                </button>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-extrabold text-white ${
+                        anak.jk === "L" ? "bg-blue-400" : "bg-pink-400"
+                      }`}
+                    >
+                      {anak.name?.charAt(0)?.toUpperCase() || (
+                        <Baby size={28} />
+                      )}
+                    </div>
 
-                {Array.from({ length: totalPages }, (_, i) => (
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-gray-800 text-lg truncate">
+                        {anak.name}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {anak.jk === "L" ? "Laki-laki" : "Perempuan"} •{" "}
+                        {hitungUmur(anak.tgl_lahir)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-sm font-semibold text-emerald-600 group-hover:translate-x-1 transition-transform">
+                    Lihat Riwayat →
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </MainLayouts>
+    );
+  }
+
+  /* ============================================================
+     TAHAP 2 — ADA :id, TAPI BUKAN ANAK MILIK SENDIRI
+     ============================================================ */
+  if (anakSaya && !anakSaya.some((a) => String(a.id) === String(id))) {
+    return (
+      <MainLayouts type="riwayatortu">
+        <div className="flex min-h-[70vh] items-center justify-center p-6">
+          <div className="max-w-lg text-center">
+            <div className="mb-4 text-6xl">🔒</div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Akses Tidak Diizinkan
+            </h2>
+            <p className="mt-3 text-gray-600">
+              Data balita ini bukan milik akun Anda.
+            </p>
+            <button
+              onClick={() => navigate(BASE_PATH, { replace: true })}
+              className="mt-6 rounded-xl bg-emerald-600 px-6 py-3 text-white font-semibold hover:bg-emerald-700"
+            >
+              Kembali ke Anak Saya
+            </button>
+          </div>
+        </div>
+      </MainLayouts>
+    );
+  }
+
+  if (loading) {
+    return (
+      <MainLayouts type="riwayatortu">
+        <div className="flex min-h-[70vh] items-center justify-center">
+          <p>Memuat data riwayat...</p>
+        </div>
+      </MainLayouts>
+    );
+  }
+
+  /* ============================================================
+     TAHAP 3 — TAMPILAN RIWAYAT
+     ============================================================ */
+  return (
+    <MainLayouts type="riwayatortu">
+      <div className="min-h-screen bg-[#F4F7F4] font-sans antialiased py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8">
+          {/* ===== PENGGANTI ANAK (pill, hanya jika anak > 1) ===== */}
+          {anakSaya && anakSaya.length > 1 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-gray-600 mr-1">
+                Anak:
+              </span>
+              {anakSaya.map((anak) => {
+                const aktif = String(anak.id) === String(id);
+                return (
                   <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3 py-1 rounded-md text-sm border ${
-                      currentPage === i + 1
-                        ? "bg-blue-500 text-white"
-                        : "bg-white"
+                    key={anak.id}
+                    onClick={() =>
+                      !aktif && navigate(`${BASE_PATH}/${anak.id}`)
+                    }
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+                      aktif
+                        ? "bg-emerald-600 text-white shadow"
+                        : "bg-white text-gray-600 border border-gray-200 hover:border-emerald-400 hover:text-emerald-600"
                     }`}
                   >
-                    {i + 1}
+                    {anak.name}
                   </button>
-                ))}
+                );
+              })}
+            </div>
+          )}
 
-                <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 rounded-md border text-sm disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
+          <div className="mb-8 pb-2 border-b border-gray-200/60">
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight sm:text-4xl">
+              Lihat Riwayat Balita
+            </h1>
+            <p className=" w-full  text-sm text-gray-500 mt-2  leading-relaxed">
+              Halaman ini menampilkan riwayat pemeriksaan dan hasil deteksi
+              risiko stunting berdasarkan data pertumbuhan balita dari waktu ke
+              waktu.
+            </p>
+          </div>
+
+          {/* Grid Konten Utama */}
+          <div className="flex flex-col md:flex-row gap-8 items-start">
+            <div className="w-full md:w-80 shrink-0 flex flex-col gap-6">
+              <HeaderProfile form={form} />
+              <EvaluasiKenaikanBulanan form={form} />
+            </div>
+            <div className="flex-1 w-full h-full">
+              <TimelineCard
+                form={form}
+                metode={metode}
+                onLihatMonitoring={(balitaId, deteksiId) =>
+                  navigate(`/orangtua/monitoring/${balitaId}/${deteksiId}`)
+                }
+              />
             </div>
           </div>
         </div>
       </div>
     </MainLayouts>
   );
-};
-
-export default RiwayatPemeriksaan;
+}

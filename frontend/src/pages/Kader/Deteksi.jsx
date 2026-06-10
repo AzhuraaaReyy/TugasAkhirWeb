@@ -7,7 +7,11 @@ import FormDeteksi from "../Deteksi/FormDeteksi";
 import RiwayatDeteksi from "../Deteksi/HasilAnalisisDeteksi";
 import gambarpencatatan from "../../assets/images/rekamedis.png";
 import gambardeteksigizi from "../../assets/images/deteksisistem.png";
+
 export default function DeteksiDini() {
+  // Animasi render saat halaman pertama dibuka (seperti dashboard)
+  const [pageLoading, setPageLoading] = useState(true);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [step, setStep] = useState(null);
@@ -15,6 +19,8 @@ export default function DeteksiDini() {
   const [balitas, setBalitas] = useState([]);
   const [data, setData] = useState([]);
   const [errors, setErrors] = useState({});
+  const [metode, setMetode] = useState("");
+  const [hasil, setHasil] = useState(null);
 
   const initialForm = {
     name: "",
@@ -34,6 +40,7 @@ export default function DeteksiDini() {
   };
 
   const [form, setForm] = useState(initialForm);
+
   const handleBack = () => {
     setForm(initialForm);
     setStep(null);
@@ -41,21 +48,49 @@ export default function DeteksiDini() {
     setMetode("");
     setErrorMsg("");
   };
+
+  /* ================= FETCHERS ================= */
+  const fetchPosyandu = async () => {
+    try {
+      const res = await api.get("/posyandu");
+      setPosyandus(res.data.data);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+    }
+  };
+
+  // ambil data deteksi
+  const fetchData = async () => {
+    try {
+      const res = await api.get("/deteksi");
+      setData(res.data.data || []);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+    }
+  };
+
+  // ambil data balita
+  const fetchBalitas = async () => {
+    try {
+      const res = await api.get("/balitas");
+      setBalitas(res.data.data || []);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+    }
+  };
+
+  /* ============ INIT SAAT HALAMAN DIBUKA ============ */
+  // Tampilkan animasi memuat, ambil semua data awal, lalu matikan animasi.
   useEffect(() => {
-    const fetchPosyandu = async () => {
+    const initHalaman = async () => {
       try {
-        const res = await api.get("/posyandu");
-        setPosyandus(res.data.data);
-      } catch (err) {
-        console.error(err.response?.data || err.message);
+        await Promise.all([fetchPosyandu(), fetchData(), fetchBalitas()]);
+      } finally {
+        setPageLoading(false);
       }
     };
-
-    fetchPosyandu();
+    initHalaman();
   }, []);
-
-  const [metode, setMetode] = useState("");
-  const [hasil, setHasil] = useState(null);
 
   /* ================= HANDLE CHANGE ================= */
   const handleChange = (e) => {
@@ -115,6 +150,7 @@ export default function DeteksiDini() {
       }
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -186,41 +222,11 @@ export default function DeteksiDini() {
       setLoading(false);
     }
   };
-  //ambil data deteksi
-  const fetchData = async () => {
-    try {
-      const res = await api.get("/deteksi");
-      setData(res.data.data || []);
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  //Ambil data balita
-  useEffect(() => {
-    fetchBalitas();
-  }, []);
-
-  const fetchBalitas = async () => {
-    try {
-      const res = await api.get("/balitas");
-
-      setBalitas(res.data.data || []);
-    } catch (err) {
-      console.error(err.response?.data || err.message);
-    }
-  };
 
   const handleSelectBalita = (e) => {
     const selectedId = e.target.value;
 
     const selectedBalita = balitas.find((item) => item.id == selectedId);
-
-    console.log(selectedBalita);
 
     if (selectedBalita) {
       setForm((prev) => ({
@@ -248,10 +254,10 @@ export default function DeteksiDini() {
 
   return (
     <MainLayouts type="deteksidini">
-      <div className="h-full bg-gray-100 p-8">
-        {/* ================= LOADING ================= */}
-        {loading && (
-          <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="h-full bg-gray-100 p-8 ">
+        {/* ====== ANIMASI RENDER SAAT HALAMAN DIBUKA / SAAT SUBMIT ====== */}
+        {(pageLoading || loading) && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
             <Atom color="#10b981" size="medium" text="Memuat..." />
           </div>
         )}
@@ -285,7 +291,7 @@ export default function DeteksiDini() {
             >
               <img
                 src={gambarpencatatan}
-                alt="Edukasi"
+                alt="Pencatatan"
                 className="w-full h-[250px] object-cover rounded-xl"
               />
 
@@ -313,7 +319,7 @@ export default function DeteksiDini() {
             >
               <img
                 src={gambardeteksigizi}
-                alt="Edukasi"
+                alt="Deteksi Gizi"
                 className="w-full h-[250px] object-cover rounded-xl"
               />
               <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
@@ -335,7 +341,6 @@ export default function DeteksiDini() {
         )}
 
         {/* ================= FORM PENCATATAN ================= */}
-
         {step === "record" && (
           <FormPencatatan
             form={form}
@@ -347,6 +352,7 @@ export default function DeteksiDini() {
             errors={errors}
           />
         )}
+
         {/* ================= FORM DETEKSI ================= */}
         {step === "deteksi" && (
           <div className="flex flex-col xl:flex-row gap-6 items-stretch">

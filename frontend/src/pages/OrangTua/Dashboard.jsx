@@ -17,6 +17,8 @@ import CardTotalPenimbangan from "@/components/Fragments/Monitoring/CardPenimban
 import CardStatus from "@/components/Fragments/Monitoring/CardStatus";
 import ChartZScoreTBU from "@/components/Fragments/Monitoring/ChartZscoreTb";
 import ChartZscoreBb from "@/components/Fragments/Monitoring/ChartZscoreBb";
+import EventCalendar from "@/components/Fragments/Dashboard/EventCalander";
+import CardPerkembanganAnak from "./CardPerkembanganAnak";
 
 // SESUAIKAN dengan path route dashboard orang tua Anda.
 // Daftarkan DUA route ke komponen ini:
@@ -160,6 +162,7 @@ export default function DashboardOrtu() {
           orang_tua: item.orang_tua,
           umur: item.umur,
           jk: item.jk,
+          tgl_lahir: item.tgl_lahir,
           ZscoreTBU: item.zscore_tbu,
           ZscoreBBU: item.zscore_bbu,
           ZscoreBBTB: item.zscore_bbtb,
@@ -391,9 +394,10 @@ export default function DashboardOrtu() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-stretch">
             {/* Profil (sidebar kiri) */}
-            <div className="min-w-0 lg:col-span-3">
+
+            <div className="min-w-0 lg:col-span-3 h-full  ">
               <Profile data={detail} />
             </div>
 
@@ -494,9 +498,15 @@ export default function DashboardOrtu() {
               </div>
             </div>
           </div>
-          <div className="min-w-0">
-            <CardPerkembangan data={perkembangan} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 ">
+            <div className="lg:col-span-8">
+              <CardPerkembanganAnak data={perkembangan} />
+            </div>
+            <div className="lg:col-span-4">
+              <EventCalendar />
+            </div>
           </div>
+
           <div className="flex min-w-0">
             <CardStatusAnak data={detail} />
           </div>
