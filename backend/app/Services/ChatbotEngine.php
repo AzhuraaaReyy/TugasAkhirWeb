@@ -7,27 +7,40 @@ use App\Models\Deteksi;
 use App\Models\KnowledgeBase;
 use App\Models\UnansweredQuestion;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ChatbotEngine
 {
+    private ?int $deteksiId = null;
+
+    /** Sapaan ke user yang sedang login (orang tua / kader).
+     *  Fallback "Bapak/Ibu" bila nama tidak tersedia. */
+    private string $sapaan = 'Bapak/Ibu';
+
     public function __construct(
         private IntentClassifier $classifier
     ) {}
 
-    public function process(string $sessionId, int $balitaId, string $text): array
+    public function process(string $sessionId, int $balitaId, string $text, ?int $deteksiId = null): array
     {
+        $this->deteksiId = $deteksiId;
+        $this->sapaan = Auth::user()?->name ?: 'Bapak/Ibu';
+
         $session = ChatSession::firstOrCreate(
             ['session_id' => $sessionId],
             ['deteksi_id' => $balitaId, 'history' => [], 'context' => []]
         );
 
-        $deteksi = Deteksi::with('balita')
-            ->where('balita_id', $balitaId)
-            ->orderByDesc('tgl_deteksi')->orderByDesc('id')
-            ->first();
+        $deteksi = $this->deteksiAcuan($balitaId);
 
         if (!$deteksi) {
             return ['status' => 'error', 'message' => 'Data deteksi tidak ditemukan'];
+        }
+
+        // Perintah "Menu utama" ditangani langsung (deterministik), tanpa lewat classifier
+        if ($this->isPerintahMenuUtama($text)) {
+            return $this->handleMenuUtama();
         }
 
         $intentResult = $this->classifier->classify($text);
@@ -71,6 +84,9 @@ class ChatbotEngine
             $response = $this->handleFallback($text, $session, $deteksi);
         }
 
+        // Tombol "Menu utama" otomatis menempel di setiap balasan (jangkar navigasi)
+        $response = $this->tambahkanMenuUtama($response);
+
         // session update
         $session->update([
             'current_intent' => $intent,
@@ -93,6 +109,40 @@ class ChatbotEngine
         ];
 
         return $response;
+    }
+
+
+    private function deteksiAcuan(int $balitaId): ?Deteksi
+    {
+        if ($this->deteksiId) {
+            return Deteksi::with('balita')
+                ->where('id', $this->deteksiId)
+                ->where('balita_id', $balitaId)
+                ->first();
+        }
+
+        return Deteksi::with('balita')
+            ->where('balita_id', $balitaId)
+            ->orderByDesc('tgl_deteksi')->orderByDesc('id')
+            ->first();
+    }
+
+
+    private function riwayatSampaiAcuan($deteksi)
+    {
+        $q = Deteksi::where('balita_id', $deteksi->balita_id);
+
+        if ($this->deteksiId) {
+            $q->where(function ($w) use ($deteksi) {
+                $w->where('tgl_deteksi', '<', $deteksi->tgl_deteksi)
+                    ->orWhere(function ($w2) use ($deteksi) {
+                        $w2->where('tgl_deteksi', $deteksi->tgl_deteksi)
+                            ->where('id', '<=', $deteksi->id);
+                    });
+            });
+        }
+
+        return $q->orderBy('tgl_deteksi')->orderBy('id')->get();
     }
 
 
@@ -134,10 +184,10 @@ class ChatbotEngine
                 break;
         }
 
-        $message = "Kondisi anak Bunda saat ini terdeteksi dalam kategori {$status}.\n\n";
+        $message = "Kondisi ananda saat ini terdeteksi dalam kategori {$status}.\n\n";
         $message .= $keteranganWHO . "\n";
         if ($zscore && $zscore !== '-') {
-            $message .= "Menurut keterangan tersebut, Z-Score anak bunda saat ini berada di angka {$zscore}. ";
+            $message .= "Menurut keterangan tersebut, Z-Score ananda saat ini berada di angka {$zscore}. ";
         }
 
         if ($penjelasan && $penjelasan !== '-') {
@@ -152,9 +202,7 @@ class ChatbotEngine
             'type'   => 'deteksi',
             'topic'  => 'kondisi',
 
-
             'message' => $message,
-
 
             'data'   => [
                 'status'      => $status ?? 'Tidak tersedia',
@@ -164,17 +212,11 @@ class ChatbotEngine
                 'keteranganWHO' => $keteranganWHO ?? '-',
             ],
 
+            // Rekomendasi diutamakan: chip pertama mengajak ke langkah & makanan
             'suggested_questions' => [
-                [
-                    'label' => 'Apa penyebabnya?',
-                    'type' => 'ask',
-                    'question' => 'Apa penyebab stunting?',
-                ],
-                [
-                    'label' => 'Apa penyebab anak bisa terkena ini?',
-                    'type' => 'ask',
-                    'question' => 'Kenapa anak bisa terkena hal ini?',
-                ],
+                ['label' => 'Apa yang sebaiknya dilakukan?', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Apa penyebabnya?', 'type' => 'ask', 'question' => 'Apa penyebab stunting?'],
             ],
         ];
     }
@@ -234,14 +276,14 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
             'suggested_questions' => [
                 [
-                    'label' => 'Apa dampak dari kondisi ini?',
-                    'type' => 'ask',
-                    'question' => 'apa dampaknya',
-                ],
-                [
                     'label' => 'Apa yang harus saya lakukan?',
                     'type' => 'ask',
                     'question' => 'solusi',
+                ],
+                [
+                    'label' => 'Rekomendasi makanan & MPASI',
+                    'type' => 'ask',
+                    'question' => 'Menu MPASI apa?',
                 ],
             ],
         ];
@@ -273,7 +315,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 break;
         }
 
-        $message = "Baik Bunda, untuk membantu memperbaiki kondisi anak, ada beberapa langkah penting yang dapat dilakukan. Karena kondisi anak berada pada kategori {$status}. Solusi atau langkah-langkah yang bisa dilakukan yaitu:\n\n";
+        $message = "Baik, {$this->sapaan}. Untuk membantu memperbaiki kondisi anak, ada beberapa langkah penting yang dapat dilakukan. Karena kondisi anak berada pada kategori {$status}, langkah-langkah yang bisa dilakukan yaitu:\n\n";
         foreach ($rekomendasi as $r) {
             $message .= "- {$r}\n";
         }
@@ -287,7 +329,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             'type'   => 'deteksi',
             'topic'  => 'solusi',
 
-
             'message' => $message,
 
             'data' => [
@@ -296,29 +337,97 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             ],
 
             'suggested_questions' => [
-                ['label' => 'Menu makanan', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
                 ['label' => 'Rekomendasi susu', 'type' => 'ask', 'question' => 'Susu apa yang bagus?'],
                 ['label' => 'Soal sanitasi', 'type' => 'ask', 'question' => 'Kenapa sanitasi penting?'],
             ],
         ];
     }
 
+    /**
+     * REKOMENDASI MAKANAN — mengutamakan rekomendasi konkret berbasis AKG
+     * balita (umur + status gizi), lalu tetap menambahkan isi KnowledgeBase
+     * sebagai informasi pelengkap. Tidak mengubah pengambilan AKG di tempat lain.
+     */
     private function handleMakanan($deteksi): array
     {
+        $umur    = (int) ($deteksi->umur ?? 0);
+        $status  = $this->statusGiziUtama($deteksi);   // 'kurang' | 'lebih' | 'normal'
+        $akg     = $this->akgPadananUmur($umur);        // baca akg_balitas (read-only)
+        $panduan = $this->panduanMakanUmur($umur);      // panduan tekstur/menu (engine)
+
+        if ($umur <= 5) {
+            $message  = "Untuk si Kecil usia {$umur} bulan, makanan terbaik dan satu-satunya adalah ASI.\n\n";
+            $message .= "- Berikan ASI eksklusif sesering keinginan bayi (8-12 kali sehari, termasuk malam).\n";
+            $message .= "- Belum perlu air putih, madu, pisang, atau makanan/minuman lain.\n";
+            $message .= "- Jika ASI terasa kurang, temui bidan/konselor laktasi sebelum memberi susu formula.";
+        } else {
+            $kelompok = $akg['kelompok_umur'] ?? 'anak';
+            $message  = "Berikut rekomendasi makanan untuk si Kecil ({$kelompok}):\n\n";
+
+            if ($panduan) {
+                $message .= "-) Tekstur: {$panduan['tekstur']}\n";
+                $message .= "-) Frekuensi: {$panduan['frekuensi']}\n\n";
+                $message .= "-) Contoh menu sehari:\n";
+                foreach ($panduan['menu'] as $m) {
+                    $message .= "  • {$m}\n";
+                }
+                $message .= "\n";
+            }
+
+            // Sumber gizi kunci dari padanan AKG (kalau tersedia)
+            $pad = $akg['padanan'] ?? [];
+            $pilih = ['Protein', 'Karbohidrat', 'Serat', 'Zat Besi', 'Vitamin A', 'Vitamin C'];
+            $adaPad = false;
+            foreach ($pilih as $k) {
+                if (!empty($pad[$k])) {
+                    if (!$adaPad) {
+                        $message .= "-) Sumber gizi yang dianjurkan:\n";
+                        $adaPad = true;
+                    }
+                    $message .= "  • {$k}: {$pad[$k]}\n";
+                }
+            }
+            if ($adaPad) $message .= "\n";
+
+            // Penyesuaian sesuai status gizi
+            if ($status === 'kurang') {
+                $message .= "Karena berat/tinggi anak masih perlu dikejar, utamakan makanan padat energi dan protein hewani di setiap kali makan (telur, ikan, ayam, hati, daging), tambahkan sedikit minyak/santan, dan beri makan lebih sering dalam porsi kecil. Konsultasikan juga kemungkinan PMT ke kader/puskesmas.";
+            } elseif ($status === 'lebih') {
+                $message .= "Karena berat anak cenderung berlebih, jaga porsi tetap sesuai kebutuhan, perbanyak sayur dan buah, serta batasi gula, gorengan, dan makanan/minuman kemasan manis.";
+            } else {
+                $message .= "Pertahankan pola makan beragam dan seimbang setiap hari: makanan pokok, lauk hewani, lauk nabati, sayur, dan buah.";
+            }
+        }
+
+        // KnowledgeBase tetap digunakan sebagai informasi tambahan
         $kb = KnowledgeBase::whereJsonContains('tags', 'makanan')
             ->orWhereJsonContains('tags', 'mpasi')
             ->first();
 
-        if (!$kb) return $this->handleFallback('makanan', null, $deteksi);
+        if ($kb && !empty($kb->jawaban)) {
+            $message .= "\n\n-) Informasi tambahan:\n" . $kb->jawaban;
+        }
 
         return [
             'status' => 'success',
-            'type'   => 'knowledge_base',
+            'type'   => 'rekomendasi',
             'topic'  => 'makanan',
-            'data'   => ['jawaban' => $kb->jawaban, 'kategori' => $kb->kategori],
+
+            'message' => $message,
+
+            'data'   => [
+                'umur'     => $umur,
+                'status'   => $status,
+                'akg'      => $akg,
+                'jawaban'  => $kb->jawaban ?? null,
+                'kategori' => $kb->kategori ?? null,
+            ],
+
             'suggested_questions' => [
-                ['label' => 'Lanjut ke soal susu', 'type' => 'ask', 'question' => 'Susu apa yang bagus?'],
-                ['label' => 'Apa yang harus dilakukan?', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
+                ['label' => 'Rekomendasi susu', 'type' => 'ask', 'question' => 'Susu apa yang bagus?'],
+                ['label' => 'Langkah yang sebaiknya dilakukan', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
+                ['label' => 'Bagaimana kondisi anak saya?', 'type' => 'ask', 'question' => 'Bagaimana kondisi anak saya?'],
             ],
         ];
     }
@@ -334,7 +443,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             'topic'  => 'susu',
             'data'   => ['jawaban' => $kb->jawaban],
             'suggested_questions' => [
-                ['label' => 'Soal makanan padat', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
                 ['label' => 'Topik lain', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
             ],
         ];
@@ -351,12 +460,18 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             'topic'  => 'sanitasi',
             'data'   => ['jawaban' => $kb->jawaban],
             'suggested_questions' => [
-                ['label' => 'Soal gizi & makanan', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
                 ['label' => 'Lihat rekomendasi lain', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
             ],
         ];
     }
 
+    /**
+     * DEFINISI / PENJELASAN ISTILAH — mencari entri KnowledgeBase paling cocok.
+     * Perbaikan: pencocokan case-insensitive, weight HANYA ditambahkan bila ada
+     * kecocokan nyata (mencegah entri ber-weight tinggi selalu menang), threshold
+     * diturunkan agar pertanyaan valid tidak jatuh ke fallback.
+     */
     private function handleDefinisi(string $text, $deteksi): array
     {
         $text = strtolower($text);
@@ -373,9 +488,9 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         foreach ($kbs as $kb) {
             $score = 0;
 
-            // cocokkan tags
+            // cocokkan tags (case-insensitive)
             foreach ($kb->tags as $tag) {
-                if (str_contains($text, $tag)) {
+                if (str_contains($text, strtolower($tag))) {
                     $score += 2;
                 }
             }
@@ -387,15 +502,17 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 }
             }
 
-            // cocokkan kata per kata
+            // cocokkan kata per kata terhadap pertanyaan (case-insensitive)
             foreach ($words as $word) {
-                if (str_contains($kb->pertanyaan, $word)) {
+                if ($word !== '' && str_contains(strtolower($kb->pertanyaan), $word)) {
                     $score += 1;
                 }
             }
 
-            // tambahkan weight dari JSON
-            $score += $kb->weight;
+            // weight HANYA ditambahkan bila ada kecocokan nyata
+            if ($score > 0) {
+                $score += (int) ($kb->weight ?? 0);
+            }
 
             if ($score > $bestScore) {
                 $bestScore = $score;
@@ -403,8 +520,8 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             }
         }
 
-        // threshold supaya tidak asal jawab
-        if ($bestKb && $bestScore >= 12) {
+        // threshold supaya tidak asal jawab (diturunkan dari 12 -> 8)
+        if ($bestKb && $bestScore >= 8) {
 
             return [
                 'status' => 'success',
@@ -433,11 +550,11 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         $text = strtolower($text);
         $reply = match (true) {
             str_contains($text, 'terima kasih') || str_contains($text, 'makasih')
-            => 'Sama-sama, Bunda! Senang bisa membantu :)',
-            str_contains($text, 'selamat pagi')   => 'Selamat pagi, Bunda! Ada yang bisa saya bantu?',
-            str_contains($text, 'selamat siang')  => 'Selamat siang, Bunda! Ada yang bisa saya bantu?',
-            str_contains($text, 'selamat malam')  => 'Selamat malam, Bunda! Ada yang bisa saya bantu?',
-            default                                => 'Halo, Bunda! Saya siap membantu. Mau tanya apa?',
+            => "Sama-sama, {$this->sapaan}! Senang bisa membantu :)",
+            str_contains($text, 'selamat pagi')   => "Selamat pagi, {$this->sapaan}! Ada yang bisa saya bantu?",
+            str_contains($text, 'selamat siang')  => "Selamat siang, {$this->sapaan}! Ada yang bisa saya bantu?",
+            str_contains($text, 'selamat malam')  => "Selamat malam, {$this->sapaan}! Ada yang bisa saya bantu?",
+            default                                => "Halo, {$this->sapaan}! Saya siap membantu. Mau mulai dari rekomendasi untuk si Kecil?",
         };
 
         return [
@@ -446,8 +563,9 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             'topic'  => 'sapaan',
             'data'   => ['jawaban' => $reply],
             'suggested_questions' => [
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Langkah yang sebaiknya dilakukan', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
                 ['label' => 'Bagaimana kondisi anak saya?', 'type' => 'ask', 'question' => 'Bagaimana kondisi anak saya?'],
-                ['label' => 'Apa yang harus dilakukan?', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
             ],
         ];
     }
@@ -468,16 +586,16 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             'type'    => 'fallback',
             'topic'   => 'fallback',
             'message' => $isHard
-                ? "Sepertinya pertanyaan Bunda di luar topik yang saya kuasai 🙏 Yuk langsung tanya pakar:"
-                : "Hmm, saya belum punya jawaban untuk itu. Coba pilih topik di bawah ya, Bunda:",
+                ? "Sepertinya pertanyaan {$this->sapaan} di luar topik yang saya kuasai. Yuk langsung tanya pakar:"
+                : "Hmm, saya belum punya jawaban untuk itu. Coba pilih topik di bawah ya, {$this->sapaan}:",
             'suggested_questions' => $isHard
                 ? [
-                    ['label' => 'Mulai dari awal', 'type' => 'ask', 'question' => 'Bagaimana kondisi anak saya?'],
-                    ['label' => '📞 Konsultasi Pakar', 'type' => 'whatsapp', 'url' => $waUrl],
+                    ['label' => 'Mulai dari rekomendasi', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                    ['label' => 'Konsultasi Pakar', 'type' => 'whatsapp', 'url' => $waUrl],
                 ]
                 : [
-                    ['label' => 'Soal makanan', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
-                    ['label' => 'Soal susu', 'type' => 'ask', 'question' => 'Susu apa yang bagus?'],
+                    ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                    ['label' => 'Rekomendasi susu', 'type' => 'ask', 'question' => 'Susu apa yang bagus?'],
                     ['label' => 'Soal sanitasi', 'type' => 'ask', 'question' => 'Kenapa sanitasi penting?'],
                 ],
         ];
@@ -485,9 +603,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
     private function handleGrafik($deteksi): array
     {
-        $grafik = $deteksi->balita->deteksis
-            ->sortBy('tgl_deteksi')
-            ->values()
+        $grafik = $this->riwayatSampaiAcuan($deteksi)
             ->map(function ($item) {
                 return [
                     'tgl_format' => Carbon::parse($item->tgl_deteksi)->format('Y-m-d'),
@@ -525,9 +641,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
     private function handleGrafikAnalysis($deteksi): array
     {
-        $grafik = $deteksi->balita->deteksis
-            ->sortBy('tgl_deteksi')
-            ->values()
+        $grafik = $this->riwayatSampaiAcuan($deteksi)
             ->map(function ($item) {
                 return [
                     'tgl_format' => Carbon::parse($item->tgl_deteksi)->format('Y-m-d'),
@@ -535,6 +649,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                     'berat' => (float) $item->berat,
                 ];
             })
+            ->values()
             ->toArray();
 
         $analisis = $this->analisisEWSGrafik($grafik);
@@ -567,17 +682,14 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
     }
 
 
-
-
     private function analisisEWSGrafik($grafik)
     {
         $warning = [];
 
         $count = count($grafik);
 
-        // =========================
+
         // 1. JIKA DATA HANYA 1
-        // =========================
         if ($count == 1) {
 
             $data = $grafik[0];
@@ -599,36 +711,32 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             ];
         }
 
-        // =========================
+
         // 2. AMBIL DATA TERAKHIR
-        // =========================
         $last = $grafik[$count - 1];
         $prev = $grafik[$count - 2];
 
         $selisihTinggi = $last['tinggi'] - $prev['tinggi'];
         $selisihBerat  = $last['berat'] - $prev['berat'];
 
-        // =========================
+
         // 3. DETEKSI TINGGI
-        // =========================
         if (abs($selisihTinggi) <= 0.1) {
             $warning[] = "Tinggi badan anak belum banyak bertambah dibanding bulan lalu.";
         } elseif ($selisihTinggi < 0) {
             $warning[] = "Tinggi badan anak tercatat lebih rendah dari pengukuran sebelumnya. Mungkin perlu diukur ulang untuk memastikan.";
         }
 
-        // =========================
+
         // 4. DETEKSI BERAT
-        // =========================
         if ($selisihBerat < 0) {
             $warning[] = "Berat badan anak turun dibanding bulan lalu.";
         } elseif ($selisihBerat == 0) {
             $warning[] = "Berat badan anak belum naik sejak pengukuran terakhir.";
         }
 
-        // =========================
+
         // 5. TREND ANALISIS (>=3 DATA)
-        // =========================
         if ($count >= 3) {
 
             $last3 = collect($grafik)->slice(-3)->values();
@@ -653,9 +761,8 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             }
         }
 
-        // =========================
+
         // 6. LEVEL RISIKO
-        // =========================
         $level = 'normal';
 
         if (count($warning) >= 3) {
@@ -664,18 +771,14 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             $level = 'warning';
         }
 
-        // =========================
-        // 7. MESSAGE HUMAN FRIENDLY
-        // =========================
 
-        // Pembuka — disesuaikan dengan level, tidak bikin panik
+        // 7. MESSAGE HUMAN FRIENDLY
         $baseMessage = match ($level) {
             'danger'  => "Pertumbuhan si Kecil perlu perhatian khusus, Bu/Pak.\n\nBeberapa hal pada hasil pengukuran terakhir menunjukkan anak butuh pemeriksaan lebih lanjut. Jangan khawatir berlebihan ya, ini langkah awal supaya anak bisa segera dibantu.",
             'warning' => "Ada beberapa hal yang perlu diperhatikan pada pertumbuhan si Kecil.\n\nBelum termasuk masalah serius, tapi sebaiknya dipantau lebih dekat di bulan-bulan berikutnya.",
             default   => "Kabar baik! Pertumbuhan si Kecil terlihat sehat dan berjalan dengan baik.\n\nTerus pertahankan ya, Bu/Pak. ",
         };
 
-        // Ringkasan pengukuran terakhir
         $ringkasan  = "-) Hasil pengukuran terakhir:\n";
         $ringkasan .= "• Tinggi: {$last['tinggi']} cm";
         if ($selisihTinggi > 0) {
@@ -694,7 +797,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             $ringkasan .= " (tetap)";
         }
 
-        // Penjelasan ringan tentang tinggi & berat
         $detail = "";
 
         if ($selisihTinggi > 0 && $selisihBerat > 0) {
@@ -707,14 +809,12 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             $detail = "Tinggi dan berat badan anak belum menunjukkan kenaikan. Sebaiknya cek pola makan, istirahat, dan kesehatan anak.";
         }
 
-        // Saran disesuaikan dengan level
         $saran = match ($level) {
             'danger'  => "Saran:\n• Segera bawa anak ke puskesmas atau bidan terdekat untuk pemeriksaan lebih lengkap.\n• Tanyakan ke kader atau tenaga kesehatan tentang pemberian makan tambahan (PMT).\n• Jangan lewatkan jadwal posyandu bulan depan.",
             'warning' => "Saran:\n• Berikan makanan bergizi seimbang: nasi, lauk, sayur, buah, dan susu.\n• Pastikan anak cukup istirahat dan tidak sedang sakit.\n• Tetap rutin ke posyandu setiap bulan untuk pemantauan.",
             default   => "Saran:\n• Lanjutkan pola makan dan pengasuhan yang sudah baik.\n• Tetap rutin ke posyandu setiap bulan.\n• Berikan ASI/MPASI atau makanan bergizi sesuai usia anak.",
         };
 
-        // Gabungkan semuanya
         $message  = $baseMessage . "\n\n";
         $message .= $ringkasan . "\n\n";
         $message .= $detail;
@@ -763,7 +863,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
     private function handleResetChat(ChatSession $session): array
     {
-        // reset session
         $session->update([
             'history' => [],
             'context' => [],
@@ -776,22 +875,172 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             'status' => 'success',
             'type' => 'system',
             'topic' => 'reset_chat',
-            'message' => "Percakapan berhasil direset, Bunda! \n\nSilakan mulai dari awal lagi. Misalnya:\n• Bagaimana kondisi anak saya?\n• Tampilkan grafik pertumbuhan",
+            'message' => "Percakapan berhasil direset, {$this->sapaan}! \n\nSilakan mulai dari awal lagi. Misalnya:\n• Rekomendasi makanan & MPASI\n• Bagaimana kondisi anak saya?",
             'suggested_questions' => [
-                [
-                    'label' => 'Cek kondisi anak',
-                    'type' => 'ask',
-                    'question' => 'Bagaimana kondisi anak saya?'
-                ],
-                [
-                    'label' => 'Lihat grafik anak',
-                    'type' => 'ask',
-                    'question' => 'Tampilkan grafik'
-                ],
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Cek kondisi anak', 'type' => 'ask', 'question' => 'Bagaimana kondisi anak saya?'],
             ],
         ];
     }
-    //rekomendasi 
+
+    /* ============================================================
+       NAVIGASI MENU UTAMA (jangkar terpandu)
+       ============================================================ */
+
+    /** Cek apakah teks user adalah perintah kembali ke menu utama. */
+    private function isPerintahMenuUtama(string $text): bool
+    {
+        $t = strtolower(trim($text));
+        return in_array($t, [
+            'menu utama',
+            'menu',
+            'kembali ke menu utama',
+            'kembali ke menu',
+            'topik lain',
+            'topik lainnya',
+        ], true);
+    }
+
+    /** Daftar topik besar — sama seperti pilihan pada pesan pembuka. */
+    private function handleMenuUtama(): array
+    {
+        $msg = "Berikut topik yang bisa saya bantu, {$this->sapaan}. Silakan pilih salah satu:";
+
+        return [
+            'status' => 'success',
+            'type'   => 'greeting',
+            'topic'  => 'menu_utama',
+
+            'message' => $msg,
+            'data'    => ['jawaban' => $msg],
+
+            'suggested_questions' => [
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
+                ['label' => 'Rekomendasi susu', 'type' => 'ask', 'question' => 'Susu apa yang bagus?'],
+                ['label' => 'Langkah yang sebaiknya dilakukan', 'type' => 'ask', 'question' => 'Apa yang harus saya lakukan?'],
+                ['label' => 'Bagaimana kondisi anak saya?', 'type' => 'ask', 'question' => 'Bagaimana kondisi anak saya?'],
+                ['label' => 'Apa penyebabnya?', 'type' => 'ask', 'question' => 'Apa penyebab stunting?'],
+                ['label' => 'Lihat grafik pertumbuhan', 'type' => 'ask', 'question' => 'Tampilkan grafik'],
+            ],
+        ];
+    }
+
+    /** Tempelkan tombol "Menu utama" ke setiap balasan (kecuali layar menu itu sendiri). */
+    private function tambahkanMenuUtama(array $response): array
+    {
+        // Jangan tambahkan pada layar menu utama itu sendiri
+        if (($response['topic'] ?? null) === 'menu_utama') {
+            return $response;
+        }
+
+        $chips = $response['suggested_questions'] ?? [];
+
+        // Hindari duplikat bila sudah ada
+        foreach ($chips as $c) {
+            if (($c['question'] ?? '') === 'Menu utama') {
+                return $response;
+            }
+        }
+
+        $chips[] = ['label' => 'Menu utama', 'type' => 'ask', 'question' => 'Menu utama'];
+        $response['suggested_questions'] = $chips;
+
+        return $response;
+    }
+
+    /* ============================================================
+       HELPER REKOMENDASI MAKANAN BERBASIS AKG (read-only)
+       ============================================================ */
+
+    /** Baca padanan & label dari akg_balitas — tidak memengaruhi
+     *  pengambilan kebutuhan gizi di tempat lain (akgUntukUmur dsb). */
+    private function akgPadananUmur(int $umur): array
+    {
+        $row = DB::table('akg_balitas')
+            ->where('umur_awal', '<=', $umur)
+            ->where('umur_akhir', '>=', $umur)
+            ->first();
+
+        if (!$row) return [];
+
+        return [
+            'kelompok_umur' => $row->label_kelompok,
+            'padanan'       => $row->padanan ? json_decode($row->padanan, true) : [],
+            'catatan'       => $row->catatan,
+        ];
+    }
+
+    /** Status gizi utama menurut metode deteksi. */
+    private function statusGiziUtama($deteksi): string
+    {
+        $metode = $deteksi->metode ?? 'stunting';
+        $status = match ($metode) {
+            'wasting'     => $deteksi->status_tb_bb,
+            'underweight' => $deteksi->status_bb_u,
+            default       => $deteksi->status_tb_u,
+        };
+        $s = strtolower((string) $status);
+
+        if (preg_match('/(kurang|buruk|pendek|wasted|underweight|severely)/', $s)) return 'kurang';
+        if (preg_match('/(lebih|obes|berisiko|overweight|risiko)/', $s)) return 'lebih';
+        return 'normal';
+    }
+
+    /** Panduan tekstur, frekuensi, dan contoh menu per umur (pelengkap seeder). */
+    private function panduanMakanUmur(int $umur): ?array
+    {
+        if ($umur >= 6 && $umur <= 8) {
+            return [
+                'tekstur'   => 'bubur kental/lumat halus (saring) — bukan cair',
+                'frekuensi' => 'MPASI 2-3 kali makan + 1-2 selingan, ASI diteruskan',
+                'menu'      => [
+                    'Pagi: bubur saring + kuning telur + sedikit minyak',
+                    'Selingan: pure pisang/pepaya',
+                    'Siang: bubur + hati ayam/ikan lumat + labu',
+                    'Sore: bubur + tahu/tempe lumat + bayam',
+                ],
+            ];
+        }
+        if ($umur >= 9 && $umur <= 11) {
+            return [
+                'tekstur'   => 'cincang halus / makanan yang bisa dilumat dengan lidah; mulai finger food',
+                'frekuensi' => 'MPASI 3-4 kali makan + 1-2 selingan, ASI diteruskan',
+                'menu'      => [
+                    'Pagi: nasi tim + telur + sayur cincang',
+                    'Selingan: buah potong lembut (finger food)',
+                    'Siang: nasi tim + ikan/ayam cincang + wortel',
+                    'Sore: nasi tim + tempe + bayam + sedikit minyak',
+                ],
+            ];
+        }
+        if ($umur >= 12 && $umur <= 23) {
+            return [
+                'tekstur'   => 'makanan keluarga yang dicincang/dipotong kecil',
+                'frekuensi' => '3 kali makan utama + 2 selingan, ASI boleh diteruskan',
+                'menu'      => [
+                    'Pagi: nasi + telur dadar + tumis sayur',
+                    'Selingan: buah / bubur kacang hijau',
+                    'Siang: nasi + ikan/ayam + sup sayur',
+                    'Sore: nasi + tahu/tempe + sayur + buah',
+                ],
+            ];
+        }
+        if ($umur >= 24) {
+            return [
+                'tekstur'   => 'makanan keluarga biasa, porsi anak',
+                'frekuensi' => '3 kali makan utama + 2 selingan sehat',
+                'menu'      => [
+                    'Pagi: nasi + lauk hewani + sayur + buah',
+                    'Selingan: buah segar / susu',
+                    'Siang: nasi + ikan/ayam/daging + sayur',
+                    'Sore: nasi + lauk nabati + sayur + buah',
+                ],
+            ];
+        }
+        return null; // 0-5 bln ditangani terpisah (ASI)
+    }
+
+    //rekomendasi
     private function rekomendasiBBTB($status)
     {
         $rekomendasi = include base_path('storage/data/rekomendasi.php');
@@ -978,6 +1227,11 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         }
     }
 
+    /**
+     * PENCARIAN KNOWLEDGE BASE (fallback sebelum handleFallback).
+     * Perbaikan: weight HANYA ditambahkan bila ada kecocokan nyata, threshold
+     * diturunkan dari 18 -> 8 agar pertanyaan valid tidak selalu jatuh ke fallback.
+     */
     private function handleKnowledgeSearch(string $text, $deteksi): ?array
     {
         $text = strtolower($text);
@@ -1006,12 +1260,15 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             }
 
             foreach ($words as $word) {
-                if (str_contains(strtolower($kb->pertanyaan), $word)) {
+                if ($word !== '' && str_contains(strtolower($kb->pertanyaan), $word)) {
                     $score += 1;
                 }
             }
 
-            $score += ($kb->weight ?? 0);
+            // weight HANYA ditambahkan bila ada kecocokan nyata
+            if ($score > 0) {
+                $score += (int) ($kb->weight ?? 0);
+            }
 
             if ($score > $bestScore) {
                 $bestScore = $score;
@@ -1019,8 +1276,7 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             }
         }
 
-
-        if ($bestKb && $bestScore >= 18) {
+        if ($bestKb && $bestScore >= 8) {
             return [
                 'status' => 'success',
                 'type' => 'knowledge_base',
@@ -1042,17 +1298,13 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
     }
     private function handleHasilTerakhir($deteksi): array
     {
-        // ambil data terakhir dari relasi balita (history pengukuran)
         $lastData = $deteksi;
 
-        // format tanggal
         $tanggal = \Carbon\Carbon::parse($lastData->tgl_deteksi)
             ->format('d-m-Y');
 
-        // ambil metode
         $metode = $deteksi->metode ?? 'stunting';
 
-        // ambil status & zscore sesuai metode
         switch ($metode) {
             case 'stunting':
                 $status = $lastData->status_tb_u;
@@ -1079,17 +1331,13 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 break;
         }
 
-        // message utama
-        $message  = " Baik bunda, dari data yang diperoleh berikut data hasil pengukuran terakhir anak bunda:\n\n";
+        $message  = "Baik, {$this->sapaan}. Dari data yang diperoleh, berikut hasil pengukuran terakhir ananda:\n\n";
         $message .= "-) Tanggal pengukuran: {$tanggal}\n";
         $message .= "-) Tinggi badan: {$lastData->tinggi} cm\n";
         $message .= "-) Berat badan: {$lastData->berat} kg\n";
         $message .= "-) Status gizi: {$status}\n";
         $message .= "-) Z-Score: {$zscore}\n\n";
         $message .= "-) Kesimpulan: {$penjelasan}\n\n";
-
-
-
 
         return [
             'status' => 'success',
@@ -1108,24 +1356,14 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             ],
 
             'suggested_questions' => [
-                [
-                    'label' => 'Apakah ini berbahaya?',
-                    'type' => 'ask',
-                    'question' => 'Apakah kondisi ini berbahaya?'
-                ],
-                [
-                    'label' => 'Apa yang harus dilakukan?',
-                    'type' => 'ask',
-                    'question' => 'Apa solusi untuk kondisi ini?'
-                ],
+                ['label' => 'Apa yang harus dilakukan?', 'type' => 'ask', 'question' => 'Apa solusi untuk kondisi ini?'],
+                ['label' => 'Rekomendasi makanan & MPASI', 'type' => 'ask', 'question' => 'Menu MPASI apa?'],
             ],
         ];
     }
     private function handleRiwayatPertumbuhan($deteksi): array
     {
-        $riwayat = $deteksi->balita->deteksis()
-            ->orderBy('tgl_deteksi', 'asc')
-            ->get();
+        $riwayat = $this->riwayatSampaiAcuan($deteksi);
 
         if ($riwayat->isEmpty()) {
             return [
@@ -1197,13 +1435,8 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
     private function handlePerkembanganAnak($deteksi): array
     {
-        $perkembangan = $deteksi->balita->deteksis()
-            ->orderBy('tgl_deteksi', 'asc')
-            ->get();
+        $perkembangan = $this->riwayatSampaiAcuan($deteksi);
 
-        // ======================
-        // VALIDASI MINIMAL DATA
-        // ======================
         if ($perkembangan->count() < 2) {
             return [
                 'status'  => 'success',
@@ -1214,15 +1447,9 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             ];
         }
 
-        // ======================
-        // AMBIL DATA TERAKHIR
-        // ======================
         $last = $perkembangan->last();
         $prev = $perkembangan->slice(-2, 1)->first();
 
-        // ======================
-        // DATA FISIK
-        // ======================
         $bb_last = (float) $last->berat;
         $bb_prev = (float) $prev->berat;
 
@@ -1232,9 +1459,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         $selisih_bb = round($bb_last - $bb_prev, 2);
         $selisih_tb = round($tb_last - $tb_prev, 2);
 
-        // ======================
-        // Z-SCORE DARI DB
-        // ======================
         $z_tbu_last  = isset($last->zscore_tb_u)  ? (float) $last->zscore_tb_u  : null;
         $z_bbu_last  = isset($last->zscore_bb_u)  ? (float) $last->zscore_bb_u  : null;
         $z_bbtb_last = isset($last->zscore_tb_bb) ? (float) $last->zscore_tb_bb : null;
@@ -1243,16 +1467,10 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         $z_bbu_prev  = isset($prev->zscore_bb_u)  ? (float) $prev->zscore_bb_u  : null;
         $z_bbtb_prev = isset($prev->zscore_tb_bb) ? (float) $prev->zscore_tb_bb : null;
 
-        // ======================
-        // STATUS DARI DB
-        // ======================
         $status_tbu  = $last->status_tb_u  ?? '-';
         $status_bbu  = $last->status_bb_u  ?? '-';
         $status_bbtb = $last->status_tb_bb ?? '-';
 
-        // ======================
-        // PILIH METODE
-        // ======================
         $metode = strtolower((string) ($last->metode ?? ''));
 
         $metodeMap = [
@@ -1272,9 +1490,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
 
         $isBBTB = in_array($metode, ['wasting', 'tb_bb'], true);
 
-        // ======================
-        // HITUNG TREN Z-SCORE
-        // ======================
         $selisih_z = null;
 
         if ($zscore !== null && $zscore_prev !== null) {
@@ -1292,16 +1507,12 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 else                                $tren = 'stagnan';
             }
         } else {
-            // fallback ke fisik
             if ($selisih_bb > 0 && $selisih_tb > 0)        $tren = 'membaik';
             elseif ($selisih_bb < 0 && $selisih_tb < 0)    $tren = 'memburuk';
             elseif ($selisih_bb == 0 && $selisih_tb == 0)  $tren = 'stagnan';
             else                                           $tren = 'campuran';
         }
 
-        // ======================
-        // CEK ABNORMAL
-        // ======================
         $isAbnormal = false;
 
         if ($zscore !== null) {
@@ -1310,9 +1521,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 : ($zscore < -2);
         }
 
-        // ======================
-        // FORMAT FISIK
-        // ======================
         $bb_text = $selisih_bb > 0
             ? "naik {$selisih_bb} kg (dari {$bb_prev} kg menjadi {$bb_last} kg)"
             : ($selisih_bb < 0
@@ -1328,9 +1536,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
         $z_text      = $zscore      !== null ? number_format($zscore, 2)      : '-';
         $z_text_prev = $zscore_prev !== null ? number_format($zscore_prev, 2) : null;
 
-        // ======================
-        // PERUBAHAN Z
-        // ======================
         $z_change_text = '';
         if ($selisih_z !== null && $z_text_prev !== null) {
             if ($selisih_z > 0) {
@@ -1342,9 +1547,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             }
         }
 
-        // ======================
-        // HEADLINE (INTENT FRIENDLY)
-        // ======================
         switch ($tren) {
             case 'membaik':
                 $headline = "Perkembangan anak menunjukkan peningkatan yang baik.";
@@ -1360,19 +1562,10 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 break;
         }
 
-        // ======================
-        // INTERPRETASI
-        // ======================
-        // ======================
-        // 🔥 INTERPRETASI DETAIL
-        // ======================
         if ($zscore === null) {
             $interpretasi = "Data Z-Score belum lengkap untuk menentukan kondisi gizi anak.";
         } else {
 
-            // ======================
-            // 🔥 BB/TB (WASTING)
-            // ======================
             if ($isBBTB) {
 
                 $status = $this->deteksiBBTB($zscore);
@@ -1390,10 +1583,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 } else {
                     $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak mengalami obesitas, perlu perhatian khusus pada pola makan dan aktivitas.";
                 }
-
-                // ======================
-                // 🔥 TB/U (STUNTING)
-                // ======================
             } elseif (in_array($metode, ['stunting', 'tb_u'])) {
 
                 $status = $this->deteksiTBU($zscore);
@@ -1407,10 +1596,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
                 } else {
                     $interpretasi = "Ini termasuk kategori {$status}. Artinya, anak memiliki tinggi badan di atas rata-rata.";
                 }
-
-                // ======================
-                // 🔥 BB/U (UNDERWEIGHT)
-                // ======================
             } elseif (in_array($metode, ['underweight', 'bb_u'])) {
 
                 $status = $this->deteksiBBU($zscore);
@@ -1432,9 +1617,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             }
         }
 
-        // ======================
-        // SARAN
-        // ======================
         if ($tren === 'membaik' && !$isAbnormal) {
             $saran = "Pertahankan pola makan bergizi seimbang dan pemeriksaan rutin.";
         } elseif ($tren === 'membaik') {
@@ -1445,9 +1627,6 @@ Kondisi ini bisa merupakan gabungan dari masalah gizi jangka pendek dan jangka p
             $saran = "Segera lakukan intervensi gizi dan konsultasi tenaga kesehatan.";
         }
 
-        // ======================
-        // FINAL MESSAGE
-        // ======================
         $message = trim(
             "{$headline}\n"
                 . "Berat badan {$bb_text} dan tinggi badan {$tb_text}.\n"

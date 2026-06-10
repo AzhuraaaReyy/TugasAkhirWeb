@@ -119,6 +119,7 @@ class IntentClassifier
                 'kenapa anak bisa terkena hal ini' => 10,
                 'kenapa anak saya' => 9,
                 'penyebabnya apa' => 10,
+                'apa penyebab' => 9,
                 'faktor penyebab' => 9,
                 'apa penyebabnya' => 10,
                 'kenapa terjadi' => 9,
@@ -130,6 +131,7 @@ class IntentClassifier
                 'faktor keturunan' => 8,
                 'penyebab gizi buruk' => 10,
                 'apa yang menyebabkan' => 10,
+                'penyebab' => 5,
             ],
 
             'required_any' => [
@@ -141,6 +143,31 @@ class IntentClassifier
                 'faktor',
                 'penyebabnya',
                 'kenapa anak bisa stunting',
+            ],
+        ],
+        'tanya_definisi' => [
+            'patterns' => [
+                'apa itu' => 9,
+                'apa yang dimaksud' => 10,
+                'jelaskan tentang' => 8,
+                'pengertian' => 8,
+                'definisi' => 8,
+                'arti dari' => 7,
+                'maksud dari' => 7,
+                'perbedaan' => 8,
+                'bedanya' => 8,
+                'beda' => 8,
+            ],
+            'required_any' => [
+                'apa itu',
+                'dimaksud',
+                'pengertian',
+                'definisi',
+                'arti',
+                'maksud',
+                'jelaskan',
+                'beda',
+                'perbedaan',
             ],
         ],
         'tanya_hasil' => [
@@ -170,6 +197,8 @@ class IntentClassifier
                 'histori pertumbuhan' => 10,
                 'pengukuran dari waktu ke waktu' => 12,
                 'data sebelumnya anak saya' => 10,
+                'riwayat' => 6,
+                'histori' => 6,
             ],
             'required_any' => [
                 'riwayat',

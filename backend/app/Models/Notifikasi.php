@@ -13,6 +13,7 @@ class Notifikasi extends Model
         'pesan',
         'tipe',
         'tanggal',
+        'lokasi',
     ];
 
     protected $casts = [
@@ -25,8 +26,8 @@ class Notifikasi extends Model
         return $this->belongsTo(User::class, 'pengirim_id');
     }
 
-    public function recipients()
+    public function userNotifikasi()
     {
-        return $this->hasMany(UserNotifikasi::class);
+        return $this->hasMany(UserNotifikasi::class, 'notification_id');
     }
 }

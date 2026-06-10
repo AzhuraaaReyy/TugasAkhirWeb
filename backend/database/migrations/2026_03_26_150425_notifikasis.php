@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('judul');
             $table->text('pesan');
             $table->string('tipe'); // contoh: jadwal, pengumuman
-
+            $table->string('lokasi')->nullable();
             $table->timestamp('tanggal')->nullable();
             $table->timestamps();
         });

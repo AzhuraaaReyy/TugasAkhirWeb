@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             WhoBbTbSeeder::class,
             StandarKBMSeeder::class,
             StandarKPTSeeder::class,
+            AkgBalitaSeeder::class,
         ]);
     }
 }

@@ -16,22 +16,25 @@ class NotifikasiController extends Controller
     public function store(Request $request, WhatsAppService $wa)
     {
         $request->validate([
-            'judul' => 'required',
-            'tipe' => 'required',
-            'metode' => 'required|in:whatsapp,email,dashboard',
-            'pesan' => 'required',
+            'judul'   => 'required',
+            'tipe'    => 'required',
+            'metode'  => 'required|in:whatsapp,email,dashboard',
+            'pesan'   => 'required',
             'tanggal' => 'nullable|date',
-            'target' => 'required|in:semua,tertentu',
-            'user_id' => 'nullable|exists:users,id'
+            'lokasi'  => 'nullable|string', // NEW
+            'target'  => 'required|in:semua,tertentu',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         // 1. Simpan Notifikasi
         $notif = Notifikasi::create([
             'pengirim_id' => Auth::id(),
-            'judul' => $request->judul,
-            'tipe' => $request->tipe,
-            'pesan' => $request->pesan,
-            'tanggal' => $request->tanggal ?? now(),
+            'judul'       => $request->judul,
+            'tipe'        => $request->tipe,
+            'pesan'       => $request->pesan,
+            'lokasi'      => $request->lokasi,   // NEW
+            // Biarkan null bila kosong: hanya notifikasi bertanggal yang tampil di kalender
+            'tanggal'     => $request->tanggal,
         ]);
 
         // 2. Tentukan target user
@@ -47,6 +50,7 @@ class NotifikasiController extends Controller
 
             try {
                 // FORMAT NOMOR WA
+                $no_telp = null;
                 if ($user->no_telp) {
                     if (substr($user->no_telp, 0, 2) == '62') {
                         $no_telp = $user->no_telp;
@@ -66,13 +70,12 @@ class NotifikasiController extends Controller
                         $status = 'gagal';
                     }
                 }
+
                 if ($request->metode === 'email' && $user->email) {
                     try {
                         Mail::raw($message, function ($mail) use ($user, $notif) {
-                            $mail->to($user->email)
-                                ->subject($notif->judul);
+                            $mail->to($user->email)->subject($notif->judul);
                         });
-
                         $status = 'terkirim';
                     } catch (\Exception $e) {
                         $status = 'gagal';
@@ -80,28 +83,65 @@ class NotifikasiController extends Controller
                     }
                 }
 
-                // dashboard = tidak kirim apa2 (hanya simpan)
+                // dashboard = tidak kirim apa-apa (hanya simpan)
 
             } catch (\Exception $e) {
                 $status = 'gagal';
             }
 
-            // 4. Simpan ke user_notifikasi
+            // 4. Simpan ke user_notifikasi (pivot)
             UserNotifikasi::create([
                 'notification_id' => $notif->id,
-                'user_id' => $user->id,
-                'metode' => $request->metode,
-                'status_kirim' => $status,
-                'status_baca' => false,
+                'user_id'         => $user->id,
+                'metode'          => $request->metode,
+                'status_kirim'    => $status,
+                'status_baca'     => false,
             ]);
         }
 
         return response()->json([
-            'message' => 'Notifikasi berhasil dikirim'
+            'message' => 'Notifikasi berhasil dikirim',
         ]);
     }
 
+    // UPDATE: hanya mengubah ISI notifikasi (tidak mengirim ulang)
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'judul'   => 'required',
+            'tipe'    => 'required',
+            'pesan'   => 'required',
+            'tanggal' => 'nullable|date',
+            'lokasi'  => 'nullable|string',
+        ]);
 
+        $notif = Notifikasi::findOrFail($id);
+
+        $notif->update([
+            'judul'   => $request->judul,
+            'tipe'    => $request->tipe,
+            'pesan'   => $request->pesan,
+            'tanggal' => $request->tanggal,
+            'lokasi'  => $request->lokasi,
+        ]);
+
+        return response()->json([
+            'message' => 'Notifikasi berhasil diperbarui',
+        ]);
+    }
+
+    // DESTROY: hapus notifikasi (baris user_notifications ikut terhapus via cascadeOnDelete)
+    public function destroy($id)
+    {
+        $notif = Notifikasi::findOrFail($id);
+        $notif->delete();
+
+        return response()->json([
+            'message' => 'Notifikasi berhasil dihapus',
+        ]);
+    }
+
+    // Notifikasi milik user yang login (dipakai di halaman ortu)
     public function index()
     {
         $user = Auth::id();
@@ -114,26 +154,48 @@ class NotifikasiController extends Controller
         return response()->json($data);
     }
 
+    // Riwayat untuk halaman KADER: SATU BARIS PER NOTIFIKASI (id = id Notifikasi)
     public function tampildata()
     {
-        $data = UserNotifikasi::with(['notifikasi', 'user'])->orderBy('id', 'asc')
-            ->get();
+        $data = Notifikasi::with('userNotifikasi')
+            ->latest()
+            ->get()
+            ->map(function ($n) {
+                $rows     = $n->userNotifikasi;
+                $total    = $rows->count();
+                $terkirim = $rows->where('status_kirim', 'terkirim')->count();
+                $gagal    = $rows->where('status_kirim', 'gagal')->count();
+                $dibaca   = $rows->where('status_baca', true)->count();
 
-        $result = $data->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'user_id' => $item->user_id,
-                'judul' => $item->notifikasi->judul ?? '-',
-                'tipe' => $item->notifikasi->tipe ?? '-',
-                'metode' => $item->metode ?? '-',
-                'tanggal' => $item->notifikasi->tanggal ?? '-',
-                'status_kirim' => $item->status_kirim ?? '-',
-                'status_baca' => $item->status_baca ?? '-',
-            ];
-        });
+                // Status ringkas untuk badge di tabel
+                $status = 'pending';
+                if ($total > 0) {
+                    if ($gagal === $total) {
+                        $status = 'gagal';
+                    } elseif ($terkirim > 0) {
+                        $status = 'terkirim';
+                    }
+                }
 
-        return response()->json($result);
+                return [
+                    'id'             => $n->id, // ID Notifikasi -> dipakai Edit & Hapus
+                    'judul'          => $n->judul,
+                    'tipe'           => $n->tipe,
+                    'pesan'          => $n->pesan,
+                    'lokasi'         => $n->lokasi,
+                    'metode'         => optional($rows->first())->metode ?? '-',
+                    'tanggal'        => $n->tanggal
+                        ? \Carbon\Carbon::parse($n->tanggal)->format('Y-m-d')
+                        : '-',
+                    'status_kirim'   => $status,
+                    'total_penerima' => $total,
+                    'dibaca'         => $dibaca, // untuk fitur "dibaca X dari Y"
+                ];
+            });
+
+        return response()->json($data);
     }
+
     public function getOrangTua()
     {
         $users = User::where('role', 'orangtua')
@@ -143,6 +205,7 @@ class NotifikasiController extends Controller
         return response()->json($users);
     }
 
+    // Semua event bertanggal -> tampil di kalender ortu
     public function kalender()
     {
         $events = Notifikasi::whereNotNull('tanggal')
@@ -154,8 +217,8 @@ class NotifikasiController extends Controller
                     'judul'   => $n->judul,
                     'pesan'   => $n->pesan,
                     'tipe'    => $n->tipe,
-                    // WAJIB 'Y-m-d' — kalender membandingkan string persis,
-                    // jadi "2026-06-10 00:00:00" tidak akan pernah cocok
+                    'lokasi'  => $n->lokasi, // NEW
+                    // WAJIB 'Y-m-d' — kalender membandingkan string persis
                     'tanggal' => \Carbon\Carbon::parse($n->tanggal)->format('Y-m-d'),
                 ];
             });

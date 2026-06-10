@@ -45,58 +45,56 @@ class BalitaController extends Controller
 
     public function index()
     {
-        //ambil data deteksi yang berelasi dengan balita
+        // Ambil data deteksi yang berelasi dengan balita
         $deteksis = Deteksi::with('balita')
-            ->orderBy('tgl_deteksi', 'desc')
+            ->orderByDesc('tgl_deteksi')
             ->get();
 
-        //ambil data terbaru saja
+        // ✅ Status TERBARU tiap balita berdasarkan TANGGAL PENGUKURAN (bukan created_at)
         $deteksiTerbaru = Deteksi::with('balita')
-            ->latest()
+            ->orderByDesc('tgl_deteksi')   // pengukuran paling baru di atas
+            ->orderByDesc('id')            // pemecah seri bila tgl_deteksi sama
             ->get()
             ->groupBy('balita_id')
-            ->map(fn($items) => $items->first())
+            ->map(fn($items) => $items->first()) // ambil pengukuran terbaru tiap balita
             ->values();
 
         $stunting = $deteksiTerbaru->filter(function ($item) {
             $status = strtolower(trim($item->status_tb_u ?? ''));
-
             return str_contains($status, 'pendek');
         })->count();
 
         $tidakStunting = $deteksiTerbaru->filter(function ($item) {
             $status = strtolower(trim($item->status_tb_u ?? ''));
-
-            return str_contains($status, 'normal') ||
-                str_contains($status, 'tinggi');
+            return str_contains($status, 'normal') || str_contains($status, 'tinggi');
         })->count();
 
-        //ambil data balita
-        $balitas = Balita::with(['user', 'posyandu'])->orderBy('id', 'asc')
-            ->get();
-
+        // Ambil data balita
+        $balitas = Balita::with(['user', 'posyandu'])->orderBy('id', 'asc')->get();
 
         $data = $balitas->map(function ($balita) {
             return [
-                'id' => $balita->id,
-                'name' => $balita->name,
-                'orangtua' => $balita->user?->name,
-                'jk' => $balita->jk === 'L' ? 'Laki-Laki' : 'Perempuan',
+                'id'        => $balita->id,
+                'name'      => $balita->name,
+                'orangtua'  => $balita->user?->name,
+                'jk'        => $balita->jk === 'L' ? 'Laki-Laki' : 'Perempuan',
                 'tgl_lahir' => $balita->tgl_lahir,
                 'tmp_lahir' => $balita->tmp_lahir,
-                'posyandu' => $balita->posyandu?->nama_posyandu,
+                'posyandu'  => $balita->posyandu?->nama_posyandu,
             ];
         });
+
         $totalBalita = Balita::count();
         $lastUpdate = Carbon::parse(Deteksi::max('updated_at'))
             ->timezone('Asia/Jakarta')
             ->toDateTimeString();
+
         return response()->json([
-            'data' => $data,
-            'total_balita' => $totalBalita,
-            'stunting' => $stunting,
+            'data'           => $data,
+            'total_balita'   => $totalBalita,
+            'stunting'       => $stunting,
             'tidak_stunting' => $tidakStunting,
-            'last_update' => $lastUpdate
+            'last_update'    => $lastUpdate,
         ]);
     }
 

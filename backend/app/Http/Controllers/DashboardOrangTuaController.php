@@ -9,32 +9,12 @@ use App\Models\Balita;
 use App\Models\Deteksi;
 use Illuminate\Support\Carbon;
 use App\Services\ChatbotEngine;
+use Illuminate\Support\Facades\Auth;
+use App\Models\DetailDeteksi;
+use App\Models\Notifikasi;
 
 class DashboardOrangTuaController extends Controller
 {
-    public function __construct(private ChatbotEngine $engine) {}
-
-    public function ask(Request $request)
-    {
-        $request->validate([
-            'question'   => 'required|string',
-            'balita_id'  => 'required|integer',
-            'session_id' => 'nullable|string',
-        ]);
-
-        //Generate session_id otomatis kalau frontend belum kirim
-        $sessionId = $request->session_id ?? 'sess_' . uniqid();
-
-        $response = $this->engine->process(
-            $sessionId,
-            $request->balita_id,
-            $request->question
-        );
-
-        return response()->json($response);
-    }
-
-
     public function lengkapiNoTelp(Request $request)
     {
         $request->merge([
@@ -101,257 +81,10 @@ class DashboardOrangTuaController extends Controller
             return response()->json(['message' => 'Data deteksi belum tersedia'], 404);
         }
 
-        // Pembanding = pengukuran terakhir sebelum yang terbaru
-        $dataLalu = Deteksi::where('balita_id', $id)
-            ->where(function ($q) use ($deteksiTerbaru) {
-                $q->where('tgl_deteksi', '<', $deteksiTerbaru->tgl_deteksi)
-                    ->orWhere(function ($q2) use ($deteksiTerbaru) {
-                        $q2->where('tgl_deteksi', $deteksiTerbaru->tgl_deteksi)
-                            ->where('id', '<', $deteksiTerbaru->id);
-                    });
-            })
-            ->orderByDesc('tgl_deteksi')->orderByDesc('id')->first();
 
-        // ---------- Nilai dasar ----------
-        $bbIni  = (float) $deteksiTerbaru->berat;
-        $tbIni  = (float) $deteksiTerbaru->tinggi;
-        $bbLalu = $dataLalu ? (float) $dataLalu->berat : null;
-        $tbLalu = $dataLalu ? (float) $dataLalu->tinggi : null;
-
-        $selisihBb = $bbLalu !== null ? round($bbIni - $bbLalu, 2) : null;
-        $selisihTb = $tbLalu !== null ? round($tbIni - $tbLalu, 2) : null;
-
-        $statusBb = $this->tentukanStatus($selisihBb);
-        $statusTb = $this->tentukanStatus($selisihTb);
-
-        // ---------- Umur & interval ----------
-        $jk       = $balita->jk; // 'L' / 'P'
-        $umurLalu = ($dataLalu && $dataLalu->umur !== null) ? (int) $dataLalu->umur : null;
-        $umurIni  = (int) $deteksiTerbaru->umur;
-        $interval = $umurLalu !== null ? max(1, $umurIni - $umurLalu) : null;
-
-        $pengukuranPertama = $dataLalu === null;
-        $lebihDari24       = $umurLalu !== null && $umurLalu > 24;
-
-        // KBM/KPT (tabel = jendela 3 bulan)
-        $kbm = $this->standarKenaikan('standar_kbm', 'kbm_kg', $jk, $umurLalu, $interval);
-        $kpt = $this->standarKenaikan('standar_kpt', 'kpt_cm', $jk, $umurLalu, $interval);
-
-        $kbmHarapan = $this->skalaInterval($kbm['nilai'], $kbm['interval'], $interval);
-        $kptHarapan = $this->skalaInterval($kpt['nilai'], $kpt['interval'], $interval);
-
-        $kbmBerlaku = $umurLalu !== null && $kbm['nilai'] !== null;
-        $kptBerlaku = $umurLalu !== null && $kpt['nilai'] !== null;
-        $intervalBeda = $interval !== null && $kbm['interval'] !== null && $interval !== (int) $kbm['interval'];
-
-        // Proyeksi target berikutnya (jendela asli tabel = 3 bln)
-        $intervalForward = $kbm['interval'] ?? $kpt['interval'] ?? 3;
-        $kbmNext = $this->standarKenaikan('standar_kbm', 'kbm_kg', $jk, $umurIni, $intervalForward);
-        $kptNext = $this->standarKenaikan('standar_kpt', 'kpt_cm', $jk, $umurIni, $intervalForward);
-        $ivNext  = $kbmNext['interval'] ?? $kptNext['interval'] ?? 3;
-        $tglTarget = Carbon::parse($deteksiTerbaru->tgl_deteksi)
-            ->copy()->addMonths($ivNext)->toDateString();
-
-        // ============================================================
-        //  BERAT BADAN
-        // ============================================================
-        $zBbtb        = (float) $deteksiTerbaru->zscore_tb_bb;
-        $statusGiziBb = $this->labelGiziBBTB($zBbtb);
-        $arahBb       = $this->arahDariBBTB($zBbtb);
-
-        $lmsBb = $this->lmsBBTB($tbIni, $jk);
-        $idealMin = $idealMax = null;
-        if ($lmsBb) {
-            $idealMin = round($this->nilaiDariZScore(-2, $lmsBb->l, $lmsBb->m, $lmsBb->s), 1);
-            $idealMax = round($this->nilaiDariZScore(1,  $lmsBb->l, $lmsBb->m, $lmsBb->s), 1);
-        }
-        $dalamIdeal = ($idealMin !== null && $bbIni >= $idealMin && $bbIni <= $idealMax);
-
-        $penurunanDibutuhkan = null;
-        $catatanBb = null;
-        $kenaikanDibutuhkanBb = null;
-        $kenaikanBerikutnyaBb = null;
-
-        if ($arahBb === 'turun') {
-            $penurunanDibutuhkan = ($idealMax !== null) ? max(0, round($bbIni - $idealMax, 1)) : 0;
-            $targetBb   = $idealMax;
-            $memenuhiBb = $dalamIdeal;
-            $targetNextBb = $idealMax;
-
-            if (!$dalamIdeal) {
-                $catatanBb = "Berat anak berlebih. Jangan turunkan berat anak dengan cepat. Tanyakan ke petugas Posyandu cara yang aman.";
-            }
-        } else {
-            $targetBb = ($bbLalu !== null && $kbmHarapan !== null) ? round($bbLalu + $kbmHarapan, 2) : null;
-            $memenuhiBb = ($selisihBb !== null && $kbmHarapan !== null) ? ($selisihBb >= $kbmHarapan) : null;
-            if ($dalamIdeal) $memenuhiBb = true;
-
-            $targetNextBb = ($kbmNext['nilai'] !== null) ? round($bbIni + $kbmNext['nilai'], 2) : null;
-            $kenaikanBerikutnyaBb = $kbmNext['nilai'];
-            $kenaikanDibutuhkanBb = $kbmHarapan;
-
-            if ($memenuhiBb === false && $targetBb !== null) {
-                $targetNextBb = $targetBb;
-            }
-
-            if ($pengukuranPertama) {
-                $catatanBb = "Ini penimbangan pertama, jadi belum ada pembandingnya. Hasil kenaikan berat baru terlihat di penimbangan berikutnya.";
-            } elseif ($lebihDari24) {
-                $catatanBb = "Anak sudah lebih dari 2 tahun. Di usia ini berat dinilai dari status gizinya, bukan dari target kenaikan.";
-            } elseif ($intervalBeda) {
-                $catatanBb = "Jarak penimbangan ini {$interval} bulan, padahal patokannya 3 bulan. Jadi angka ini hanya perkiraan. Sebaiknya timbang anak tiap 3 bulan.";
-            }
-        }
-
-        $peringatanBb = null;
-        if ($bbLalu !== null && $bbLalu > 0 && $selisihBb !== null && $interval !== null) {
-            $persenPerBulan = abs($selisihBb) / $bbLalu * 100 / max(1, $interval);
-            if ($persenPerBulan > 10) {
-                $peringatanBb = "Berat anak berubah terlalu banyak ("
-                    . ($selisihBb > 0 ? "naik" : "turun") . " " . abs(round($selisihBb, 1))
-                    . " kg dalam {$interval} bulan). Coba cek lagi angkanya. Kalau benar, segera bawa anak ke petugas kesehatan.";
-            }
-        }
-
-        // ============================================================
-        //  TINGGI BADAN
-        // ============================================================
-        $zTbuIni  = (float) $deteksiTerbaru->zscore_tb_u;
-        $zTbuLalu = $dataLalu ? (float) $dataLalu->zscore_tb_u : null;
-        $modeTinggi = ($zTbuIni < -2) ? 'kejar' : 'normal';
-
-        $targetTb   = ($tbLalu !== null && $kptHarapan !== null) ? round($tbLalu + $kptHarapan, 2) : null;
-        $memenuhiTb = ($selisihTb !== null && $kptHarapan !== null) ? ($selisihTb >= $kptHarapan) : null;
-
-        $kenaikanBerikutnyaTb = $kptNext['nilai'];
-        $targetNextTb = ($kptNext['nilai'] !== null) ? round($tbIni + $kptNext['nilai'], 2) : null;
-
-        if ($modeTinggi === 'kejar') {
-            $LANGKAH_KEJAR = 0.05;
-            $umurTarget = $umurIni + $ivNext;
-            $lmsTbu = $this->lmsTBU($umurTarget, $jk);
-            if ($lmsTbu) {
-                $zTarget = min(-2.0, $zTbuIni + $LANGKAH_KEJAR * $ivNext);
-                $tinggiTarget = $this->nilaiDariZScore($zTarget, $lmsTbu->l, $lmsTbu->m, $lmsTbu->s);
-                $kenaikanKejar = max($kptNext['nilai'] ?? 0, round($tinggiTarget - $tbIni, 2));
-                $kenaikanBerikutnyaTb = round($kenaikanKejar, 2);
-                $targetNextTb = round($tbIni + $kenaikanKejar, 1);
-            }
-        }
-
-        if ($memenuhiTb === false && $targetTb !== null) {
-            $targetNextTb = $targetTb;
-        }
-
-        $trenZTbu = null;
-        if ($zTbuLalu !== null) {
-            $selisihZ = round($zTbuIni - $zTbuLalu, 2);
-            $trenZTbu = $selisihZ > 0.02 ? 'membaik' : ($selisihZ < -0.02 ? 'memburuk' : 'tetap');
-        }
-
-        $catatanTb = null;
-        if ($pengukuranPertama) {
-            $catatanTb = "Ini pengukuran pertama, jadi belum ada pembandingnya. Hasil kenaikan tinggi baru terlihat di pengukuran berikutnya.";
-        } elseif ($lebihDari24) {
-            $catatanTb = "Anak sudah lebih dari 2 tahun. Di usia ini tinggi dinilai dari status gizinya. Kalau anak pendek, akan diberi target tambahan untuk mengejar.";
-        } elseif ($intervalBeda) {
-            $catatanTb = "Jarak pengukuran ini {$interval} bulan, padahal patokannya 3 bulan. Jadi angka ini hanya perkiraan. Sebaiknya ukur tinggi anak tiap 3 bulan.";
-        }
-
-        $peringatanTb = null;
-        if ($selisihTb !== null && $selisihTb < 0) {
-            $peringatanTb = "Tinggi anak tercatat berkurang dari sebelumnya. Tinggi tidak mungkin berkurang, jadi mungkin ada salah ketik atau salah ukur. Coba cek lagi datanya.";
-        }
-
-        // ---------- Bulatkan SEMUA angka tampilan ke 1 desimal ----------
-        $r1 = fn($x) => $x === null ? null : round((float) $x, 1);
-
-        // ============================================================
-        //  RESPONSE
-        // ============================================================
-        return response()->json([
-            'balita' => [
-                'nama'          => $balita->name ?? null,
-                'usia_bulan'    => $umurIni,
-                'jenis_kelamin' => $jk,
-            ],
-
-            'berat_badan' => [
-                'tanggal_lalu'         => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'          => $deteksiTerbaru->tgl_deteksi,
-                'bulan_lalu'           => $r1($bbLalu),
-                'bulan_ini'            => $r1($bbIni),
-                'perubahan'            => $r1($selisihBb),
-                'status'               => $statusBb,
-                'pesan'                => $this->pesan('Berat badan', $statusBb, $selisihBb, 'kg'),
-
-                'arah_target'          => $arahBb,
-                'ideal_min'            => $r1($idealMin),
-                'ideal_max'            => $r1($idealMax),
-                'penurunan_dibutuhkan' => $r1($penurunanDibutuhkan),
-
-                'target'               => $r1($targetBb),
-                'kenaikan_dibutuhkan'  => $r1($kenaikanDibutuhkanBb),
-                'interval_bulan'       => $interval,
-                'memenuhi_standar'     => $memenuhiBb,
-                'status_kenaikan'      => $this->statusKenaikan($memenuhiBb),
-
-                'target_berikutnya'    => $r1($targetNextBb),
-                'kenaikan_berikutnya'  => $r1($kenaikanBerikutnyaBb),
-                'interval_target'      => $ivNext,
-                'tanggal_target'       => $tglTarget,
-
-                'kbm_berlaku'          => $kbmBerlaku,
-                'catatan'              => $catatanBb,
-                'peringatan'           => $peringatanBb,
-
-                'zscore'               => $deteksiTerbaru->zscore_tb_bb,
-                'status_gizi'          => $statusGiziBb,
-                'status_gizi_level'    => $this->level($deteksiTerbaru->status_tb_bb),
-            ],
-
-            'tinggi_badan' => [
-                'tanggal_lalu'         => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'          => $deteksiTerbaru->tgl_deteksi,
-                'bulan_lalu'           => $r1($tbLalu),
-                'bulan_ini'            => $r1($tbIni),
-                'perubahan'            => $r1($selisihTb),
-                'status'               => $statusTb,
-                'pesan'                => $this->pesan('Tinggi badan', $statusTb, $selisihTb, 'cm'),
-
-                'arah_target'          => 'naik',
-                'mode_target'          => $modeTinggi,
-                'ideal_min'            => null,
-                'ideal_max'            => null,
-
-                'target'               => $r1($targetTb),
-                'kenaikan_dibutuhkan'  => $r1($kptHarapan),
-                'interval_bulan'       => $interval,
-                'memenuhi_standar'     => $memenuhiTb,
-                'status_kenaikan'      => $this->statusKenaikan($memenuhiTb),
-
-                'target_berikutnya'    => $r1($targetNextTb),
-                'kenaikan_berikutnya'  => $r1($kenaikanBerikutnyaTb),
-                'interval_target'      => $ivNext,
-                'tanggal_target'       => $tglTarget,
-
-                'kpt_berlaku'          => $kptBerlaku,
-                'catatan'              => $catatanTb,
-                'peringatan'           => $peringatanTb,
-
-                'zscore'               => $zTbuIni,
-                'zscore_lalu'          => $zTbuLalu,
-                'tren_zscore'          => $trenZTbu,
-                'status_gizi'          => $deteksiTerbaru->status_tb_u,
-                'status_gizi_level'    => $this->level($deteksiTerbaru->status_tb_u),
-            ],
-
-            'wasting' => [
-                'zscore'            => $deteksiTerbaru->zscore_tb_bb,
-                'status_gizi'       => $deteksiTerbaru->status_tb_bb,
-                'status_gizi_level' => $this->level($deteksiTerbaru->status_tb_bb),
-            ],
-        ]);
+        return response()->json(
+            $this->susunPerkembangan($balita, $deteksiTerbaru)
+        );
     }
 
     public function detailMonitoringBalita($balitaId)
@@ -425,7 +158,7 @@ class DashboardOrangTuaController extends Controller
             'data' => [
                 'id' => $detaildeteksi?->id,
                 'deteksi_id' => $deteksi->id,
-
+                'nama_user' => Auth::user()?->name,
                 'name' => $deteksi->balita?->name,
                 'jk' => $deteksi->balita?->jk,
                 'tgl_lahir' => $deteksi->balita?->tgl_lahir,
@@ -758,7 +491,632 @@ class DashboardOrangTuaController extends Controller
         return response()->json($data);
     }
 
+    public function ambilstatustimeline($balitaId)
+    {
+        $deteksis = Deteksi::where('balita_id', $balitaId)
+            ->with('balita') // <- TAMBAHKAN: accessor umur menghitung dari tgl_lahir (sama dgn profil)
+            ->orderBy('tgl_deteksi', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
 
+        $data = $deteksis->map(function ($d) {
+            return [
+                'id'             => $d->id,
+                'tgl_deteksi'    => $d->tgl_deteksi,
+                'tgl_label'      => $d->tgl_deteksi
+                    ? Carbon::parse($d->tgl_deteksi)->locale('id')->translatedFormat('d M Y')
+                    : '-',
+                'umur'           => $d->umur,
+                'berat'          => $d->berat,
+                'tinggi'         => $d->tinggi,
+                'lingkar_kepala' => $d->lingkar_kepala ?? null,
+                'zscore_tbu'     => $d->zscore_tb_u,
+                'zscore_bbu'     => $d->zscore_bb_u,
+                'zscore_bbtb'    => $d->zscore_tb_bb,
+                'status_tbu'     => $d->status_tb_u  ?? $this->deteksiTBU($d->zscore_tb_u),
+                'status_bbu'     => $d->status_bb_u  ?? $this->deteksiBBU($d->zscore_bb_u),
+                'status_bbtb'    => $d->status_tb_bb ?? $this->deteksiBBTB($d->zscore_tb_bb),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data'    => $data,
+        ]);
+    }
+
+    public function detaildeteksi($id)
+    {
+        $detaildeteksi = DetailDeteksi::with([
+            'deteksi.user',
+            'deteksi.balita.posyandu',
+            'deteksi.balita.deteksis'
+        ])->findOrFail($id);
+        $detail = $detaildeteksi->deteksi;
+
+        // ambil zscore dari DB
+        $z_bbu = $detail->zscore_bb_u;
+        $z_tbu = $detail->zscore_tb_u;
+        $z_bbtb = $detail->zscore_tb_bb;
+
+        // hitung ulang status (REAL-TIME & AKURAT)
+        $status_bbu = $this->deteksiBBU($z_bbu);
+        $status_tbu = $this->deteksiTBU($z_tbu);
+        $status_bbtb = $this->deteksiBBTB($z_bbtb);
+
+        //hitung perbandingan berat dan tinggi
+
+        $penimbangan = $detail->balita
+            ->deteksis()
+            ->orderByDesc('id') // 🔥 ini kunci utama
+            ->get();
+
+        $sekarang = $penimbangan->first();
+        $sebelumnya = $penimbangan->skip(1)->first();
+
+        $kunjunganTerbaru = $penimbangan->whereNotNull('user_id')->first() ?? $sekarang;
+
+        // HITUNG STATUS
+        $status_berat = "Belum ada data pembanding";
+        $status_tinggi = "Belum ada data pembanding";
+
+        if ($sekarang && $sebelumnya) {
+            // BERAT
+            if ($sekarang->berat > $sebelumnya->berat) {
+                $status_berat = "Naik";
+            } elseif ($sekarang->berat < $sebelumnya->berat) {
+                $status_berat = "Turun";
+            } else {
+                $status_berat = "Tetap";
+            }
+
+            // TINGGI
+            if ($sekarang->tinggi > $sebelumnya->tinggi) {
+                $status_tinggi = "Naik";
+            } elseif ($sekarang->tinggi < $sebelumnya->tinggi) {
+                $status_tinggi = "Turun";
+            } else {
+                $status_tinggi = "Tetap";
+            }
+        }
+        $rekomendasidata = include storage_path('data/rekomendasi.php');
+        $rekomendasiBBU = $rekomendasidata['bbu'][$status_bbu] ?? [];
+
+        $rekomendasiTBU = $rekomendasidata['tbu'][$status_tbu] ?? [];
+
+        $rekomendasiBBTB = $rekomendasidata['bbtb'][$status_bbtb] ?? [];
+
+        return response()->json([
+            'message' => "Detail data deteksi",
+            'data' => [
+                'id' => $detaildeteksi->id,
+                'deteksi_id' => $detail->id,
+
+                // data balita
+                'name' => $detail->balita?->name,
+                'jk' => $detail->balita?->jk,
+                'tgl_lahir' => $detail->balita?->tgl_lahir,
+                'orang_tua' => $detail->balita?->user?->name ?? "-",
+                // data pengukuran
+                'tgl_deteksi' => Carbon::parse($detail->tgl_deteksi)->format('Y-m-d'),
+                'umur' => $detail->umur,
+                'berat' => $detail->berat,
+                'tinggi' => $detail->tinggi,
+
+
+                // perbandingan
+                'berat_sekarang' => $sekarang?->berat,
+                'berat_sebelumnya' => $sebelumnya?->berat,
+                'tinggi_sekarang' => $sekarang?->tinggi,
+                'tinggi_sebelumnya' => $sebelumnya?->tinggi,
+
+                // status hasil perbandingan
+                'status_berat' => $status_berat,
+                'status_tinggi' => $status_tinggi,
+
+                // z-score (DARI DB)
+                'zscore_bbu' => $z_bbu,
+                'zscore_tbu' => $z_tbu,
+                'zscore_bbtb' => $z_bbtb,
+
+                // status (HITUNG ULANG)
+                'status' => [
+                    'bbu' => $status_bbu,
+                    'tbu' => $status_tbu,
+                    'bbtb' => $status_bbtb,
+                ],
+
+                // keterangan & rekomendasi
+                'keterangangizi' => [
+                    'stunting' => $this->keteranganTBU($status_tbu),
+                    'wasting' => $this->keteranganBBTB($status_bbtb),
+                    'underweight' => $this->keteranganBBU($status_bbu),
+                ],
+                'rekomendasigizi' => [
+                    'stunting' => $rekomendasiTBU,
+                    'wasting' => $rekomendasiBBTB,
+                    'underweight' => $rekomendasiBBU,
+                ],
+                'keterangan' => $detaildeteksi->keterangan,
+                'rekomendasi' => $detaildeteksi->rekomendasi,
+                'total_deteksi' => $detail->balita?->deteksis()->count(),
+                'lokasi_posyandu' => $detail->balita?->posyandu?->nama_posyandu ?? "Posyandu Wilayah",
+                'kader_pemeriksa' => $detail->user?->name
+                    ?? $kunjunganTerbaru?->user?->name
+                    ?? "Kader Posyandu",
+            ]
+        ]);
+    }
+    public function show($id)
+    {
+        $balita = Balita::with(['user', 'posyandu'])->findOrFail($id);
+
+        return response()->json([
+            'message' => 'Detail data balita',
+            'data' => [
+                'id' => $balita->id,
+                'name' => $balita->name,
+                'jk' => $balita->jk,
+                'tgl_lahir' => $balita->tgl_lahir,
+                'tmp_lahir' => $balita->tmp_lahir,
+                'alamat' => $balita->alamat,
+
+                'posyandu_id' => $balita->posyandu_id,
+                'user_id' => $balita->user_id,
+
+                'posyandu' => $balita->posyandu?->nama_posyandu,
+                'orangtua' => $balita->user?->name,
+            ]
+        ]);
+    }
+
+    public function grafikSnapshot($deteksiId)
+    {
+        $deteksiDipilih = Deteksi::findOrFail($deteksiId);
+
+        $deteksisRaw = Deteksi::where(
+            'balita_id',
+            $deteksiDipilih->balita_id
+        )
+            ->where(function ($q) use ($deteksiDipilih) {
+
+                $q->where(
+                    'tgl_deteksi',
+                    '<',
+                    $deteksiDipilih->tgl_deteksi
+                )
+
+                    ->orWhere(function ($q2) use ($deteksiDipilih) {
+
+                        $q2->where(
+                            'tgl_deteksi',
+                            $deteksiDipilih->tgl_deteksi
+                        )
+                            ->where(
+                                'id',
+                                '<=',
+                                $deteksiDipilih->id
+                            );
+                    });
+            })
+            ->with('balita')
+            ->orderBy('tgl_deteksi', 'asc')
+            ->get();
+
+        if ($deteksisRaw->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // hindari tanggal duplicate
+        $deteksis = $deteksisRaw->unique('tgl_deteksi')->values();
+
+        $data = $deteksis->map(function ($item, $index) use ($deteksis) {
+
+            // ZSCORE WHO
+            $zScore = $item->zscore_tb_u;
+            $ZScoreBBU = $item->zscore_bb_u;
+
+            $status = $zScore !== null
+                ? $this->deteksiTBU($zScore)
+                : '-';
+
+            $statusBBU = $ZScoreBBU !== null
+                ? $this->deteksiBBU($ZScoreBBU)
+                : '-';
+
+            // DEFAULT VALUE
+            $kenaikanBB = 0;
+            $kenaikanTB = 0;
+
+            $targetKbm = null;
+            $targetKpt = null;
+
+            $statusPertumbuhanBB = "Data Awal";
+            $statusPertumbuhanTB = "Data Awal";
+            $tooltipBB = "Data awal";
+            $tooltipTB = "Data awal";
+
+            //ambil status z-score
+            $status_bbu = $this->deteksiBBU($ZScoreBBU);
+            $status_tbu = $this->deteksiTBU($zScore);
+
+
+            // CEK PERTUMBUHAN
+            if ($index > 0) {
+
+                // data sebelumnya
+                $prevItem = $deteksis[$index - 1];
+
+                // hitung kenaikan langsung dari data sebelumnya
+                $kenaikanBB = round(
+                    (float)$item->berat - (float)$prevItem->berat,
+                    2
+                );
+
+                $kenaikanTB = round(
+                    (float)$item->tinggi - (float)$prevItem->tinggi,
+                    2
+                );
+                $umurSebelumnya = (int)$prevItem->umur;
+                $umurSekarang = (int)$item->umur;
+
+                // interval real antar penimbangan
+                $intervalAktual = $umurSekarang - $umurSebelumnya;
+                $umurAnak = (int)$item->umur;
+                $genderAnak = strtolower(trim($item->balita->jk));
+
+                $genderDB = $genderAnak == 'l'
+                    ? 'laki-laki'
+                    : 'perempuan';
+
+                //Hitung ideal KBM
+                $kbmStandar = DB::table('standar_kbm')
+                    ->whereRaw('LOWER(TRIM(gender)) = ?', [strtolower(trim($genderDB))])
+                    ->where('umur_awal', '<=', $umurAnak)
+                    ->where('umur_akhir', '>=', $umurAnak)
+                    ->orderByRaw('ABS(interval_bulan - ?)', [$intervalAktual])
+                    ->first();
+
+                if ($kbmStandar) {
+
+                    $targetKbm = (float)$kbmStandar->kbm_kg;
+
+                    $statusPertumbuhanBB =
+                        $kenaikanBB >= $targetKbm
+                        ? "Telah Tercapai"
+                        : "Belum Tercapai";
+                } else {
+
+                    // fallback ke WHO
+                    $statusPertumbuhanBB = $statusBBU;
+                }
+
+                //Hitung Ideal KPT
+                $kptStandar = DB::table('standar_kpt')
+                    ->whereRaw('LOWER(TRIM(gender)) = ?', [$genderDB])
+
+                    ->where('umur_awal', '<=', $umurAnak)
+                    ->where('umur_akhir', '>=', $umurAnak)
+
+                    // cari interval yang <= interval aktual
+                    ->orderByRaw('ABS(interval_bulan - ?)', [$intervalAktual])
+
+                    ->first();
+
+                if ($kptStandar) {
+
+                    $targetKpt = (float)$kptStandar->kpt_cm;
+
+                    $statusPertumbuhanTB =
+                        $kenaikanTB >= $targetKpt
+                        ? "Telah Tercapai"
+                        : "Belum Tercapai";
+                } else {
+
+                    // fallback ke WHO
+                    $statusPertumbuhanTB = $status;
+                }
+
+                $selisihBB = $targetKbm !== null
+                    ? round($kenaikanBB - $targetKbm, 2)
+                    : 0;
+                $selisihTB = $targetKpt !== null
+                    ? round($kenaikanTB - $targetKpt, 2)
+                    : 0;
+
+                //Tooltip BB
+                if ($targetKbm !== null) {
+
+                    if ($kenaikanBB >= $targetKbm) {
+
+                        $tooltipBB =
+                            "Pertumbuhan luar biasa (+" . $kenaikanBB . " kg), " .
+                            "melampaui standar minimal +" . $targetKbm . " kg (selisih +" . $selisihBB . " kg)";
+                    } else {
+
+                        $tooltipBB =
+                            "Pertumbuhan kurang optimal (" . $kenaikanBB . " kg), " .
+                            "standar minimal " . $targetKbm . " kg, " .
+                            "kurang " . abs($selisihBB) . " kg dari target.";
+                    }
+                } else {
+                    $tooltipBB = $statusPertumbuhanBB;
+                }
+
+
+
+
+                //Tooltip TB
+                if ($targetKpt !== null) {
+
+                    if ($kenaikanTB >= $targetKpt) {
+
+                        $tooltipTB =
+                            "Pertumbuhan luar biasa (+" . $kenaikanTB . " cm), " .
+                            "melampaui standar minimal +" . $targetKpt . " cm (selisih +" . $selisihTB . " cm)";
+                    } else {
+
+                        $tooltipTB =
+                            $tooltipTB =
+                            "Pertumbuhan kurang optimal (" . $kenaikanTB . " cm), " .
+                            "standar minimal " . $targetKpt . " cm, " .
+                            "kurang " . abs($selisihTB) . " cm dari target.";
+                    }
+                } else {
+                    $tooltipTB = $statusPertumbuhanTB;
+                }
+            }
+
+            $warnaBB = "gray";
+
+            if ($targetKbm !== null) {
+                if ($kenaikanBB >= $targetKbm) {
+                    $warnaBB = "green";
+                } else {
+                    $warnaBB = "red";
+                }
+            }
+
+            $warnaTB = "gray";
+
+            if ($targetKpt !== null) {
+                if ($kenaikanTB >= $targetKpt) {
+                    $warnaTB = "green";
+                } else {
+                    $warnaTB = "red";
+                }
+            }
+            // Ambil WHO TB/U
+            $gender = strtoupper(trim($item->balita->jk));
+            $who = DB::table('who_tb_u')
+                ->where('month', $item->umur)
+                ->where('gender', $gender)
+                ->first();
+
+            //Ambil WHO BB/U    
+            $whobbu = DB::table('who_bb_u')
+                ->where('month', $item->umur)
+                ->where('gender', $gender)
+                ->first();
+
+            return [
+                'id' => $item->id,
+
+                'umur' => (int)$item->umur,
+
+                'tinggi' => (float)$item->tinggi,
+                'berat' => (float)$item->berat,
+
+
+                // TOOLTIP DATA
+                'kenaikan_berat' => $kenaikanBB,
+                'targetKbm' => $targetKbm,
+
+                'kenaikan_tinggi' => $kenaikanTB,
+                'targetKpt' => $targetKpt,
+
+
+                // TANGGAL
+                'tgl_deteksi' => $item->tgl_deteksi,
+
+                'tgl_label' => $item->tgl_deteksi
+                    ? Carbon::parse($item->tgl_deteksi)
+                    ->translatedFormat('d F Y')
+                    : '-',
+
+                'bulan' => $item->tgl_deteksi
+                    ? Carbon::parse($item->tgl_deteksi)
+                    ->translatedFormat('d M')
+                    : '-',
+
+                // STATUS
+                'status' => $status,
+
+                // status pertumbuhan dinamis
+                'statusTinggi' => $statusPertumbuhanTB,
+                'statusBBU' => $statusPertumbuhanBB,
+
+                'tooltipBB' => $tooltipBB,
+                'tooltipTB' => $tooltipTB,
+                'warnaTB' => $warnaTB,
+                'warnaBB' => $warnaBB,
+                // ZSCORE
+                'zscore' => $zScore,
+                'ZScoreBBU' => $ZScoreBBU,
+
+                // GARIS WHO TBU
+                'median_tb' => $who->m ?? null,
+                'minus2_tb' => $who ? $who->m - (2 * $who->s) : null,
+                'minus3_tb' => $who ? $who->m - (3 * $who->s) : null,
+
+                // GARIS WHO BBU
+                'median_bb' => $whobbu->m ?? null,
+                'minus2_bb' => $whobbu ? $whobbu->m - (2 * $whobbu->s) : null,
+                'minus3_bb' => $whobbu ? $whobbu->m - (3 * $whobbu->s) : null,
+
+                'statustbu' =>  $status_tbu,
+                'statusbbu' =>  $status_bbu,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+
+    public function detailMonitoringSnapshot($deteksiId)
+    {
+        $deteksi = Deteksi::with([
+            'user',
+            'balita.user',
+            'balita.posyandu'
+        ])->findOrFail($deteksiId);
+
+        $rekomendasidata = include storage_path('data/rekomendasi.php');
+
+        $z_bbu = $deteksi->zscore_bb_u;
+        $z_tbu = $deteksi->zscore_tb_u;
+        $z_bbtb = $deteksi->zscore_tb_bb;
+
+        $status_bbu = $this->deteksiBBU($z_bbu);
+        $status_tbu = $this->deteksiTBU($z_tbu);
+        $status_bbtb = $this->deteksiBBTB($z_bbtb);
+
+        $riwayat = Deteksi::where(
+            'balita_id',
+            $deteksi->balita_id
+        )
+            ->where(function ($q) use ($deteksi) {
+
+                $q->where(
+                    'tgl_deteksi',
+                    '<',
+                    $deteksi->tgl_deteksi
+                )
+
+                    ->orWhere(function ($q2) use ($deteksi) {
+
+                        $q2->where(
+                            'tgl_deteksi',
+                            $deteksi->tgl_deteksi
+                        )
+                            ->where(
+                                'id',
+                                '<=',
+                                $deteksi->id
+                            );
+                    });
+            })
+            ->orderBy('tgl_deteksi')
+            ->get();
+
+        return response()->json([
+            'data' => [
+
+                'id' => $deteksi->id,
+                'nama_user' => Auth::user()?->name,
+                'name' => $deteksi->balita->name,
+                'orang_tua' => $deteksi->balita?->user?->name ?? '-',
+                'jk' => $deteksi->balita->jk,
+                'tgl_lahir' => $deteksi->balita?->tgl_lahir,
+                'umur' => $deteksi->umur,
+                'berat' => $deteksi->berat,
+                'tinggi' => $deteksi->tinggi,
+
+                'tgl_deteksi' => $deteksi->tgl_deteksi,
+
+                'zscore_bbu' => $z_bbu,
+                'zscore_tbu' => $z_tbu,
+                'zscore_bbtb' => $z_bbtb,
+
+                'total_deteksi' => $riwayat->count(),
+
+                'status' => [
+                    'bbu' => $status_bbu,
+                    'tbu' => $status_tbu,
+                    'bbtb' => $status_bbtb,
+                ],
+
+                'keterangangizi' => [
+                    'stunting' => $this->keteranganTBU($status_tbu),
+                    'wasting' => $this->keteranganBBTB($status_bbtb),
+                    'underweight' => $this->keteranganBBU($status_bbu),
+                ],
+
+                'rekomendasigizi' => [
+                    'stunting' => $rekomendasidata['tbu'][$status_tbu] ?? [],
+                    'wasting' => $rekomendasidata['bbtb'][$status_bbtb] ?? [],
+                    'underweight' => $rekomendasidata['bbu'][$status_bbu] ?? [],
+                ],
+
+                'kebutuhan_gizi' => $deteksi->umur <= 72
+                    ? $this->akgUntukUmur((int) $deteksi->umur)
+                    : null,
+
+                'riwayat' => $riwayat->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'tanggal' => $item->tgl_deteksi,
+                        'umur' => $item->umur,
+                        'berat' => (float) $item->berat,
+                        'tinggi' => (float) $item->tinggi,
+                    ];
+                }),
+            ]
+        ]);
+    }
+
+
+    public function perkembanganSnapshot($deteksiId)
+    {
+        $deteksiTerbaru = Deteksi::find($deteksiId);
+
+        if (!$deteksiTerbaru) {
+            return response()->json([
+                'message' => 'Data deteksi tidak ditemukan'
+            ], 404);
+        }
+
+        $balita = Balita::find($deteksiTerbaru->balita_id);
+
+        if (!$balita) {
+            return response()->json([
+                'message' => 'Data balita tidak ditemukan'
+            ], 404);
+        }
+        $this->pastikanMilikOrangTua($balita->id);
+        $payload = $this->susunPerkembangan($balita, $deteksiTerbaru);
+
+        $payload = [
+            'snapshot' => [
+                'deteksi_id' => $deteksiTerbaru->id,
+                'tanggal'    => $deteksiTerbaru->tgl_deteksi,
+                'umur'       => (int) $deteksiTerbaru->umur,
+            ],
+        ] + $payload;
+
+        return response()->json($payload);
+    }
+
+    public function kalender()
+    {
+        $events = Notifikasi::whereNotNull('tanggal')
+            ->orderBy('tanggal')
+            ->get()
+            ->map(function ($n) {
+                return [
+                    'id'      => $n->id,
+                    'judul'   => $n->judul,
+                    'pesan'   => $n->pesan,
+                    'tipe'    => $n->tipe,
+                    'lokasi'  => $n->lokasi,
+                    'jam'     => $n->jam ?? null, // opsional: EventCalendar bisa menampilkan jam bila ada
+                    // WAJIB 'Y-m-d' — kalender membandingkan string persis
+                    'tanggal' => \Carbon\Carbon::parse($n->tanggal)->format('Y-m-d'),
+                ];
+            });
+
+        return response()->json($events);
+    }
     //helper
     private function tentukanStatus($selisih)
     {

@@ -1,6 +1,6 @@
 {
-    "version": "1.0",
-    "updated_at": "2026-04-25",
+    "version": "1.1",
+    "updated_at": "2026-06-08",
     "items": [
         {
             "kategori": "Stunting",
@@ -40,6 +40,10 @@
                 },
                 { "type": "mengatasi", "target": "stunting", "weight": 0.8 }
             ],
+            "related_questions": [
+                "Susu apa yang bagus untuk anak stunting?",
+                "Kapan anak mulai diberi MPASI dan berapa lama ASI eksklusif?"
+            ],
             "weight": 9
         },
         {
@@ -53,6 +57,9 @@
                 { "type": "terkandung_di", "target": "telur", "weight": 0.9 },
                 { "type": "terkandung_di", "target": "ikan", "weight": 0.95 },
                 { "type": "mencegah", "target": "stunting", "weight": 0.9 }
+            ],
+            "related_questions": [
+                "Menu MPASI apa yang bagus untuk anak stunting?"
             ],
             "weight": 8
         },
@@ -70,6 +77,9 @@
                     "weight": 0.7
                 }
             ],
+            "related_questions": [
+                "Menu MPASI apa yang bagus untuk anak stunting?"
+            ],
             "weight": 8
         },
         {
@@ -83,6 +93,7 @@
                 { "type": "mencegah", "target": "stunting", "weight": 0.7 },
                 { "type": "mencegah", "target": "diare", "weight": 0.9 }
             ],
+            "related_questions": ["Bagaimana cara mencegah stunting?"],
             "weight": 6
         },
         {
@@ -95,6 +106,119 @@
             "relations": [
                 { "type": "memantau", "target": "stunting", "weight": 0.85 }
             ],
+            "related_questions": ["Bagaimana cara mencegah stunting?"],
+            "weight": 7
+        },
+        {
+            "kategori": "Stunting",
+            "pertanyaan": "Bagaimana cara mencegah stunting?",
+            "jawaban": "Pencegahan stunting paling efektif pada 1000 Hari Pertama Kehidupan (sejak ibu hamil sampai anak usia 2 tahun): penuhi gizi ibu saat hamil, berikan ASI eksklusif 0-6 bulan, lanjutkan MPASI bergizi dengan protein hewani mulai usia 6 bulan, lengkapi imunisasi, jaga sanitasi dan air bersih, serta rutin menimbang anak di posyandu setiap bulan.",
+            "tags": ["pencegahan", "mencegah", "cegah", "stunting"],
+            "aliases": [
+                "cara mencegah",
+                "menghindari stunting",
+                "mencegah stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "mencegah", "target": "stunting", "weight": 0.95 }
+            ],
+            "related_questions": [
+                "Apa penyebab stunting?",
+                "Menu MPASI apa yang bagus untuk anak stunting?"
+            ],
+            "weight": 9
+        },
+        {
+            "kategori": "Stunting",
+            "pertanyaan": "Apa dampak atau bahaya stunting bagi anak?",
+            "jawaban": "Stunting tidak hanya membuat anak lebih pendek. Dampak jangka panjangnya meliputi perkembangan otak dan kemampuan belajar yang terhambat, daya tahan tubuh lebih lemah sehingga mudah sakit, dan saat dewasa berisiko lebih tinggi terkena penyakit tidak menular seperti diabetes. Karena itu penanganan sejak dini sangat penting.",
+            "tags": ["dampak", "bahaya", "akibat", "stunting"],
+            "aliases": [
+                "efek stunting",
+                "stunting berbahaya",
+                "bahaya stunting"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "akibat_dari", "target": "stunting", "weight": 0.9 }
+            ],
+            "related_questions": [
+                "Bagaimana cara mencegah stunting?",
+                "Apa yang harus saya lakukan?"
+            ],
+            "weight": 8
+        },
+        {
+            "kategori": "Stunting",
+            "pertanyaan": "Apakah stunting bisa sembuh atau diperbaiki?",
+            "jawaban": "Stunting bisa diperbaiki, terutama jika ditangani sebelum anak berusia 2 tahun karena pertumbuhan otak dan tubuh masih sangat cepat. Setelah usia 2 tahun, perbaikan tinggi badan lebih sulit, tetapi gizi dan stimulasi yang baik tetap membantu kesehatan dan kecerdasan anak. Kuncinya adalah perbaikan gizi yang konsisten, pengobatan bila ada infeksi, dan pemantauan rutin.",
+            "tags": ["sembuh", "pulih", "diperbaiki", "stunting"],
+            "aliases": [
+                "stunting bisa sembuh",
+                "mengejar pertumbuhan",
+                "stunting sembuh"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "terkait", "target": "stunting", "weight": 0.85 }
+            ],
+            "related_questions": [
+                "Bagaimana cara mencegah stunting?",
+                "Apa yang harus saya lakukan?"
+            ],
+            "weight": 8
+        },
+        {
+            "kategori": "MPASI",
+            "pertanyaan": "Kapan anak mulai diberi MPASI dan berapa lama ASI eksklusif?",
+            "jawaban": "Berikan ASI eksklusif (hanya ASI, tanpa makanan atau minuman lain) sejak lahir hingga usia 6 bulan. Mulai usia 6 bulan, kenalkan MPASI bertekstur sesuai usia sambil ASI tetap diteruskan hingga 2 tahun. Mulai dari bubur lumat, naik ke cincang, lalu makanan keluarga.",
+            "tags": ["mpasi", "asi", "kapan", "usia", "mulai"],
+            "aliases": [
+                "mulai mpasi",
+                "asi eksklusif berapa lama",
+                "kapan mpasi"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "terkait", "target": "mpasi", "weight": 0.9 }
+            ],
+            "related_questions": [
+                "Menu MPASI apa yang bagus untuk anak stunting?"
+            ],
+            "weight": 8
+        },
+        {
+            "kategori": "MPASI",
+            "pertanyaan": "Bagaimana mengatasi anak yang susah makan (GTM)?",
+            "jawaban": "Untuk anak yang susah makan: berikan porsi kecil tapi sering, sajikan menu beragam dan menarik, makan bersama keluarga pada jam teratur, hindari memaksa atau memberi camilan/susu menjelang jam makan, dan batasi distraksi seperti gawai. Jika berat badan terus turun atau anak menolak makan berkepanjangan, konsultasikan ke bidan/dokter.",
+            "tags": ["susah makan", "gtm", "nafsu makan", "makan"],
+            "aliases": [
+                "anak tidak mau makan",
+                "gerakan tutup mulut",
+                "picky eater",
+                "anak susah makan"
+            ],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "terkait", "target": "mpasi", "weight": 0.8 }
+            ],
+            "related_questions": [
+                "Menu MPASI apa yang bagus untuk anak stunting?"
+            ],
+            "weight": 7
+        },
+        {
+            "kategori": "Pencegahan",
+            "pertanyaan": "Apa pentingnya 1000 Hari Pertama Kehidupan dan imunisasi?",
+            "jawaban": "1000 Hari Pertama Kehidupan (sejak kehamilan sampai anak usia 2 tahun) adalah masa emas pertumbuhan otak dan tubuh, sehingga gizi pada periode ini sangat menentukan. Imunisasi lengkap melindungi anak dari penyakit infeksi yang dapat menghambat penyerapan gizi dan memicu stunting. Lengkapi imunisasi sesuai jadwal posyandu/puskesmas.",
+            "tags": ["imunisasi", "1000 hari", "pencegahan", "vaksin"],
+            "aliases": ["seribu hari pertama", "hpk", "imunisasi anak"],
+            "kondisi": "semua",
+            "relations": [
+                { "type": "mencegah", "target": "stunting", "weight": 0.8 }
+            ],
+            "related_questions": ["Bagaimana cara mencegah stunting?"],
             "weight": 7
         }
     ]

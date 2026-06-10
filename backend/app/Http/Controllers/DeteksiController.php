@@ -25,6 +25,7 @@ class DeteksiController extends Controller
         $data = $deteksi->map(function ($deteksi) {
             return [
                 'id' => $deteksi->id,
+                'balita_id' => $deteksi->balita_id,
                 'name' => $deteksi->balita?->name,
                 'umur' => $deteksi->umur,
                 'berat' => $deteksi->berat,
@@ -61,23 +62,37 @@ class DeteksiController extends Controller
             ]);
         }
         //hitung umur
-        $umurAsli = $this->hitungUmur($request->tgl_lahir, $request->tgl_deteksi);
+        $umurHari = $this->hitungUmurHari(
+            $request->tgl_lahir,
+            $request->tgl_deteksi
+        );
 
-        $warning = null;
-        if (!is_null($request->umur) && abs($request->umur - $umurAsli) > 1) {
-            $warning = 'Umur tidak sesuai dengan tanggal lahir';
-        }
-
-        $umur = $umurAsli;
+        $umur = $this->hitungUmurBulan(
+            $request->tgl_lahir,
+            $request->tgl_deteksi
+        );
 
         $jk = $balita->jk;
         $bb = $request->berat;
         $tb = $request->tinggi;
 
 
-        $z_bbu = $this->hitungZScoreBBU($umur, $jk, $bb);
-        $z_tbu = $this->hitungZScoreTBU($umur, $jk, $tb);
-        $z_bbtb = $this->hitungZScoreBBTB($tb, $jk, $bb);
+        $z_bbu = $this->hitungZScoreBBU(
+            $umurHari,
+            $jk,
+            $bb
+        );
+        $z_tbu = $this->hitungZScoreTBU(
+            $umurHari,
+            $jk,
+            $tb
+        );
+        $z_bbtb = $this->hitungZScoreBBTB(
+            $tb,
+            $jk,
+            $bb,
+            $umurHari
+        );
 
         $status_bbu = $this->deteksiBBU($z_bbu);
         $status_tbu = $this->deteksiTBU($z_tbu);
@@ -98,7 +113,7 @@ class DeteksiController extends Controller
             'status_bb_u' => $status_bbu,
             'status_tb_bb' => $status_bbtb,
             'metode' => $request->metode,
-            'warning' => $warning,
+
 
         ]);
         return response()->json([
@@ -164,9 +179,15 @@ class DeteksiController extends Controller
 
 
 
-    private function hitungUmur($tgl_lahir, $tgl_deteksi)
+    private function hitungUmurHari($tgl_lahir, $tgl_deteksi)
     {
-        return (int) Carbon::parse($tgl_lahir)
+        return Carbon::parse($tgl_lahir)
+            ->diffInDays(Carbon::parse($tgl_deteksi));
+    }
+
+    private function hitungUmurBulan($tgl_lahir, $tgl_deteksi)
+    {
+        return Carbon::parse($tgl_lahir)
             ->diffInMonths(Carbon::parse($tgl_deteksi));
     }
 
@@ -335,14 +356,16 @@ class DeteksiController extends Controller
         };
     }
 
-    private function hitungZScoreBBU($umur, $jk, $bb)
-    {
-        $umur = (int) $umur;
-
-        $dataWHO = DB::table('who_bb_u')
-            ->where('month', $umur)
-            ->where('gender', $jk)
-            ->first();
+    private function hitungZScoreBBU(
+        $umurHari,
+        $jk,
+        $bb
+    ) {
+        $dataWHO = $this->getLMSInterpolasi(
+            'who_bb_u',
+            $umurHari,
+            $jk
+        );
 
         if (!$dataWHO) return null;
 
@@ -352,14 +375,17 @@ class DeteksiController extends Controller
 
         return (pow(($bb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
     }
-    private function hitungZScoreTBU($umur, $jk, $tb)
-    {
-        $umur = (int) $umur;
 
-        $dataWHO = DB::table('who_tb_u')
-            ->where('month', $umur)
-            ->where('gender', $jk)
-            ->first();
+    private function hitungZScoreTBU(
+        $umurHari,
+        $jk,
+        $tb
+    ) {
+        $dataWHO = $this->getLMSInterpolasi(
+            'who_tb_u',
+            $umurHari,
+            $jk
+        );
 
         if (!$dataWHO) return null;
 
@@ -367,24 +393,65 @@ class DeteksiController extends Controller
             return log($tb / $dataWHO->m) / $dataWHO->s;
         }
 
-        return (pow(($tb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
+        return (
+            pow(($tb / $dataWHO->m), $dataWHO->l) - 1
+        ) / (
+            $dataWHO->l * $dataWHO->s
+        );
     }
-    private function hitungZScoreBBTB($tb, $jk, $bb)
-    {
-        $tb = round($tb * 2) / 2;
 
-        $dataWHO = DB::table('who_bb_tb')
-            ->whereRaw('ABS(height - ?) < 0.01', [$tb])
+    private function hitungZScoreBBTB(
+        $tb,
+        $jk,
+        $bb,
+        $umurHari
+    ) {
+        // Koreksi WHO
+        if ($umurHari < 731) {
+            $tb += 0.7;
+        }
+
+        $dataBawah = DB::table('who_bb_tb')
             ->where('gender', $jk)
+            ->where('height', '<=', $tb)
+            ->orderByDesc('height')
             ->first();
 
-        if (!$dataWHO) return null;
+        $dataAtas = DB::table('who_bb_tb')
+            ->where('gender', $jk)
+            ->where('height', '>=', $tb)
+            ->orderBy('height')
+            ->first();
+
+        if (!$dataBawah || !$dataAtas) {
+            return null;
+        }
+
+        if ($dataBawah->height == $dataAtas->height) {
+            $dataWHO = $dataBawah;
+        } else {
+
+            $ratio =
+                ($tb - $dataBawah->height)
+                /
+                ($dataAtas->height - $dataBawah->height);
+
+            $dataWHO = (object)[
+                'l' => $dataBawah->l + (($dataAtas->l - $dataBawah->l) * $ratio),
+                'm' => $dataBawah->m + (($dataAtas->m - $dataBawah->m) * $ratio),
+                's' => $dataBawah->s + (($dataAtas->s - $dataBawah->s) * $ratio),
+            ];
+        }
 
         if ($dataWHO->l == 0) {
             return log($bb / $dataWHO->m) / $dataWHO->s;
         }
 
-        return (pow(($bb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
+        return (
+            pow(($bb / $dataWHO->m), $dataWHO->l) - 1
+        ) / (
+            $dataWHO->l * $dataWHO->s
+        );
     }
 
     //rekomendasi 
@@ -404,5 +471,42 @@ class DeteksiController extends Controller
     {
         $rekomendasi = include base_path('storage/data/rekomendasi.php');
         return $rekomendasi['bbu'][$status] ?? ["-"];
+    }
+
+    private function getLMSInterpolasi($table, $umurHari, $jk)
+    {
+        $umurBulan = $umurHari / 30.4375;
+
+        $bulanBawah = floor($umurBulan);
+        $bulanAtas = ceil($umurBulan);
+
+        $dataBawah = DB::table($table)
+            ->where('month', $bulanBawah)
+            ->where('gender', $jk)
+            ->first();
+
+        $dataAtas = DB::table($table)
+            ->where('month', $bulanAtas)
+            ->where('gender', $jk)
+            ->first();
+
+        if (!$dataBawah || !$dataAtas) {
+            return null;
+        }
+
+        if ($bulanBawah == $bulanAtas) {
+            return $dataBawah;
+        }
+
+        $ratio =
+            ($umurBulan - $bulanBawah)
+            /
+            ($bulanAtas - $bulanBawah);
+
+        return (object) [
+            'l' => $dataBawah->l + (($dataAtas->l - $dataBawah->l) * $ratio),
+            'm' => $dataBawah->m + (($dataAtas->m - $dataBawah->m) * $ratio),
+            's' => $dataBawah->s + (($dataAtas->s - $dataBawah->s) * $ratio),
+        ];
     }
 }

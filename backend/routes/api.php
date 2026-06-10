@@ -34,7 +34,14 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     });
 
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/ask', [QnAController::class, 'ask']);
+        Route::post('/ask-snapshot', [QnAController::class, 'askSnapshot']);
+    });
 
+
+
+    //Route milik Kader
     Route::middleware('auth:sanctum', 'role:kader')->group(function () {
         Route::get('/kader/dashboard', function () {
             return response()->json([
@@ -91,16 +98,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/detailmonitoring/{balitaId}', [MonitoringController::class, 'detailMonitoringBalita']);
         Route::get('/monitoring/{balita}/{deteksi}', [MonitoringController::class, 'LihatMonitoring']);
-        Route::get('/grafik-snapshot/{deteksiId}', [MonitoringController::class, 'grafikSanpshot']);
+        Route::get('/grafik-snapshot/{deteksiId}', [MonitoringController::class, 'grafikSnapshot']);
 
         Route::get('/detailmonitoring-snapshot/{deteksiId}', [MonitoringController::class, 'detailMonitoringSnapshot']);
 
         Route::get('/perkembangan-snapshot/{deteksiId}', [MonitoringController::class, 'perkembanganSnapshot']);
-        Route::post('/ask', [QnAController::class, 'ask']);
+
         Route::get('/guided/{status}', [QnAController::class, 'guided']);
     });
 
 
+    //Route milik OrangTua
     Route::middleware('role:orangtua')->group(function () {
         Route::get('/orangtua/dashboard', function () {
             return response()->json([
@@ -113,6 +121,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/perkembangan-ortu/{id}', [DashboardOrangTuaController::class, 'getPerkembangan']);
         Route::get('/detailmonitoring-ortu/{balitaId}', [DashboardOrangTuaController::class, 'detailMonitoringBalita']);
         Route::get('/grafik-ortu/{id}', [DashboardOrangTuaController::class, 'grafik']);
-        Route::post('/ask-ortu', [DashboardOrangTuaController::class, 'ask']);
+        Route::get('/ambilstatustimeline-ortu/{balitaId}', [DashboardOrangTuaController::class, 'ambilstatustimeline']);
+        Route::get('/detaildeteksi-ortu/{id}', [DashboardOrangTuaController::class, 'detaildeteksi']);
+        Route::get('/balitas-ortu/{id}', [DashboardOrangTuaController::class, 'show']);
+        Route::get('/grafik-snapshot-ortu/{deteksiId}', [DashboardOrangTuaController::class, 'grafikSnapshot']);
+
+        Route::get('/detailmonitoring-snapshot-ortu/{deteksiId}', [DashboardOrangTuaController::class, 'detailMonitoringSnapshot']);
+        Route::get('/kalender-notifikasi-ortu', [DashboardOrangTuaController::class, 'kalender']);
+        Route::get('/perkembangan-snapshot-ortu/{deteksiId}', [DashboardOrangTuaController::class, 'perkembanganSnapshot']);
     });
 });

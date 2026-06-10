@@ -416,42 +416,7 @@ class RiwayatGrafikController extends Controller
         if ($z > 3) return "Tinggi";
         return "-";
     }
-    private function hitungZScoreTBU($umur, $jk, $tb)
-    {
-        $umur = (int) $umur;
-
-        $dataWHO = DB::table('who_tb_u')
-            ->where('month', $umur)
-            ->where('gender', $jk)
-            ->first();
-
-        if (!$dataWHO) return null;
-
-        if ($dataWHO->l == 0) {
-            return log($tb / $dataWHO->m) / $dataWHO->s;
-        }
-
-        return (pow(($tb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
-    }
-
-    private function hitungZScoreBBU($umur, $jk, $bb)
-    {
-        $umur = (int) $umur;
-
-        $dataWHO = DB::table('who_bb_u')
-            ->where('month', $umur)
-            ->where('gender', $jk)
-            ->first();
-
-        if (!$dataWHO) return null;
-
-        if ($dataWHO->l == 0) {
-            return log($bb / $dataWHO->m) / $dataWHO->s;
-        }
-
-        return (pow(($bb / $dataWHO->m), $dataWHO->l) - 1) / ($dataWHO->l * $dataWHO->s);
-    }
-
+   
     private function deteksiBBU($z)
     {
         if ($z < -3) return "Berat badan sangat kurang (severely underweight)";

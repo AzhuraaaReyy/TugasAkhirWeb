@@ -145,64 +145,46 @@ class DashboardController extends Controller
 
     public function grafikStunting()
     {
-        $deteksis = Deteksi::with('balita.posyandu')
-            ->orderBy('created_at', 'asc')
+        $deteksis = Deteksi::with('balita')
+            ->orderBy('tgl_deteksi', 'asc')
             ->get();
 
-        $data = $deteksis
-            ->groupBy(function ($item) {
-                return Carbon::parse($item->created_at)->format('Y-m');
-            })
-            ->map(function ($itemsPerBulan, $bulanKey) {
-
-
-                //ambil data terbaru tiap bulan
-                $latestPerBalita = $itemsPerBulan
-                    ->sortByDesc('created_at')
-                    ->groupBy('balita_id')
-                    ->map(function ($items) {
-                        return $items->first();
-                    });
-
-                //list berdasarkan posyandu
-                return $latestPerBalita
-                    ->groupBy(function ($item) {
-                        return $item->balita->posyandu->nama_posyandu
-                            ?? 'Tidak diketahui';
-                    })
-                    ->map(function ($group, $posyandu) use ($bulanKey) {
-
-                        $stunting = $group->filter(function ($item) {
-
-                            $status = strtolower(trim($item->status_tb_u ?? ''));
-
-                            return str_contains($status, 'pendek');
-                        })->count();
-
-                        $tidakStunting = $group->filter(function ($item) {
-
-                            $status = strtolower(trim($item->status_tb_u ?? ''));
-
-                            return str_contains($status, 'normal') ||
-                                str_contains($status, 'tinggi');
-                        })->count();
-
-                        return [
-                            'month' => Carbon::parse($bulanKey . '-01')
-                                ->translatedFormat('F Y'),
-
-                            'posyandu' => $posyandu,
-
-                            'stunting' => $stunting,
-
-                            'tidakStunting' => $tidakStunting,
-
-                            'total' => $group->count(),
-                        ];
-                    });
-            })
-            ->flatten(1)
+        // Bulan-bulan yang punya data (Y-m), urut menaik
+        $bulanList = $deteksis
+            ->map(fn($d) => Carbon::parse($d->tgl_deteksi)->format('Y-m'))
+            ->unique()
+            ->sort()
             ->values();
+
+        $data = $bulanList->map(function ($bulanKey) use ($deteksis) {
+            $akhirBulan = Carbon::parse($bulanKey . '-01')->endOfMonth();
+
+            // ✅ Carry-forward: status TERAKHIR tiap balita sampai akhir bulan ini
+            $latestPerBalita = $deteksis
+                ->filter(fn($d) => Carbon::parse($d->tgl_deteksi)->lessThanOrEqualTo($akhirBulan))
+                ->sortBy([['tgl_deteksi', 'desc'], ['id', 'desc']])
+                ->groupBy('balita_id')
+                ->map(fn($items) => $items->first());
+
+            $stunting = $latestPerBalita->filter(function ($item) {
+                $status = strtolower(trim($item->status_tb_u ?? ''));
+                return str_contains($status, 'pendek');
+            })->count();
+
+            $tidakStunting = $latestPerBalita->filter(function ($item) {
+                $status = strtolower(trim($item->status_tb_u ?? ''));
+                return str_contains($status, 'normal') || str_contains($status, 'tinggi');
+            })->count();
+
+            $tgl = Carbon::parse($bulanKey . '-01');
+            return [
+                'monthKey'      => $bulanKey,
+                'month'         => $tgl->translatedFormat('M Y'),
+                'stunting'      => $stunting,
+                'tidakStunting' => $tidakStunting,
+                'total'         => $latestPerBalita->count(),
+            ];
+        })->values();
 
         return response()->json($data);
     }
@@ -210,56 +192,54 @@ class DashboardController extends Controller
 
     public function grafikPerbandinganTahunan()
     {
-        $deteksis = Deteksi::orderBy('created_at', 'asc')
-            ->get();
+        $tahunIni  = now()->year;
+        $tahunLalu = $tahunIni - 1;
 
-        $data = $deteksis
-            ->groupBy(function ($item) {
-                return Carbon::parse($item->created_at)->format('Y');
+        // Ambil SEMUA deteksi (perlu data lama untuk carry-forward), urut tanggal
+        $deteksis = Deteksi::orderBy('tgl_deteksi', 'asc')->get();
+
+        // Bulan yang DITAMPILKAN = bulan ber-data dalam rentang tahun lalu–tahun ini
+        $bulanList = $deteksis
+            ->filter(function ($d) use ($tahunLalu, $tahunIni) {
+                $th = (int) Carbon::parse($d->tgl_deteksi)->format('Y');
+                return $th >= $tahunLalu && $th <= $tahunIni;
             })
-            ->map(function ($itemsPerTahun, $year) {
+            ->map(fn($d) => Carbon::parse($d->tgl_deteksi)->format('Y-m'))
+            ->unique()
+            ->sort()
+            ->values();
 
-                return $itemsPerTahun
-                    ->groupBy(function ($item) {
-                        return Carbon::parse($item->created_at)->format('Y-m');
-                    })
-                    ->map(function ($itemsPerBulan, $monthKey) use ($year) {
+        $data = $bulanList->map(function ($monthKey) use ($deteksis) {
+            $akhirBulan = Carbon::parse($monthKey . '-01')->endOfMonth();
 
-                        $latestPerBalita = $itemsPerBulan
-                            ->sortByDesc('created_at')
-                            ->groupBy('balita_id')
-                            ->map(fn($items) => $items->first());
+            // ✅ Carry-forward memakai SEMUA data (termasuk sebelum tahun lalu)
+            $latestPerBalita = $deteksis
+                ->filter(fn($d) => Carbon::parse($d->tgl_deteksi)->lessThanOrEqualTo($akhirBulan))
+                ->sortBy([['tgl_deteksi', 'desc'], ['id', 'desc']])
+                ->groupBy('balita_id')
+                ->map(fn($items) => $items->first());
 
-                        $stunting = $latestPerBalita->filter(function ($item) {
+            $stunting = $latestPerBalita->filter(function ($item) {
+                $status = strtolower(trim($item->status_tb_u ?? ''));
+                return str_contains($status, 'pendek');
+            })->count();
 
-                            $status = strtolower(trim($item->status_tb_u ?? ''));
+            $tidakStunting = $latestPerBalita->filter(function ($item) {
+                $status = strtolower(trim($item->status_tb_u ?? ''));
+                return str_contains($status, 'normal') || str_contains($status, 'tinggi');
+            })->count();
 
-                            return str_contains($status, 'pendek');
-                        })->count();
-
-                        $tidakStunting = $latestPerBalita->filter(function ($item) {
-
-                            $status = strtolower(trim($item->status_tb_u ?? ''));
-
-                            return str_contains($status, 'normal') ||
-                                str_contains($status, 'tinggi');
-                        })->count();
-
-                        return [
-                            'month' => Carbon::parse($monthKey . '-01')
-                                ->translatedFormat('M'),
-
-                            'year' => (int)$year,
-
-                            'stunting' => $stunting,
-
-                            'tidakStunting' => $tidakStunting,
-
-                            'total' => $latestPerBalita->count(),
-                        ];
-                    });
-            })
-            ->flatten(1)
+            $tgl = Carbon::parse($monthKey . '-01');
+            return [
+                'month'         => $tgl->translatedFormat('M'),
+                'monthNum'      => (int) $tgl->format('n'),
+                'year'          => (int) $tgl->format('Y'),
+                'stunting'      => $stunting,
+                'tidakStunting' => $tidakStunting,
+                'total'         => $latestPerBalita->count(),
+            ];
+        })
+            ->sortBy([['year', 'asc'], ['monthNum', 'asc']])
             ->values();
 
         return response()->json($data);

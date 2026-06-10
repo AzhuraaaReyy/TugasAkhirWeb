@@ -7,13 +7,12 @@ use Carbon\Carbon;
 use App\Models\Deteksi;
 use App\Models\Balita;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class MonitoringController extends Controller
 {
     public function getPerkembangan($id)
     {
-       
-
         $balita = Balita::find($id);
         if (!$balita) {
             return response()->json(['message' => 'Data balita tidak ditemukan'], 404);
@@ -27,256 +26,11 @@ class MonitoringController extends Controller
         }
 
         // Pembanding = pengukuran terakhir sebelum yang terbaru
-        $dataLalu = Deteksi::where('balita_id', $id)
-            ->where(function ($q) use ($deteksiTerbaru) {
-                $q->where('tgl_deteksi', '<', $deteksiTerbaru->tgl_deteksi)
-                    ->orWhere(function ($q2) use ($deteksiTerbaru) {
-                        $q2->where('tgl_deteksi', $deteksiTerbaru->tgl_deteksi)
-                            ->where('id', '<', $deteksiTerbaru->id);
-                    });
-            })
-            ->orderByDesc('tgl_deteksi')->orderByDesc('id')->first();
 
-        // ---------- Nilai dasar ----------
-        $bbIni  = (float) $deteksiTerbaru->berat;
-        $tbIni  = (float) $deteksiTerbaru->tinggi;
-        $bbLalu = $dataLalu ? (float) $dataLalu->berat : null;
-        $tbLalu = $dataLalu ? (float) $dataLalu->tinggi : null;
 
-        $selisihBb = $bbLalu !== null ? round($bbIni - $bbLalu, 2) : null;
-        $selisihTb = $tbLalu !== null ? round($tbIni - $tbLalu, 2) : null;
-
-        $statusBb = $this->tentukanStatus($selisihBb);
-        $statusTb = $this->tentukanStatus($selisihTb);
-
-        // ---------- Umur & interval ----------
-        $jk       = $balita->jk; // 'L' / 'P'
-        $umurLalu = ($dataLalu && $dataLalu->umur !== null) ? (int) $dataLalu->umur : null;
-        $umurIni  = (int) $deteksiTerbaru->umur;
-        $interval = $umurLalu !== null ? max(1, $umurIni - $umurLalu) : null;
-
-        $pengukuranPertama = $dataLalu === null;
-        $lebihDari24       = $umurLalu !== null && $umurLalu > 24;
-
-        // KBM/KPT (tabel = jendela 3 bulan)
-        $kbm = $this->standarKenaikan('standar_kbm', 'kbm_kg', $jk, $umurLalu, $interval);
-        $kpt = $this->standarKenaikan('standar_kpt', 'kpt_cm', $jk, $umurLalu, $interval);
-
-        $kbmHarapan = $this->skalaInterval($kbm['nilai'], $kbm['interval'], $interval);
-        $kptHarapan = $this->skalaInterval($kpt['nilai'], $kpt['interval'], $interval);
-
-        $kbmBerlaku = $umurLalu !== null && $kbm['nilai'] !== null;
-        $kptBerlaku = $umurLalu !== null && $kpt['nilai'] !== null;
-        $intervalBeda = $interval !== null && $kbm['interval'] !== null && $interval !== (int) $kbm['interval'];
-
-        // Proyeksi target berikutnya (jendela asli tabel = 3 bln)
-        $intervalForward = $kbm['interval'] ?? $kpt['interval'] ?? 3;
-        $kbmNext = $this->standarKenaikan('standar_kbm', 'kbm_kg', $jk, $umurIni, $intervalForward);
-        $kptNext = $this->standarKenaikan('standar_kpt', 'kpt_cm', $jk, $umurIni, $intervalForward);
-        $ivNext  = $kbmNext['interval'] ?? $kptNext['interval'] ?? 3;
-        $tglTarget = Carbon::parse($deteksiTerbaru->tgl_deteksi)
-            ->copy()->addMonths($ivNext)->toDateString();
-
-        // ============================================================
-        //  BERAT BADAN
-        // ============================================================
-        $zBbtb        = (float) $deteksiTerbaru->zscore_tb_bb;
-        $statusGiziBb = $this->labelGiziBBTB($zBbtb);
-        $arahBb       = $this->arahDariBBTB($zBbtb);
-
-        $lmsBb = $this->lmsBBTB($tbIni, $jk);
-        $idealMin = $idealMax = null;
-        if ($lmsBb) {
-            $idealMin = round($this->nilaiDariZScore(-2, $lmsBb->l, $lmsBb->m, $lmsBb->s), 1);
-            $idealMax = round($this->nilaiDariZScore(1,  $lmsBb->l, $lmsBb->m, $lmsBb->s), 1);
-        }
-        $dalamIdeal = ($idealMin !== null && $bbIni >= $idealMin && $bbIni <= $idealMax);
-
-        $penurunanDibutuhkan = null;
-        $catatanBb = null;
-        $kenaikanDibutuhkanBb = null;
-        $kenaikanBerikutnyaBb = null;
-
-        if ($arahBb === 'turun') {
-            $penurunanDibutuhkan = ($idealMax !== null) ? max(0, round($bbIni - $idealMax, 1)) : 0;
-            $targetBb   = $idealMax;
-            $memenuhiBb = $dalamIdeal;
-            $targetNextBb = $idealMax;
-
-            if (!$dalamIdeal) {
-                $catatanBb = "Berat anak berlebih. Jangan turunkan berat anak dengan cepat. Tanyakan ke petugas Posyandu cara yang aman.";
-            }
-        } else {
-            $targetBb = ($bbLalu !== null && $kbmHarapan !== null) ? round($bbLalu + $kbmHarapan, 2) : null;
-            $memenuhiBb = ($selisihBb !== null && $kbmHarapan !== null) ? ($selisihBb >= $kbmHarapan) : null;
-            if ($dalamIdeal) $memenuhiBb = true;
-
-            $targetNextBb = ($kbmNext['nilai'] !== null) ? round($bbIni + $kbmNext['nilai'], 2) : null;
-            $kenaikanBerikutnyaBb = $kbmNext['nilai'];
-            $kenaikanDibutuhkanBb = $kbmHarapan;
-
-            if ($memenuhiBb === false && $targetBb !== null) {
-                $targetNextBb = $targetBb;
-            }
-
-            if ($pengukuranPertama) {
-                $catatanBb = "Ini penimbangan pertama, jadi belum ada pembandingnya. Hasil kenaikan berat baru terlihat di penimbangan berikutnya.";
-            } elseif ($lebihDari24) {
-                $catatanBb = "Anak sudah lebih dari 2 tahun. Di usia ini berat dinilai dari status gizinya, bukan dari target kenaikan.";
-            } elseif ($intervalBeda) {
-                $catatanBb = "Jarak penimbangan ini {$interval} bulan, padahal patokannya 3 bulan. Jadi angka ini hanya perkiraan. Sebaiknya timbang anak tiap 3 bulan.";
-            }
-        }
-
-        $peringatanBb = null;
-        if ($bbLalu !== null && $bbLalu > 0 && $selisihBb !== null && $interval !== null) {
-            $persenPerBulan = abs($selisihBb) / $bbLalu * 100 / max(1, $interval);
-            if ($persenPerBulan > 10) {
-                $peringatanBb = "Berat anak berubah terlalu banyak ("
-                    . ($selisihBb > 0 ? "naik" : "turun") . " " . abs(round($selisihBb, 1))
-                    . " kg dalam {$interval} bulan). Coba cek lagi angkanya. Kalau benar, segera bawa anak ke petugas kesehatan.";
-            }
-        }
-
-        // ============================================================
-        //  TINGGI BADAN
-        // ============================================================
-        $zTbuIni  = (float) $deteksiTerbaru->zscore_tb_u;
-        $zTbuLalu = $dataLalu ? (float) $dataLalu->zscore_tb_u : null;
-        $modeTinggi = ($zTbuIni < -2) ? 'kejar' : 'normal';
-
-        $targetTb   = ($tbLalu !== null && $kptHarapan !== null) ? round($tbLalu + $kptHarapan, 2) : null;
-        $memenuhiTb = ($selisihTb !== null && $kptHarapan !== null) ? ($selisihTb >= $kptHarapan) : null;
-
-        $kenaikanBerikutnyaTb = $kptNext['nilai'];
-        $targetNextTb = ($kptNext['nilai'] !== null) ? round($tbIni + $kptNext['nilai'], 2) : null;
-
-        if ($modeTinggi === 'kejar') {
-            $LANGKAH_KEJAR = 0.05;
-            $umurTarget = $umurIni + $ivNext;
-            $lmsTbu = $this->lmsTBU($umurTarget, $jk);
-            if ($lmsTbu) {
-                $zTarget = min(-2.0, $zTbuIni + $LANGKAH_KEJAR * $ivNext);
-                $tinggiTarget = $this->nilaiDariZScore($zTarget, $lmsTbu->l, $lmsTbu->m, $lmsTbu->s);
-                $kenaikanKejar = max($kptNext['nilai'] ?? 0, round($tinggiTarget - $tbIni, 2));
-                $kenaikanBerikutnyaTb = round($kenaikanKejar, 2);
-                $targetNextTb = round($tbIni + $kenaikanKejar, 1);
-            }
-        }
-
-        if ($memenuhiTb === false && $targetTb !== null) {
-            $targetNextTb = $targetTb;
-        }
-
-        $trenZTbu = null;
-        if ($zTbuLalu !== null) {
-            $selisihZ = round($zTbuIni - $zTbuLalu, 2);
-            $trenZTbu = $selisihZ > 0.02 ? 'membaik' : ($selisihZ < -0.02 ? 'memburuk' : 'tetap');
-        }
-
-        $catatanTb = null;
-        if ($pengukuranPertama) {
-            $catatanTb = "Ini pengukuran pertama, jadi belum ada pembandingnya. Hasil kenaikan tinggi baru terlihat di pengukuran berikutnya.";
-        } elseif ($lebihDari24) {
-            $catatanTb = "Anak sudah lebih dari 2 tahun. Di usia ini tinggi dinilai dari status gizinya. Kalau anak pendek, akan diberi target tambahan untuk mengejar.";
-        } elseif ($intervalBeda) {
-            $catatanTb = "Jarak pengukuran ini {$interval} bulan, padahal patokannya 3 bulan. Jadi angka ini hanya perkiraan. Sebaiknya ukur tinggi anak tiap 3 bulan.";
-        }
-
-        $peringatanTb = null;
-        if ($selisihTb !== null && $selisihTb < 0) {
-            $peringatanTb = "Tinggi anak tercatat berkurang dari sebelumnya. Tinggi tidak mungkin berkurang, jadi mungkin ada salah ketik atau salah ukur. Coba cek lagi datanya.";
-        }
-
-        // ---------- Bulatkan SEMUA angka tampilan ke 1 desimal ----------
-        $r1 = fn($x) => $x === null ? null : round((float) $x, 1);
-
-        // ============================================================
-        //  RESPONSE
-        // ============================================================
-        return response()->json([
-            'balita' => [
-                'nama'          => $balita->name ?? null,
-                'usia_bulan'    => $umurIni,
-                'jenis_kelamin' => $jk,
-            ],
-
-            'berat_badan' => [
-                'tanggal_lalu'         => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'          => $deteksiTerbaru->tgl_deteksi,
-                'bulan_lalu'           => $r1($bbLalu),
-                'bulan_ini'            => $r1($bbIni),
-                'perubahan'            => $r1($selisihBb),
-                'status'               => $statusBb,
-                'pesan'                => $this->pesan('Berat badan', $statusBb, $selisihBb, 'kg'),
-
-                'arah_target'          => $arahBb,
-                'ideal_min'            => $r1($idealMin),
-                'ideal_max'            => $r1($idealMax),
-                'penurunan_dibutuhkan' => $r1($penurunanDibutuhkan),
-
-                'target'               => $r1($targetBb),
-                'kenaikan_dibutuhkan'  => $r1($kenaikanDibutuhkanBb),
-                'interval_bulan'       => $interval,
-                'memenuhi_standar'     => $memenuhiBb,
-                'status_kenaikan'      => $this->statusKenaikan($memenuhiBb),
-
-                'target_berikutnya'    => $r1($targetNextBb),
-                'kenaikan_berikutnya'  => $r1($kenaikanBerikutnyaBb),
-                'interval_target'      => $ivNext,
-                'tanggal_target'       => $tglTarget,
-
-                'kbm_berlaku'          => $kbmBerlaku,
-                'catatan'              => $catatanBb,
-                'peringatan'           => $peringatanBb,
-
-                'zscore'               => $deteksiTerbaru->zscore_tb_bb,
-                'status_gizi'          => $statusGiziBb,
-                'status_gizi_level'    => $this->level($deteksiTerbaru->status_tb_bb),
-            ],
-
-            'tinggi_badan' => [
-                'tanggal_lalu'         => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'          => $deteksiTerbaru->tgl_deteksi,
-                'bulan_lalu'           => $r1($tbLalu),
-                'bulan_ini'            => $r1($tbIni),
-                'perubahan'            => $r1($selisihTb),
-                'status'               => $statusTb,
-                'pesan'                => $this->pesan('Tinggi badan', $statusTb, $selisihTb, 'cm'),
-
-                'arah_target'          => 'naik',
-                'mode_target'          => $modeTinggi,
-                'ideal_min'            => null,
-                'ideal_max'            => null,
-
-                'target'               => $r1($targetTb),
-                'kenaikan_dibutuhkan'  => $r1($kptHarapan),
-                'interval_bulan'       => $interval,
-                'memenuhi_standar'     => $memenuhiTb,
-                'status_kenaikan'      => $this->statusKenaikan($memenuhiTb),
-
-                'target_berikutnya'    => $r1($targetNextTb),
-                'kenaikan_berikutnya'  => $r1($kenaikanBerikutnyaTb),
-                'interval_target'      => $ivNext,
-                'tanggal_target'       => $tglTarget,
-
-                'kpt_berlaku'          => $kptBerlaku,
-                'catatan'              => $catatanTb,
-                'peringatan'           => $peringatanTb,
-
-                'zscore'               => $zTbuIni,
-                'zscore_lalu'          => $zTbuLalu,
-                'tren_zscore'          => $trenZTbu,
-                'status_gizi'          => $deteksiTerbaru->status_tb_u,
-                'status_gizi_level'    => $this->level($deteksiTerbaru->status_tb_u),
-            ],
-
-            'wasting' => [
-                'zscore'            => $deteksiTerbaru->zscore_tb_bb,
-                'status_gizi'       => $deteksiTerbaru->status_tb_bb,
-                'status_gizi_level' => $this->level($deteksiTerbaru->status_tb_bb),
-            ],
-        ]);
+        return response()->json(
+            $this->susunPerkembangan($balita, $deteksiTerbaru)
+        );
     }
 
     public function detailMonitoringBalita($balitaId)
@@ -349,7 +103,7 @@ class MonitoringController extends Controller
             'data' => [
                 'id' => $detaildeteksi?->id,
                 'deteksi_id' => $deteksi->id,
-
+                'nama_user' => Auth::user()?->name,
                 'name' => $deteksi->balita?->name,
                 'jk' => $deteksi->balita?->jk,
                 'tgl_lahir' => $deteksi->balita?->tgl_lahir,
@@ -390,6 +144,10 @@ class MonitoringController extends Controller
                     'wasting' => $rekomendasidata['bbtb'][$status_bbtb] ?? [],
                     'underweight' => $rekomendasidata['bbu'][$status_bbu] ?? [],
                 ],
+
+                'kebutuhan_gizi' => $deteksi->umur <= 72
+                    ? $this->akgUntukUmur((int) $deteksi->umur)
+                    : null,
 
                 'total_deteksi' => $penimbangan->count(),
 
@@ -777,11 +535,11 @@ class MonitoringController extends Controller
             'data' => [
 
                 'id' => $deteksi->id,
-
+                'nama_user' => Auth::user()?->name,
                 'name' => $deteksi->balita->name,
                 'orang_tua' => $deteksi->balita?->user?->name ?? '-',
                 'jk' => $deteksi->balita->jk,
-
+                'tgl_lahir' => $deteksi->balita?->tgl_lahir,
                 'umur' => $deteksi->umur,
                 'berat' => $deteksi->berat,
                 'tinggi' => $deteksi->tinggi,
@@ -811,6 +569,10 @@ class MonitoringController extends Controller
                     'wasting' => $rekomendasidata['bbtb'][$status_bbtb] ?? [],
                     'underweight' => $rekomendasidata['bbu'][$status_bbu] ?? [],
                 ],
+
+                'kebutuhan_gizi' => $deteksi->umur <= 72
+                    ? $this->akgUntukUmur((int) $deteksi->umur)
+                    : null,
 
                 'riwayat' => $riwayat->map(function ($item) {
                     return [
@@ -843,233 +605,18 @@ class MonitoringController extends Controller
                 'message' => 'Data balita tidak ditemukan'
             ], 404);
         }
+        $this->pastikanMilikOrangTua($balita->id);
+        $payload = $this->susunPerkembangan($balita, $deteksiTerbaru);
 
-        // Pembanding = data sebelum snapshot yang dipilih
-        $dataLalu = Deteksi::where('balita_id', $balita->id)
-            ->where(function ($q) use ($deteksiTerbaru) {
-
-                $q->where('tgl_deteksi', '<', $deteksiTerbaru->tgl_deteksi)
-
-                    ->orWhere(function ($q2) use ($deteksiTerbaru) {
-
-                        $q2->where('tgl_deteksi', $deteksiTerbaru->tgl_deteksi)
-                            ->where('id', '<', $deteksiTerbaru->id);
-                    });
-            })
-            ->orderByDesc('tgl_deteksi')
-            ->orderByDesc('id')
-            ->first();
-
-        $bbIni = (float) $deteksiTerbaru->berat;
-        $tbIni = (float) $deteksiTerbaru->tinggi;
-
-        $bbLalu = $dataLalu ? (float) $dataLalu->berat : null;
-        $tbLalu = $dataLalu ? (float) $dataLalu->tinggi : null;
-
-        $selisihBb = $bbLalu !== null
-            ? round($bbIni - $bbLalu, 2)
-            : null;
-
-        $selisihTb = $tbLalu !== null
-            ? round($tbIni - $tbLalu, 2)
-            : null;
-
-        $statusBb = $this->tentukanStatus($selisihBb);
-        $statusTb = $this->tentukanStatus($selisihTb);
-
-        $jk = $balita->jk;
-
-        $umurIni = (int) $deteksiTerbaru->umur;
-
-        $umurLalu = $dataLalu && $dataLalu->umur !== null
-            ? (int) $dataLalu->umur
-            : null;
-
-        $interval = $umurLalu !== null
-            ? max(1, $umurIni - $umurLalu)
-            : null;
-
-
-        // KBM & KPT
-        $kbm = $this->standarKenaikan(
-            'standar_kbm',
-            'kbm_kg',
-            $jk,
-            $umurLalu,
-            $interval
-        );
-
-        $kpt = $this->standarKenaikan(
-            'standar_kpt',
-            'kpt_cm',
-            $jk,
-            $umurLalu,
-            $interval
-        );
-
-        $targetBb = ($bbLalu !== null && $kbm['nilai'] !== null)
-            ? round($bbLalu + $kbm['nilai'], 2)
-            : null;
-
-        $targetTb = ($tbLalu !== null && $kpt['nilai'] !== null)
-            ? round($tbLalu + $kpt['nilai'], 2)
-            : null;
-
-        $memenuhiBb = ($selisihBb !== null && $kbm['nilai'] !== null)
-            ? $selisihBb >= $kbm['nilai']
-            : null;
-
-        $memenuhiTb = ($selisihTb !== null && $kpt['nilai'] !== null)
-            ? $selisihTb >= $kpt['nilai']
-            : null;
-
-
-        // PROYEKSI TARGET BERIKUTNYA
-        $intervalForward =
-            $kbm['interval']
-            ?? $kpt['interval']
-            ?? ($interval ?? 2);
-
-        $kbmNext = $this->standarKenaikan(
-            'standar_kbm',
-            'kbm_kg',
-            $jk,
-            $umurIni,
-            $intervalForward
-        );
-
-        $kptNext = $this->standarKenaikan(
-            'standar_kpt',
-            'kpt_cm',
-            $jk,
-            $umurIni,
-            $intervalForward
-        );
-
-        $ivNext =
-            $kbmNext['interval']
-            ?? $kptNext['interval']
-            ?? $intervalForward;
-
-        $tglTarget = Carbon::parse(
-            $deteksiTerbaru->tgl_deteksi
-        )
-            ->copy()
-            ->addMonths($ivNext)
-            ->toDateString();
-
-        $targetNextBb = $kbmNext['nilai'] !== null
-            ? round($bbIni + $kbmNext['nilai'], 2)
-            : null;
-
-        $targetNextTb = $kptNext['nilai'] !== null
-            ? round($tbIni + $kptNext['nilai'], 2)
-            : null;
-
-        if ($memenuhiBb === false && $targetBb !== null) {
-            $targetNextBb = $targetBb;
-        }
-
-        if ($memenuhiTb === false && $targetTb !== null) {
-            $targetNextTb = $targetTb;
-        }
-
-        return response()->json([
-
+        $payload = [
             'snapshot' => [
                 'deteksi_id' => $deteksiTerbaru->id,
                 'tanggal'    => $deteksiTerbaru->tgl_deteksi,
-                'umur'       => $umurIni,
+                'umur'       => (int) $deteksiTerbaru->umur,
             ],
+        ] + $payload;
 
-            'balita' => [
-                'nama'          => $balita->name,
-                'usia_bulan'    => $umurIni,
-                'jenis_kelamin' => $jk,
-            ],
-
-            'berat_badan' => [
-                'tanggal_lalu'        => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'         => $deteksiTerbaru->tgl_deteksi,
-
-                'bulan_lalu'          => $bbLalu,
-                'bulan_ini'           => $bbIni,
-
-                'perubahan'           => $selisihBb,
-
-                'status'              => $statusBb,
-
-                'pesan' => $this->pesan(
-                    'Berat badan',
-                    $statusBb,
-                    $selisihBb,
-                    'kg'
-                ),
-
-                'target'              => $targetBb,
-                'kenaikan_dibutuhkan' => $kbm['nilai'],
-                'interval_bulan'      => $kbm['interval'],
-
-                'memenuhi_standar'    => $memenuhiBb,
-                'status_kenaikan'     => $this->statusKenaikan($memenuhiBb),
-
-                'target_berikutnya'   => $targetNextBb,
-                'kenaikan_berikutnya' => $kbmNext['nilai'],
-                'interval_target'     => $ivNext,
-                'tanggal_target'      => $tglTarget,
-
-                'zscore'            => $deteksiTerbaru->zscore_bb_u,
-                'status_gizi'       => $deteksiTerbaru->status_bb_u,
-                'status_gizi_level' => $this->level(
-                    $deteksiTerbaru->status_bb_u
-                ),
-            ],
-
-            'tinggi_badan' => [
-                'tanggal_lalu'        => $dataLalu?->tgl_deteksi,
-                'tanggal_ini'         => $deteksiTerbaru->tgl_deteksi,
-
-                'bulan_lalu'          => $tbLalu,
-                'bulan_ini'           => $tbIni,
-
-                'perubahan'           => $selisihTb,
-
-                'status'              => $statusTb,
-
-                'pesan' => $this->pesan(
-                    'Tinggi badan',
-                    $statusTb,
-                    $selisihTb,
-                    'cm'
-                ),
-
-                'target'              => $targetTb,
-                'kenaikan_dibutuhkan' => $kpt['nilai'],
-                'interval_bulan'      => $kpt['interval'],
-
-                'memenuhi_standar'    => $memenuhiTb,
-                'status_kenaikan'     => $this->statusKenaikan($memenuhiTb),
-
-                'target_berikutnya'   => $targetNextTb,
-                'kenaikan_berikutnya' => $kptNext['nilai'],
-                'interval_target'     => $ivNext,
-                'tanggal_target'      => $tglTarget,
-
-                'zscore'            => $deteksiTerbaru->zscore_tb_u,
-                'status_gizi'       => $deteksiTerbaru->status_tb_u,
-                'status_gizi_level' => $this->level(
-                    $deteksiTerbaru->status_tb_u
-                ),
-            ],
-
-            'wasting' => [
-                'zscore'            => $deteksiTerbaru->zscore_tb_bb,
-                'status_gizi'       => $deteksiTerbaru->status_tb_bb,
-                'status_gizi_level' => $this->level(
-                    $deteksiTerbaru->status_tb_bb
-                ),
-            ]
-        ]);
+        return response()->json($payload);
     }
 
 
@@ -1161,151 +708,5 @@ class MonitoringController extends Controller
 
             default => "-",
         };
-    }
-
-    
-    private function tentukanStatus($selisih)
-    {
-        if ($selisih === null) return null;
-        if ($selisih > 0)      return "Kenaikan Pertumbuhan";
-        if ($selisih < 0)      return "Penurunan Pertumbuhan";
-        return "Stagnan";
-    }
-
-    private function pesan($label, $status, $selisih, $unit)
-    {
-        if ($selisih === null) return "Belum ada data pembanding dari pengukuran sebelumnya.";
-        if ($status === 'Stagnan') return "$label tidak mengalami perubahan dari pengukuran sebelumnya.";
-        return "$label mengalami " . strtolower($status) . " " . abs($selisih) . " $unit dari pengukuran sebelumnya.";
-    }
-
-    private function statusKenaikan(?bool $memenuhi): ?string
-    {
-        if ($memenuhi === null) return null;
-        return $memenuhi ? 'Mengalami Kenaikan Pertumbuhan' : 'Mengalamai Penurunan Pertumbuhan';
-    }
-
-    /**
-     * Ambil standar kenaikan (KBM/KPT) untuk interval & umur awal tertentu.
-     * Tabel hanya menyediakan interval {2,3,4,6} bulan & umur 0-24 bulan.
-     * Bila interval persis tak ada, pakai interval terdekat (dilaporkan di response).
-     *
-     * @return array{nilai: float|null, interval: int|null}
-     */
-    private function standarKenaikan(string $tabel, string $kolom, ?string $jk, ?int $umurAwal, ?int $interval): array
-    {
-        if (!$jk || $umurAwal === null || $interval === null) {
-            return ['nilai' => null, 'interval' => null];
-        }
-
-        $gender = $this->genderStandar($jk);
-
-        // urutkan interval tersedia dari yang paling dekat dengan interval aktual
-        $tersedia = [2, 3, 4, 6];
-        usort($tersedia, fn($a, $b) => abs($a - $interval) <=> abs($b - $interval));
-
-        foreach ($tersedia as $iv) {
-            $row = DB::table($tabel)
-                ->where('gender', $gender)
-                ->where('interval_bulan', $iv)
-                ->where('umur_awal', '<=', $umurAwal)
-                ->where('umur_akhir', '>=', $umurAwal)
-                ->orderByRaw('ABS(umur_awal - ?)', [$umurAwal]) // utamakan bracket yang mulai di umur ini
-                ->first();
-
-            if ($row) {
-                return ['nilai' => (float) $row->$kolom, 'interval' => $iv];
-            }
-        }
-
-        return ['nilai' => null, 'interval' => null];
-    }
-
-    private function genderStandar(?string $jk): string
-    {
-        $v = strtolower(trim((string) $jk));
-        return in_array($v, ['p', 'perempuan', 'female', 'f', '2'], true) ? 'perempuan' : 'laki-laki';
-    }
-
-    private function level(?string $status): ?string
-    {
-        if (!$status || $status === '-') return null;
-
-        $bahaya = [
-            'Berat badan sangat kurang (severely underweight)',
-            'Berat badan kurang (underweight)',
-            'Sangat pendek (severely stunted)',
-            'Pendek (stunted)',
-            'Gizi buruk (severely wasted)',
-            'Gizi kurang (wasted)',
-            'Obesitas (obese)',
-        ];
-        $waspada = [
-            'Risiko berat badan lebih',
-            'Berisiko gizi lebih (possible risk of overweight)',
-            'Gizi lebih (overweight)',
-        ];
-
-        if (in_array($status, $bahaya, true))  return 'bahaya';
-        if (in_array($status, $waspada, true)) return 'waspada';
-        return 'normal';
-    }
-
-
-
-
-    private function arahDariBBTB($z)
-    {
-        if ($z < -2) return 'naik';        // gizi buruk / kurang
-        if ($z <= 1) return 'pertahankan'; // gizi baik (normal)
-        return 'turun';                    // berisiko / lebih / obesitas
-    }
-
-    /** Label singkat status gizi BB/TB untuk badge kartu. */
-    private function labelGiziBBTB($z)
-    {
-        if ($z < -3) return 'Gizi Buruk';
-        if ($z < -2) return 'Gizi Kurang';
-        if ($z <= 1) return 'Gizi Baik';
-        if ($z <= 2) return 'Risiko Gizi Lebih';
-        if ($z <= 3) return 'Gizi Lebih';
-        return 'Obesitas';
-    }
-
-    /** Ambil baris L,M,S BB/TB untuk tinggi & gender (snap 0.5 cm). */
-    private function lmsBBTB($tb, $jk)
-    {
-        $tb = round($tb * 2) / 2;
-        return DB::table('who_bb_tb')
-            ->whereRaw('ABS(height - ?) < 0.01', [$tb])
-            ->where('gender', $jk)
-            ->first();
-    }
-
-    /** Ambil baris L,M,S TB/U untuk umur & gender. */
-    private function lmsTBU($umur, $jk)
-    {
-        return DB::table('who_tb_u')
-            ->where('month', (int) $umur)
-            ->where('gender', $jk)
-            ->first();
-    }
-
-    /** Kebalikan rumus z-score: cari nilai (kg / cm) pada z tertentu. */
-    private function nilaiDariZScore($z, $l, $m, $s)
-    {
-        if ($l == 0) return $m * exp($s * $z);
-        return $m * pow(1 + $l * $s * $z, 1 / $l);
-    }
-
-    private function skalaInterval($nilai, $intervalStandar, $intervalAktual)
-    {
-        if ($nilai === null || !$intervalStandar || $intervalAktual === null) {
-            return $nilai;
-        }
-        if ((int) $intervalAktual === (int) $intervalStandar) {
-            return $nilai;
-        }
-        return round($nilai * ($intervalAktual / $intervalStandar), 3);
     }
 }
