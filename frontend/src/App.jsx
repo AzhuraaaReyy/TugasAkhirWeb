@@ -24,15 +24,26 @@ import RiwayatOrtu from "./pages/OrangTua/Riwayat";
 import LengkapiNoTelp from "./pages/Lengkapinotelp";
 import RiwayatdanGrafik from "./pages/Kader/RiwayatGrafik";
 import KeteranganWarna from "./components/Fragments/Monitoring/CardLegend";
+import DetailFormBalita from "./pages/Admin/ManajemenBalita/Detail";
+import UpdateFormBalita from "./pages/Admin/ManajemenBalita/Update";
+import DetailPenimbangan from "./pages/Admin/ManajemenPenimbangan/Detail";
+import UpdatePenimbangan from "./pages/Admin/ManajemenPenimbangan/Update";
 const RequireAuth = ({ children, role }) => {
   const { user, loading } = useAuth();
 
-  if (loading) return null; // atau spinner
+  if (loading) return null;
 
   if (!user) return <Navigate to="/" replace />;
 
   if (role && user.role !== role) {
-    return <Navigate to="/login" replace />;
+    // arahkan ke beranda sesuai peran, JANGAN ke /login
+    const beranda =
+      user.role === "kader"
+        ? "/kader/dashboard"
+        : user.role === "orangtua"
+          ? "/orangtua/dashboard"
+          : "/";
+    return <Navigate to={beranda} replace />;
   }
 
   return children;
@@ -77,6 +88,10 @@ const App = () => {
         { path: "lihatriwayat/:id", element: <LihatRiwayat /> },
         { path: "lihatmonitoring/:id", element: <LihatMonitoring /> },
         { path: "riwayat", element: <RiwayatdanGrafik /> },
+        { path: "detailmanajemenbalita/:id", element: <DetailFormBalita /> },
+        { path: "updatemanajemenbalita/:id", element: <UpdateFormBalita /> },
+        { path: "detailpenimbangan/:id", element: <DetailPenimbangan /> },
+        { path: "updatepenimbangan/:id", element: <UpdatePenimbangan /> },
         {
           path: "monitoring/:balitaId/:deteksiId",
           element: <TrenMonitoring />,

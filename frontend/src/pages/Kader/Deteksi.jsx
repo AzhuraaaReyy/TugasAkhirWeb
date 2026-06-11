@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import MainLayouts from "../../layouts/MainLayouts";
+import { Link } from "react-router-dom";
+import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import api from "@/services/api";
 import { Atom } from "react-loading-indicators";
+import Pagination from "@/components/Pagination/pagination";
 import FormPencatatan from "../Deteksi/FormPencatatan";
 import FormDeteksi from "../Deteksi/FormDeteksi";
 import RiwayatDeteksi from "../Deteksi/HasilAnalisisDeteksi";
@@ -17,10 +20,16 @@ export default function DeteksiDini() {
   const [step, setStep] = useState(null);
   const [posyandus, setPosyandus] = useState([]);
   const [balitas, setBalitas] = useState([]);
+  const [penimbangans, setPenimbangans] = useState([]);
   const [data, setData] = useState([]);
   const [errors, setErrors] = useState({});
   const [metode, setMetode] = useState("");
   const [hasil, setHasil] = useState(null);
+
+  // ===== Tabel manajemen (di bawah kartu) =====
+  const [tabAktif, setTabAktif] = useState("balita"); // "balita" | "penimbangan"
+  const [halaman, setHalaman] = useState(1);
+  const perHalaman = 10;
 
   const initialForm = {
     name: "",
@@ -79,12 +88,26 @@ export default function DeteksiDini() {
     }
   };
 
+  // ambil data penimbangan
+  const fetchPenimbangans = async () => {
+    try {
+      const res = await api.get("/penimbangans");
+      setPenimbangans(res.data.data || res.data || []);
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+    }
+  };
+
   /* ============ INIT SAAT HALAMAN DIBUKA ============ */
-  // Tampilkan animasi memuat, ambil semua data awal, lalu matikan animasi.
   useEffect(() => {
     const initHalaman = async () => {
       try {
-        await Promise.all([fetchPosyandu(), fetchData(), fetchBalitas()]);
+        await Promise.all([
+          fetchPosyandu(),
+          fetchData(),
+          fetchBalitas(),
+          fetchPenimbangans(),
+        ]);
       } finally {
         setPageLoading(false);
       }
@@ -252,6 +275,42 @@ export default function DeteksiDini() {
     }
   };
 
+  /* ================= TABEL MANAJEMEN ================= */
+  // Ganti tab -> reset pagination ke halaman 1 agar tetap konsisten.
+  const pilihTab = (tab) => {
+    setTabAktif(tab);
+    setHalaman(1);
+  };
+
+  const hapusBalita = async (idHapus) => {
+    if (!window.confirm("Yakin ingin menghapus data balita ini?")) return;
+    try {
+      await api.delete(`/balitas/${idHapus}`);
+      setBalitas((prev) => prev.filter((it) => it.id !== idHapus));
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghapus data");
+    }
+  };
+
+  const hapusPenimbangan = async (idHapus) => {
+    if (!window.confirm("Yakin ingin menghapus data penimbangan ini?")) return;
+    try {
+      await api.delete(`/penimbangans/${idHapus}`);
+      setPenimbangans((prev) => prev.filter((it) => it.id !== idHapus));
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menghapus data");
+    }
+  };
+
+  // Data aktif sesuai tab + slicing pagination
+  const dataAktif = tabAktif === "balita" ? balitas : penimbangans;
+  const totalHalaman = Math.max(1, Math.ceil(dataAktif.length / perHalaman));
+  const halamanAman = Math.min(halaman, totalHalaman);
+  const mulai = (halamanAman - 1) * perHalaman;
+  const dataTampil = dataAktif.slice(mulai, mulai + perHalaman);
+
   return (
     <MainLayouts type="deteksidini">
       <div className="h-full bg-gray-100 p-8 ">
@@ -281,63 +340,293 @@ export default function DeteksiDini() {
           </p>
         </div>
 
-        {/* ================= MENU CARD ================= */}
+        {/* ================= MENU CARD + TABEL ================= */}
         {!step && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* CARD PENCATATAN */}
-            <div
-              onClick={() => setStep("record")}
-              className="bg-white rounded-3xl border p-8 cursor-pointer hover:shadow-xl transition duration-300 group shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7 border-2 border-gray-100"
-            >
-              <img
-                src={gambarpencatatan}
-                alt="Pencatatan"
-                className="w-full h-[250px] object-cover rounded-xl"
-              />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* CARD PENCATATAN */}
+              <div
+                onClick={() => setStep("record")}
+                className="bg-white rounded-3xl border p-8 cursor-pointer hover:shadow-xl transition duration-300 group shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7 border-2 border-gray-100"
+              >
+                <img
+                  src={gambarpencatatan}
+                  alt="Pencatatan"
+                  className="w-full h-[250px] object-cover rounded-xl"
+                />
 
-              <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
-                Pencatatan Pemeriksaan
-              </h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
+                  Pencatatan Pemeriksaan
+                </h2>
 
-              <p className="text-sm leading-relaxed text-gray-500">
-                Input data identitas balita seperti nama anak, tanggal lahir,
-                alamat, jenis kelamin, dan data pemeriksaan lainnya untuk
-                kebutuhan monitoring kesehatan.
-              </p>
+                <p className="text-sm leading-relaxed text-gray-500">
+                  Input data identitas balita seperti nama anak, tanggal lahir,
+                  alamat, jenis kelamin, dan data pemeriksaan lainnya untuk
+                  kebutuhan monitoring kesehatan.
+                </p>
 
-              <div className="mt-6">
-                <button className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">
-                  Mulai Pencatatan
-                </button>
+                <div className="mt-6">
+                  <button className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition">
+                    Mulai Pencatatan
+                  </button>
+                </div>
+              </div>
+
+              {/* CARD DETEKSI */}
+              <div
+                onClick={() => setStep("deteksi")}
+                className="bg-white rounded-3xl border border-gray-200 p-8 cursor-pointer hover:shadow-xl transition duration-300 group shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7 border-2 border-gray-100"
+              >
+                <img
+                  src={gambardeteksigizi}
+                  alt="Deteksi Gizi"
+                  className="w-full h-[250px] object-cover rounded-xl"
+                />
+                <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
+                  Deteksi Status Gizi
+                </h2>
+
+                <p className="text-sm leading-relaxed text-gray-500">
+                  Lakukan analisis pertumbuhan balita berdasarkan indikator WHO
+                  untuk mengetahui status stunting, wasting, maupun underweight.
+                </p>
+
+                <div className="mt-6">
+                  <button className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">
+                    Mulai Deteksi
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* CARD DETEKSI */}
-            <div
-              onClick={() => setStep("deteksi")}
-              className="bg-white rounded-3xl border border-gray-200 p-8 cursor-pointer hover:shadow-xl transition duration-300 group shadow-sm hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative pb-7 border-2 border-gray-100"
-            >
-              <img
-                src={gambardeteksigizi}
-                alt="Deteksi Gizi"
-                className="w-full h-[250px] object-cover rounded-xl"
-              />
-              <h2 className="text-xl font-bold text-gray-800 mb-3 mt-4">
-                Deteksi Status Gizi
-              </h2>
+            {/* ===================== DATA MANAJEMEN ===================== */}
+            <div className="mt-8 bg-white rounded-3xl border-2 border-gray-100 shadow-sm p-6">
+              {/* Header + Slide pemilih tabel */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Data Manajemen
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {tabAktif === "balita"
+                      ? "Daftar data balita yang terdaftar."
+                      : "Daftar data penimbangan balita."}
+                  </p>
+                </div>
 
-              <p className="text-sm leading-relaxed text-gray-500">
-                Lakukan analisis pertumbuhan balita berdasarkan indikator WHO
-                untuk mengetahui status stunting, wasting, maupun underweight.
-              </p>
-
-              <div className="mt-6">
-                <button className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">
-                  Mulai Deteksi
-                </button>
+                {/* SLIDE / SEGMENTED CONTROL */}
+                <div className="relative flex w-full sm:w-[420px] rounded-xl bg-gray-100 p-1">
+                  <span
+                    className="absolute top-1 bottom-1 rounded-lg bg-white shadow transition-all duration-300 ease-out"
+                    style={{
+                      left: tabAktif === "balita" ? "0.25rem" : "50%",
+                      right: tabAktif === "balita" ? "50%" : "0.25rem",
+                    }}
+                  />
+                  <button
+                    onClick={() => pilihTab("balita")}
+                    className={`relative z-10 grow basis-0 whitespace-nowrap rounded-lg py-2.5 text-center text-sm font-semibold transition-colors ${
+                      tabAktif === "balita"
+                        ? "text-emerald-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Manajemen Balita
+                  </button>
+                  <button
+                    onClick={() => pilihTab("penimbangan")}
+                    className={`relative z-10 grow basis-0 whitespace-nowrap rounded-lg py-2.5 text-center text-sm font-semibold transition-colors ${
+                      tabAktif === "penimbangan"
+                        ? "text-emerald-600"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Manajemen Penimbangan
+                  </button>
+                </div>
               </div>
+
+              {/* TABEL */}
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
+                {tabAktif === "balita" ? (
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
+                      <tr>
+                        <th className="px-4 py-3">No</th>
+                        <th className="px-4 py-3">Nama Balita</th>
+                        <th className="px-4 py-3">Orang Tua</th>
+                        <th className="px-4 py-3">JK</th>
+                        <th className="px-4 py-3">TTL</th>
+                        <th className="px-4 py-3">Alamat</th>
+                        <th className="px-4 py-3">Posyandu</th>
+                        <th className="px-4 py-3 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-center">
+                      {dataTampil.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="py-6 text-gray-400">
+                            Data tidak ditemukan
+                          </td>
+                        </tr>
+                      ) : (
+                        dataTampil.map((item, index) => (
+                          <tr
+                            key={item.id}
+                            className="hover:bg-gray-50 transition"
+                          >
+                            <td className="px-4 py-3 text-gray-500">
+                              {mulai + index + 1}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.name || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.orangtua || "-"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  item.jk === "Perempuan"
+                                    ? "bg-emerald-100 text-emerald-600"
+                                    : "bg-blue-100 text-blue-600"
+                                }`}
+                              >
+                                {item.jk || "-"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.tmp_lahir},{" "}
+                              {item.tgl_lahir
+                                ? new Date(item.tgl_lahir).toLocaleDateString(
+                                    "id-ID",
+                                  )
+                                : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.alamat || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.posyandu || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex justify-center gap-3">
+                                <Link
+                                  to={`/kader/detailmanajemenbalita/${item.id}`}
+                                  className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"
+                                >
+                                  <FaEye size={14} />
+                                </Link>
+                                <Link
+                                  to={`/kader/updatemanajemenbalita/${item.id}`}
+                                  className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg"
+                                >
+                                  <FaEdit size={14} />
+                                </Link>
+                                <button
+                                  onClick={() => hapusBalita(item.id)}
+                                  className="text-red-600 hover:bg-red-100 p-2 rounded-lg"
+                                >
+                                  <FaTrash size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
+                      <tr>
+                        <th className="px-4 py-3">No</th>
+                        <th className="px-4 py-3">Nama Balita</th>
+                        <th className="px-4 py-3">Umur</th>
+                        <th className="px-4 py-3">Tgl Penimbangan</th>
+                        <th className="px-4 py-3">BB (kg)</th>
+                        <th className="px-4 py-3">TB (cm)</th>
+                        <th className="px-4 py-3">Dicatat Oleh</th>
+                        <th className="px-4 py-3 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-center">
+                      {dataTampil.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="py-6 text-gray-400">
+                            Data tidak ditemukan
+                          </td>
+                        </tr>
+                      ) : (
+                        dataTampil.map((item, index) => (
+                          <tr
+                            key={item.id}
+                            className="hover:bg-gray-50 transition"
+                          >
+                            <td className="px-4 py-3 text-gray-500">
+                              {mulai + index + 1}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.nama_balita || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.umur || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.tgl_penimbangan
+                                ? new Date(
+                                    item.tgl_penimbangan,
+                                  ).toLocaleDateString("id-ID")
+                                : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.berat || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.tinggi || "-"}
+                            </td>
+                           
+                            <td className="px-4 py-3 text-gray-500">
+                              {item.nama_kader || "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <div className="flex justify-center gap-3">
+                                <Link
+                                  to={`/kader/detailpenimbangan/${item.id}`}
+                                  className="text-blue-600 hover:bg-blue-100 p-2 rounded-lg"
+                                >
+                                  <FaEye size={14} />
+                                </Link>
+                                <Link
+                                  to={`/kader/updatepenimbangan/${item.id}`}
+                                  className="text-yellow-600 hover:bg-yellow-100 p-2 rounded-lg"
+                                >
+                                  <FaEdit size={14} />
+                                </Link>
+                                <button
+                                  onClick={() => hapusPenimbangan(item.id)}
+                                  className="text-red-600 hover:bg-red-100 p-2 rounded-lg"
+                                >
+                                  <FaTrash size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* PAGINATION */}
+              <Pagination
+                currentPage={halamanAman}
+                totalPages={totalHalaman}
+                onPageChange={setHalaman}
+              />
             </div>
-          </div>
+          </>
         )}
 
         {/* ================= FORM PENCATATAN ================= */}

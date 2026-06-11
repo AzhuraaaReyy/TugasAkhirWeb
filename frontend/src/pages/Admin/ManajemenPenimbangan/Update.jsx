@@ -88,7 +88,7 @@ const UpdatePenimbangan = () => {
     const fetchBalita = async () => {
       try {
         const res = await api.get("/balitas");
-        setBalita(res.data);
+        setBalita(res.data.data || res.data || []);
       } catch (err) {
         console.error(err.response?.data || err.message);
       }
@@ -148,7 +148,7 @@ const UpdatePenimbangan = () => {
                   <option value="">Pilih Balita</option>
                   {balita.map((bal) => (
                     <option key={bal.id} value={bal.id}>
-                      {bal.nama}
+                      {bal.name}
                     </option>
                   ))}
                 </select>
@@ -233,7 +233,7 @@ const UpdatePenimbangan = () => {
             <div className="flex justify-between items-center pt-6 border-t border-gray-200">
               <button
                 type="button"
-                onClick={() => navigate("/kader/manajemenpenimbangan")}
+                onClick={() => navigate("/kader/deteksidini")}
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
               >
                 Kembali

@@ -2,10 +2,9 @@ import MainLayouts from "../../layouts/MainLayouts";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/services/api";
-import { Bot, Baby } from "lucide-react";
+import { Check, Bot, Baby } from "lucide-react";
 import ChartTinggi from "@/components/Fragments/Monitoring/ChartTinggi";
 import ChartBerat from "@/components/Fragments/Monitoring/ChartBerat";
-import CardPerkembangan from "@/components/Fragments/Monitoring/CardPerkembangan";
 import CardKeteranganRekomendasi from "@/components/Fragments/Monitoring/CardKeteranganRekomendasi";
 import CardStatusAnak from "@/components/Fragments/Monitoring/CardStatusAnak";
 import CardEdukasiStatusGizi from "@/components/Fragments/Monitoring/CardEdukasiStatus";
@@ -19,11 +18,7 @@ import ChartZScoreTBU from "@/components/Fragments/Monitoring/ChartZscoreTb";
 import ChartZscoreBb from "@/components/Fragments/Monitoring/ChartZscoreBb";
 import EventCalendar from "@/components/Fragments/Dashboard/EventCalander";
 import CardPerkembanganAnak from "./CardPerkembanganAnak";
-
-// SESUAIKAN dengan path route dashboard orang tua Anda.
-// Daftarkan DUA route ke komponen ini:
-//   <Route path="/dashboardortu" element={<DashboardOrtu />} />
-//   <Route path="/dashboardortu/:id" element={<DashboardOrtu />} />
+import { useAuth } from "../../context/useAuth";
 const BASE_PATH = "/orangtua/dashboard";
 
 // Hitung umur ringkas dari tgl_lahir (untuk kartu pemilih anak)
@@ -49,7 +44,7 @@ export default function DashboardOrtu() {
   const navigate = useNavigate();
   const [showChatHint, setShowChatHint] = useState(false);
   const [perkembangan, setPerkembangan] = useState(null);
-
+  const { user } = useAuth();
   // Daftar anak milik orang tua yang login (null = masih dimuat)
   const [anakSaya, setAnakSaya] = useState(null);
 
@@ -61,8 +56,6 @@ export default function DashboardOrtu() {
         const anak = res.data || [];
         setAnakSaya(anak);
 
-        // Kalau orang tua hanya punya 1 anak dan belum memilih,
-        // langsung arahkan ke dashboard anak tersebut.
         if (!id && anak.length === 1) {
           navigate(`${BASE_PATH}/${anak[0].id}`, { replace: true });
         }
@@ -196,9 +189,7 @@ export default function DashboardOrtu() {
     if (id) fetchDetail();
   }, [id]);
 
-  /* ============================================================
-     TAHAP 1 — BELUM ADA ANAK DIPILIH (tanpa :id di URL)
-     ============================================================ */
+  //TAHAP 1 — BELUM ADA ANAK DIPILIH (tanpa :id di URL)
   if (!id) {
     // masih memuat daftar anak
     if (anakSaya === null) {
@@ -298,10 +289,7 @@ export default function DashboardOrtu() {
     );
   }
 
-  /* ============================================================
-     TAHAP 2 — ADA :id, TAPI BUKAN ANAK MILIK SENDIRI
-     (backend juga menolak lewat middleware; ini lapisan tampilan)
-     ============================================================ */
+  /*TAHAP 2 — ADA :id, TAPI BUKAN ANAK MILIK SENDIRI(backend juga menolak lewat middleware; ini lapisan tampilan) */
   if (anakSaya && !anakSaya.some((a) => String(a.id) === String(id))) {
     return (
       <MainLayouts type="dashboardOrtu">
@@ -369,28 +357,69 @@ export default function DashboardOrtu() {
         <div className="space-y-8">
           {/* ===== PENGGANTI ANAK (tab/pill, hanya jika anak > 1) ===== */}
           {anakSaya && anakSaya.length > 1 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-gray-600 mr-1">
-                Anak:
-              </span>
-              {anakSaya.map((anak) => {
-                const aktif = String(anak.id) === String(id);
-                return (
-                  <button
-                    key={anak.id}
-                    onClick={() =>
-                      !aktif && navigate(`${BASE_PATH}/${anak.id}`)
-                    }
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                      aktif
-                        ? "bg-emerald-600 text-white shadow"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-emerald-400 hover:text-emerald-600"
-                    }`}
-                  >
-                    {anak.name}
-                  </button>
-                );
-              })}
+            <div className="rounded-3xl border border-gray-100 bg-white/70 backdrop-blur p-4 shadow-sm">
+              <div className="mb-3 flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <Baby size={16} />
+                </span>
+                <div>
+                  <p className="text-sm font-bold leading-none text-gray-800">
+                    Pilih Anak
+                  </p>
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Pantau tumbuh kembang tiap anak Anda
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 overflow-x-auto pb-1 hide-scrollbar">
+                {anakSaya.map((anak) => {
+                  const aktif = String(anak.id) === String(id);
+                  return (
+                    <button
+                      key={anak.id}
+                      onClick={() =>
+                        !aktif && navigate(`${BASE_PATH}/${anak.id}`)
+                      }
+                      className={`group flex shrink-0 items-center gap-3 rounded-2xl border px-3 py-2.5 transition-all duration-300 ${
+                        aktif
+                          ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
+                          : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50/40 hover:shadow"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-extrabold text-white ${
+                          anak.jk === "L" ? "bg-blue-400" : "bg-pink-400"
+                        }`}
+                      >
+                        {anak.name?.charAt(0)?.toUpperCase() || (
+                          <Baby size={18} />
+                        )}
+                      </span>
+
+                      <span className="text-left">
+                        <span
+                          className={`block text-sm font-bold leading-tight ${
+                            aktif ? "text-emerald-700" : "text-gray-800"
+                          }`}
+                        >
+                          {anak.name}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-gray-400">
+                          {anak.jk === "L" ? "Laki-laki" : "Perempuan"} •{" "}
+                          {hitungUmur(anak.tgl_lahir)}
+                        </span>
+                      </span>
+
+                      {aktif && (
+                        <span className="ml-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                          <Check size={12} strokeWidth={3} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -406,11 +435,13 @@ export default function DashboardOrtu() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <h1 className="text-xl font-extrabold text-gray-800 sm:text-2xl">
-                    Lihat Hasil Tren Monitoring
+                    Dashboard Monitoring
                   </h1>
-                  <p className="mt-1 text-sm text-black">
-                    Yuk pantau tumbuh kembang {detail?.name || "anak"} hari ini.
-                    Setiap langkah kecil sangat berarti untuk masa depannya!
+                  <p className="mt-1 text-sm text-gray-600">
+                    Selamat datang, {user?.name || "Bunda"}! Berikut ringkasan
+                    tumbuh kembang {detail?.name || "si kecil"} berdasarkan
+                    pemeriksaan terbaru. Pantau pertumbuhan dan status gizinya
+                    secara rutin agar setiap perkembangannya selalu terjaga.
                   </p>
                 </div>
               </div>

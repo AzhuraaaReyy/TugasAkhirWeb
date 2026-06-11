@@ -169,7 +169,7 @@ const DetailFormBalita = () => {
           <div className="flex justify-between items-center pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={() => navigate("/kader/manajemenbalita")}
+              onClick={() => navigate("/kader/deteksidini")}
               className="px-5 py-2 rounded-lg border border-gray-300 text-gray-600  transition hover:bg-emerald-600 hover:text-white"
             >
               Kembali
