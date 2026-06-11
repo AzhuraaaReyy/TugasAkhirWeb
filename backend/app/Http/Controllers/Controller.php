@@ -162,9 +162,11 @@ abstract class Controller
         if ($bbLalu !== null && $bbLalu > 0 && $selisihBb !== null && $interval !== null) {
             $persenPerBulan = abs($selisihBb) / $bbLalu * 100 / max(1, $interval);
             if ($persenPerBulan > 10) {
-                $peringatanBb = "Perubahan berat badan anak terlalu besar ("
-                    . ($selisihBb > 0 ? "naik" : "turun") . " " . abs(round($selisihBb, 1))
-                    . " kg dalam {$interval} bulan). Mohon periksa kembali kebenaran data. Apabila data sudah benar, segera konsultasikan ke tenaga kesehatan.";
+                $arahKata   = $selisihBb > 0 ? 'bertambah' : 'berkurang';
+                $besarNilai = abs(round($selisihBb, 1));
+                $peringatanBb = "Berat badan anak tercatat {$arahKata} cukup drastis, yaitu {$besarNilai} kg dalam {$interval} bulan. "
+                    . "Perubahan sebesar ini jarang terjadi secara wajar pada balita, sehingga kemungkinan terdapat kekeliruan saat menimbang atau mencatat data. "
+                    . "Mohon periksa kembali ketepatan data penimbangan. Apabila data sudah benar, segera konsultasikan kondisi anak kepada tenaga kesehatan.";
             }
         }
 

@@ -7,29 +7,35 @@ use App\Models\Penimbangan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Deteksi;
 
 class PenimbanganController extends Controller
 {
     public function index()
     {
-        $penimbangan = Penimbangan::with(['user', 'balita'])->orderBy('id', 'asc')->get();
+        $data = Deteksi::with(['balita', 'user'])
+            ->orderByDesc('tgl_deteksi') // pengukuran terbaru di atas
+            ->orderByDesc('id')          // pemecah seri bila tgl sama
+            ->get()
+            ->groupBy('balita_id')
+            ->map(fn($items) => $items->first()) // ambil yang terbaru tiap balita
+            ->values()                           // reset key agar jadi array bersih
+            ->map(function ($deteksi) {
+                return [
+                    'id'              => $deteksi->id,
+                    'nama_balita'     => $deteksi->balita?->name,
+                    'nama_kader'      => $deteksi->user?->name,
+                    'umur'            => $deteksi->umur,
+                    'tgl_penimbangan' => $deteksi->tgl_deteksi?->toDateString(),
+                    'berat'           => $deteksi->berat,
+                    'tinggi'          => $deteksi->tinggi,
+                    'lingkar_kepala'  => null,
+                    'lingkar_lengan'  => null,
+                ];
+            });
 
-        $data = $penimbangan->map(function ($penimbangan) {
-            return [
-                'id' => $penimbangan->id,
-                'nama_balita' => $penimbangan->balita?->name,
-                'nama_kader' => $penimbangan->user?->name,
-                'umur' => $penimbangan->umur,
-                'tgl_penimbangan' => $penimbangan->tgl_penimbangan,
-                'berat' => $penimbangan->berat,
-                'tinggi' => $penimbangan->tinggi,
-                'lingkar_kepala' => $penimbangan->lingkar_kepala,
-                'lingkar_lengan' => $penimbangan->lingkar_lengan,
-            ];
-        });
         return response()->json($data);
     }
-
     public function store(Request $request)
     {
         $validated = $request->validate([
