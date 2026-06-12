@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import stunting from "../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
 import FadeSlide from "../components/Animations/FadeSlide";
 import FadeUp from "../components/Animations/FadeUp";
@@ -69,21 +70,21 @@ const AuthLayout = (props) => {
           <FadeSlide direction="right" delay={200}>
             <div className="flex justify-center mt-5">
               {type == "login" ? (
-                <a href="/register" className="text-black text-sm">
+                <Link to="/register" className="text-black text-sm">
                   <span>Don’t have an acount? </span>
                   <span className="font-bold underline text-emerald-400 hover:text-emerald-600">
                     Register
                   </span>
-                </a>
+                </Link>
               ) : (
                 <span className="text-black text-sm">
                   Already have an acount?{" "}
-                  <a
-                    href="/login"
+                  <Link
+                    to="/login"
                     className="font-bold text-emerald-400 underline hover:text-emerald-600"
                   >
                     Login
-                  </a>
+                  </Link>
                 </span>
               )}
             </div>
