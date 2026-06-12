@@ -133,6 +133,7 @@ export default function LihatMonitoring() {
           rekomendasiUnderweight: item.rekomendasigizi.underweight,
           riwayat: item.riwayat,
           kebutuhanGizi: item.kebutuhan_gizi,
+          tingkatRekomendasi: item.tingkat_rekomendasi,
         };
         setDetail(formattedData);
         console.log("DEBUG DETAIL:", formattedData);

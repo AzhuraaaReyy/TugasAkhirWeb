@@ -179,6 +179,30 @@ const DAMPAK_DEFAULT = {
     "Kelebihan berat badan yang dibiarkan dapat berkembang menjadi obesitas serta meningkatkan risiko gangguan kesehatan seperti tekanan darah tinggi dan masalah metabolik saat anak tumbuh besar.",
 };
 
+/* ===== TAMBAHAN: gaya warna per tier (selaras output controller) ===== */
+const TIER_STYLE = {
+  0: {
+    wrap: "bg-emerald-50 ring-emerald-100",
+    badge: "bg-emerald-100 text-emerald-700",
+    title: "text-emerald-800",
+  },
+  1: {
+    wrap: "bg-amber-50 ring-amber-100",
+    badge: "bg-amber-100 text-amber-800",
+    title: "text-amber-800",
+  },
+  2: {
+    wrap: "bg-orange-50 ring-orange-100",
+    badge: "bg-orange-100 text-orange-800",
+    title: "text-orange-800",
+  },
+  3: {
+    wrap: "bg-red-50 ring-red-100",
+    badge: "bg-red-100 text-red-700",
+    title: "text-red-800",
+  },
+};
+
 function Reveal({ show, delay = 0, className = "", children }) {
   return (
     <div
@@ -212,18 +236,32 @@ function DaftarRekomendasi({ items, tone = "emerald" }) {
   );
 }
 
-/* Grid angka ringkas untuk vitamin/mineral (2 kolom) */
-function GridNilai({ items }) {
+/* Grid angka ringkas untuk vitamin/mineral (2 kolom).
+   ===== TAMBAHAN: prop `isFokus` untuk menyorot nutrien fokus dari controller. */
+function GridNilai({ items, isFokus }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {items.map((it) => (
-        <div key={it.label} className="rounded-xl bg-gray-50 px-3 py-2">
-          <p className="text-[10.5px] uppercase tracking-wide text-gray-400">
-            {it.label}
-          </p>
-          <p className="text-[13px] font-bold text-gray-800">{it.nilai}</p>
-        </div>
-      ))}
+      {items.map((it) => {
+        const fokus = isFokus?.(it.label);
+        return (
+          <div
+            key={it.label}
+            className={`rounded-xl px-3 py-2 ${
+              fokus ? "bg-emerald-50 ring-1 ring-emerald-200" : "bg-gray-50"
+            }`}
+          >
+            <p className="text-[10.5px] uppercase tracking-wide text-gray-400">
+              {it.label}
+              {fokus && (
+                <span className="ml-1 rounded bg-emerald-100 px-1 text-[8.5px] font-bold text-emerald-700">
+                  fokus
+                </span>
+              )}
+            </p>
+            <p className="text-[13px] font-bold text-gray-800">{it.nilai}</p>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -247,6 +285,20 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   // Sumber AKG fleksibel: prop `gizi` (endpoint perkembangan) ATAU
   // field kebutuhan_gizi dari endpoint detailmonitoring (lewat `data`).
   gizi = gizi || data?.kebutuhanGizi || data?.kebutuhan_gizi || null;
+
+  // ===== TAMBAHAN: tingkat rekomendasi terpadu dari backend (controller) =====
+  const tingkat = data?.tingkatRekomendasi || data?.tingkat_rekomendasi || null;
+  const fokusNutrisi = tingkat?.fokus_nutrisi || [];
+  const pemicuTren = tingkat?.pemicu_tren || [];
+  const tierStyle = tingkat
+    ? (TIER_STYLE[tingkat.tier] ?? TIER_STYLE[0])
+    : null;
+  const isFokus = (label = "") =>
+    fokusNutrisi.some(
+      (f) =>
+        f.toLowerCase().includes(label.toLowerCase()) ||
+        label.toLowerCase().includes(f.toLowerCase()),
+    );
 
   const [mounted, setMounted] = useState(false);
   const [tabGizi, setTabGizi] = useState(0); // 0=Gizi utama, 1=Vitamin, 2=Mineral
@@ -513,21 +565,33 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   /* ----- Isi tiap slide ----- */
   const SlideMakro = (
     <DaftarRekomendasi
-      items={ringkasAKG.map((z) => (
-        <span key={z.label}>
-          <span className="font-semibold text-gray-800">
-            {z.label} {z.nilai}
+      items={ringkasAKG.map((z) => {
+        const fokus = isFokus(z.label);
+        return (
+          <span key={z.label}>
+            <span
+              className={`font-semibold ${
+                fokus ? "text-emerald-700" : "text-gray-800"
+              }`}
+            >
+              {z.label} {z.nilai}
+            </span>
+            {fokus && (
+              <span className="ml-1 rounded bg-emerald-100 px-1 text-[8.5px] font-bold text-emerald-700">
+                fokus
+              </span>
+            )}
+            {z.padanan && <span className="text-gray-600"> = {z.padanan}</span>}
           </span>
-          {z.padanan && <span className="text-gray-600"> = {z.padanan}</span>}
-        </span>
-      ))}
+        );
+      })}
       tone="emerald"
     />
   );
 
   const SlideMikro = (items, padananList) => (
     <div className="space-y-3">
-      <GridNilai items={items} />
+      <GridNilai items={items} isFokus={isFokus} />
       {padananList.length > 0 && (
         <DaftarRekomendasi
           items={padananList.map((p) => (
@@ -634,6 +698,64 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
 
           <div className="mt-5 flex-1">
             <div className="space-y-5">
+              {/* ===== TAMBAHAN: TINGKAT KEWASPADAAN (tier dari controller) ===== */}
+              {tingkat && (
+                <div
+                  className={`rounded-2xl px-4 py-3.5 ring-1 ${tierStyle.wrap}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span
+                      className={`rounded-lg px-2.5 py-1 text-[11.5px] font-bold ${tierStyle.badge}`}
+                    >
+                      {tingkat.label}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                      Tingkat kewaspadaan
+                    </span>
+                  </div>
+
+                  {tingkat.tindakan_utama && (
+                    <p
+                      className={`mt-2.5 text-[13px] font-semibold leading-relaxed ${tierStyle.title}`}
+                    >
+                      {tingkat.tindakan_utama}
+                    </p>
+                  )}
+
+                  {pemicuTren.length > 0 && (
+                    <div className="mt-2.5 border-t border-white/70 pt-2.5">
+                      <p className="text-[11px] font-semibold text-gray-600">
+                        Alasan kewaspadaan:
+                      </p>
+                      <ul className="mt-1 space-y-1">
+                        {pemicuTren.map((p, i) => (
+                          <li
+                            key={i}
+                            className="flex gap-2 text-[12px] leading-relaxed text-gray-600"
+                          >
+                            <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-gray-400" />
+                            <span>{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {tingkat.catatan_gizi_lebih && (
+                    <p className="mt-2 text-[11.5px] leading-relaxed text-orange-700">
+                      Catatan: terdapat indikasi berat berlebih dibanding tinggi
+                      badan — perhatikan juga keseimbangan asupan.
+                    </p>
+                  )}
+
+                  {tingkat.dasar && (
+                    <p className="mt-2.5 text-[10px] leading-relaxed text-gray-400">
+                      Dasar penilaian: {tingkat.dasar}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Prioritas (hanya saat ada masalah) */}
               {adaMasalah && rekomendasiPrioritas.length > 0 && (
                 <div className="rounded-2xl bg-amber-50/70 px-4 py-3.5 ring-1 ring-amber-100">
@@ -670,9 +792,9 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
                   </div>
                   <p className="mb-3 text-[12px] leading-relaxed text-gray-500">
                     Angka di bawah ini menunjukkan perkiraan kebutuhan gizi
-                    harian {nama} sesuai usianya. Tidak perlu menghafal atau menghitung satu
-                    per satu, yang terpenting adalah memberikan makanan yang
-                    beragam dan seimbang setiap hari.
+                    harian {nama} sesuai usianya. Tidak perlu menghafal atau
+                    menghitung satu per satu, yang terpenting adalah memberikan
+                    makanan yang beragam dan seimbang setiap hari.
                   </p>
                   {adaMikro ? (
                     <>
@@ -727,12 +849,12 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
                   )}
 
                   <p className="mt-2 text-[10.5px] text-gray-400">
-                    Angka di atas adalah kebutuhan rata-rata per
-                    hari menurut {gizi.sumber}. Gunakan sebagai acuan, bukan
-                    target kaku yang harus tepat setiap hari. Padanan porsi
-                    mengikuti Pedoman Gizi Seimbang (Isi Piringku) dan bersifat
-                    perkiraan. Untuk kebutuhan khusus anak, konsultasikan ke
-                    kader posyandu atau tenaga kesehatan
+                    Angka di atas adalah kebutuhan rata-rata per hari menurut{" "}
+                    {gizi.sumber}. Gunakan sebagai acuan, bukan target kaku yang
+                    harus tepat setiap hari. Padanan porsi mengikuti Pedoman
+                    Gizi Seimbang (Isi Piringku) dan bersifat perkiraan. Untuk
+                    kebutuhan khusus anak, konsultasikan ke kader posyandu atau
+                    tenaga kesehatan
                   </p>
                 </div>
               ) : (
