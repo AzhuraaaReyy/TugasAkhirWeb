@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import api from "@/services/api";
+import { Atom } from "react-loading-indicators";
 const UpdateFormBalita = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -78,23 +79,21 @@ const UpdateFormBalita = () => {
       await api.put(`/balitas/${id}`, form); // id dari params
 
       alert("Data berhasil diupdate");
-      navigate("/kader/manajemenbalita");
+      navigate("/kader/deteksidini");
     } catch (error) {
       console.error(error);
       alert("Gagal update data");
     }
   };
 
-  if (loading) {
-    return (
-      <MainLayouts>
-        <div className="p-6">Loading data...</div>
-      </MainLayouts>
-    );
-  }
   return (
     <MainLayouts type="detailmanajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
         <div className="max-w-full mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* HEADER */}
           <div className="border-b border-gray-200 pb-4 mb-6">

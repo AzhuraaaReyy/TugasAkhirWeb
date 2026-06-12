@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import api from "@/services/api";
+import { Atom } from "react-loading-indicators";
 const DetailFormBalita = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -39,16 +40,14 @@ const DetailFormBalita = () => {
     if (id) fetchDetail();
   }, [id]);
 
-  if (loading) {
-    return (
-      <MainLayouts>
-        <div className="p-6">Loading data...</div>
-      </MainLayouts>
-    );
-  }
   return (
     <MainLayouts type="detailmanajemenbalita">
       <div className="min-h-screen bg-slate-100 p-6">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
         <div className="max-w-full mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* HEADER */}
           <div className="border-b border-gray-200 pb-4 mb-6">
@@ -143,7 +142,7 @@ const DetailFormBalita = () => {
               </label>
               <input
                 type="text"
-                value={form.posyandu }
+                value={form.posyandu}
                 readOnly
                 placeholder="Contoh: Posyandu Mawar"
                 className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"

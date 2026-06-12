@@ -74,7 +74,6 @@ const ManajemenBalita = () => {
   const endIndex = startIndex + itemsPerPage;
 
   const currentData = filteredData.slice(startIndex, endIndex);
-  
 
   return (
     <MainLayouts type="manajemenbalita">
@@ -142,11 +141,9 @@ const ManajemenBalita = () => {
                 <tr>
                   <th className="px-4 py-3">No</th>
                   <th className="px-4 py-3">Nama Balita</th>
-                  <th className="px-4 py-3">Orang Tua</th>
                   <th className="px-4 py-3">JK</th>
                   <th className="px-4 py-3">TTL</th>
-                  <th className="px-4 py-3">Alamat</th>
-                  <th className="px-4 py-3">Posyandu</th>
+
                   <th className="px-4 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -154,7 +151,7 @@ const ManajemenBalita = () => {
               <tbody className="divide-y divide-gray-100 text-center">
                 {filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-6 text-gray-400">
+                    <td colSpan="4" className="py-6 text-gray-400">
                       Data tidak ditemukan
                     </td>
                   </tr>
@@ -167,9 +164,7 @@ const ManajemenBalita = () => {
                       <td className="px-4 py-3 text-gray-500">
                         {item.name || "-"}
                       </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.orangtua || "-"}
-                      </td>
+
                       <td className="px-4 py-3">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -181,16 +176,7 @@ const ManajemenBalita = () => {
                           {item.jk || "-"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.tmp_lahir},{" "}
-                        {new Date(item.tgl_lahir).toLocaleDateString("id-ID")}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.alamat || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {item.posyandu || "-"}
-                      </td>
+
                       <td className="px-4 py-3 text-center">
                         <div className="flex justify-center gap-3">
                           <Link

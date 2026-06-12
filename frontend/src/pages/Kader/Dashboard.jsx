@@ -1,7 +1,7 @@
 import Barchart from "../../components/Elements/Chart/BartChart";
 import LineChart from "../../components/Elements/Chart/LineChart";
 import Status from "../../components/Elements/Chart/StatusChart";
-import { Icon } from "../../assets/icons";
+import { Icon } from "../../assets/icons/Index";
 import CardTotal from "../../components/Fragments/Dashboard/CardTotal";
 import CardStunting from "../../components/Fragments/Dashboard/CardStunting";
 import CardTidakStunting from "../../components/Fragments/Dashboard/CardTidakStunting";

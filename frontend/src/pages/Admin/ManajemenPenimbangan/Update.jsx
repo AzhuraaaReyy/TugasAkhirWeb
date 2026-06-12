@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 import api from "../../../services/api";
+import { Atom } from "react-loading-indicators";
 const UpdatePenimbangan = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -13,7 +14,7 @@ const UpdatePenimbangan = () => {
   const [form, setForm] = useState({
     balita_id: "",
     umur: "",
-    tgl_penimbangan: "",
+    tgl_deteksi: "",
     berat: "",
     tinggi: "",
     lingkar_kepala: "",
@@ -51,10 +52,10 @@ const UpdatePenimbangan = () => {
 
     let newForm = { ...form, [name]: value };
 
-    if (name === "balita_id" || name === "tgl_penimbangan") {
+    if (name === "balita_id" || name === "tgl_deteksi") {
       newForm.umur = getUmurFromBalita(
         name === "balita_id" ? value : form.balita_id,
-        name === "tgl_penimbangan" ? value : form.tgl_penimbangan,
+        name === "tgl_deteksi" ? value : form.tgl_deteksi,
       );
     }
 
@@ -69,12 +70,10 @@ const UpdatePenimbangan = () => {
 
         setForm({
           balita_id: String(data.balita_id || ""),
-          umur: data.umur || "",
-          tgl_penimbangan: data.tgl_penimbangan?.slice(0, 10) || "",
+          umur: data.umur || "0",
+          tgl_deteksi: data.tgl_deteksi?.slice(0, 10) || "",
           berat: data.berat || "",
           tinggi: data.tinggi || "",
-          lingkar_kepala: data.lingkar_kepala || "",
-          lingkar_lengan: data.lingkar_lengan || "",
         });
       } finally {
         setLoading(false);
@@ -103,22 +102,21 @@ const UpdatePenimbangan = () => {
       await api.put(`/penimbangans/${id}`, form); // id dari params
 
       alert("Data berhasil diupdate");
-      navigate("/kader/manajemenpenimbangan");
+      navigate("/kader/deteksidini");
     } catch (error) {
       console.error(error);
       alert("Gagal update data");
     }
   };
-  if (loading) {
-    return (
-      <MainLayouts>
-        <div className="p-6">Loading data...</div>
-      </MainLayouts>
-    );
-  }
+
   return (
     <MainLayouts type="createpenimbangan">
-      <div className="min-h-screen bg-slate-100 p-6">
+      <div className="min-h-screen bg-slate-100 p-6 ">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
         <div className="max-w-full mx-auto bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* HEADER */}
           <div className="border-b border-gray-200 pb-4 mb-6">
@@ -166,7 +164,7 @@ const UpdatePenimbangan = () => {
                   value={form.umur}
                   onChange={handleChange}
                   placeholder="Contoh: Ibu Melati"
-                  className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full h-12 bg-gray-100 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
@@ -177,8 +175,8 @@ const UpdatePenimbangan = () => {
                 </label>
                 <input
                   type="date"
-                  name="tgl_penimbangan"
-                  value={form.tgl_penimbangan}
+                  name="tgl_deteksi"
+                  value={form.tgl_deteksi}
                   onChange={handleChange}
                   className="w-full h-12 border border-gray-300 rounded-lg px-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                 />

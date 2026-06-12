@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 
-import LabeledInput from "../../Elements/LabeledInput";
+import LabeledInput from "../../Elements/LabeledInput/Index";
 import CheckBox from "../../Elements/CheckBox/Index";
 {
   /*import { useContext, useState } from "react";*/

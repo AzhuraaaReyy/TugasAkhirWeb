@@ -454,10 +454,7 @@ export default function DeteksiDini() {
                       <tr>
                         <th className="px-4 py-3">No</th>
                         <th className="px-4 py-3">Nama Balita</th>
-                        <th className="px-4 py-3">Orang Tua</th>
                         <th className="px-4 py-3">JK</th>
-                        <th className="px-4 py-3">TTL</th>
-                        <th className="px-4 py-3">Alamat</th>
                         <th className="px-4 py-3">Posyandu</th>
                         <th className="px-4 py-3 text-center">Aksi</th>
                       </tr>
@@ -465,7 +462,7 @@ export default function DeteksiDini() {
                     <tbody className="divide-y divide-gray-100 text-center">
                       {dataTampil.length === 0 ? (
                         <tr>
-                          <td colSpan="8" className="py-6 text-gray-400">
+                          <td colSpan="5" className="py-6 text-gray-400">
                             Data tidak ditemukan
                           </td>
                         </tr>
@@ -481,9 +478,7 @@ export default function DeteksiDini() {
                             <td className="px-4 py-3 text-gray-500">
                               {item.name || "-"}
                             </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.orangtua || "-"}
-                            </td>
+
                             <td className="px-4 py-3">
                               <span
                                 className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -494,17 +489,6 @@ export default function DeteksiDini() {
                               >
                                 {item.jk || "-"}
                               </span>
-                            </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.tmp_lahir},{" "}
-                              {item.tgl_lahir
-                                ? new Date(item.tgl_lahir).toLocaleDateString(
-                                    "id-ID",
-                                  )
-                                : "-"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.alamat || "-"}
                             </td>
                             <td className="px-4 py-3 text-gray-500">
                               {item.posyandu || "-"}
@@ -542,18 +526,14 @@ export default function DeteksiDini() {
                       <tr>
                         <th className="px-4 py-3">No</th>
                         <th className="px-4 py-3">Nama Balita</th>
-                        <th className="px-4 py-3">Umur</th>
                         <th className="px-4 py-3">Tgl Penimbangan</th>
-                        <th className="px-4 py-3">BB (kg)</th>
-                        <th className="px-4 py-3">TB (cm)</th>
-                        <th className="px-4 py-3">Dicatat Oleh</th>
                         <th className="px-4 py-3 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 text-center">
                       {dataTampil.length === 0 ? (
                         <tr>
-                          <td colSpan="8" className="py-6 text-gray-400">
+                          <td colSpan="4" className="py-6 text-gray-400">
                             Data tidak ditemukan
                           </td>
                         </tr>
@@ -569,9 +549,7 @@ export default function DeteksiDini() {
                             <td className="px-4 py-3 text-gray-500">
                               {item.nama_balita || "-"}
                             </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.umur || "-"}
-                            </td>
+                           
                             <td className="px-4 py-3 text-gray-500">
                               {item.tgl_penimbangan
                                 ? new Date(
@@ -579,16 +557,7 @@ export default function DeteksiDini() {
                                   ).toLocaleDateString("id-ID")
                                 : "-"}
                             </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.berat || "-"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.tinggi || "-"}
-                            </td>
                            
-                            <td className="px-4 py-3 text-gray-500">
-                              {item.nama_kader || "-"}
-                            </td>
                             <td className="px-4 py-3 text-center">
                               <div className="flex justify-center gap-3">
                                 <Link
