@@ -21,7 +21,7 @@ return [
 
     'allowed_origins' => ['http://localhost:5173', 'https://tugasakhirweb-production.up.railway.app',],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['#^https://.*\.vercel\.app$#'],
 
     'allowed_headers' => ['*'],
 
