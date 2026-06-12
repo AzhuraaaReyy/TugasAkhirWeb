@@ -1,4 +1,4 @@
-import { useInView } from "../../../hooks/UseInView";
+import { UseInView } from "../../../hooks/useInView";
 import FadeSlide from "../../Animations/FadeSlide";
 import FadeUp from "../../Animations/FadeUp";
 import Typewriter from "../../Animations/Typewriter";
@@ -7,7 +7,7 @@ import monitoring from "../../../assets/images/Aplikasi-Monitoring-Jaringan.jpg"
 import edukasi from "../../../assets/images/pixverse_t2i_ori_c2060860-0997-4480-ae6b-d12b9d41511f.webp";
 import BorderGlow from "../../Animations/BorderGlow";
 const FiturSistem = () => {
-  const [refHeader, headerVisible] = useInView(0.3);
+  const [refHeader, headerVisible] = UseInView(0.3);
 
   return (
     <>
