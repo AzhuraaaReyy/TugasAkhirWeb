@@ -1,5 +1,5 @@
 import Card from "../../Elements/Card/Index";
-import { Icon } from "../../../assets/icons";
+import { Icon } from "../../../assets/icons/Index";
 const CardStatus = ({ status }) => {
   const statusWarnaTBU = {
     "Sangat pendek (severely stunted)": "bg-red-600 text-white",

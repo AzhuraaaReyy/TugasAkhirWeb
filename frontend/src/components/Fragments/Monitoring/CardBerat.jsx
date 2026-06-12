@@ -1,5 +1,5 @@
 import Card from "../../Elements/Card/Index";
-import { Icon } from "../../../assets/icons";
+import { Icon } from "../../../assets/icons/Index";
 const CardBerat = ({ berat }) => {
   return (
     <Card

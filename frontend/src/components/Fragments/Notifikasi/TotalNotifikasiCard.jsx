@@ -1,5 +1,5 @@
 import Card from "../../Elements/Card/Index";
-import { Icon } from "../../../assets/icons";
+import { Icon } from "../../../assets/icons/Index";
 const TotalNotifikasiCard = ({ notif }) => {
   return (
     <>
@@ -21,7 +21,6 @@ const TotalNotifikasiCard = ({ notif }) => {
             <h2 className="text-2xl font-bold text-gray-800 mt-2 ">{notif}</h2>
 
             {/* Change */}
-          
           </div>
         }
       />
