@@ -4,7 +4,7 @@ import FadeSlide from "../../components/Animations/FadeSlide";
 import Typewriter from "../../components/Animations/Typewriter";
 import Particles from "../../components/Animations/Particles";
 import FadeUp from "../../components/Animations/FadeUp";
-import { useInView } from "@/hooks/UseInView";
+import { UseInView } from "@/hooks/UseInView";
 import AnimatedList from "../../components/Animations/AnimatedList";
 import ArtikelPanel from "@/components/Fragments/Edukasi/ArtikelPanel";
 import PengertianDetail from "@/components/Fragments/Stunting/Pengertian";
@@ -124,9 +124,9 @@ export default function EdukasiStunting() {
   }, [selectedArtikel]);
   const SelectedComponent = selectedArtikel?.component;
 
-  const [refHeader, headerVisible] = useInView(0.3);
-  const [refSec1, sec1Visible] = useInView(0.3);
-  const [refSec4, sec4Visible] = useInView(0.3);
+  const [refHeader, headerVisible] = UseInView(0.3);
+  const [refSec1, sec1Visible] = UseInView(0.3);
+  const [refSec4, sec4Visible] = UseInView(0.3);
   return (
     <MainLayouts type="edukasiortu">
       <section
