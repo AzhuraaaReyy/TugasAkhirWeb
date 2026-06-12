@@ -14,7 +14,7 @@ import "swiper/css/pagination";
 import "leaflet/dist/leaflet.css";
 import { motion } from "framer-motion";
 import { useRef, useEffect } from "react";
-import { useInView } from "../../../hooks/UseInView";
+import { useInView } from "../../../hooks/useInView";
 import Typewriter from "../../Animations/Typewriter";
 import { Navigation, Autoplay, Pagination } from "swiper/modules";
 import FadeUp from "../../Animations/FadeUp";
