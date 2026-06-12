@@ -3,7 +3,7 @@ import stunting2 from "../../../assets/images/3efe462b-579d-4a62-b536-77b6b867ae
 import stunting3 from "../../../assets/images/image_2k_2560x1440_v3.png";
 import { useState } from "react";
 import Typewriter from "../../Animations/Typewriter";
-import { useInView } from "../../../hooks/useInView";
+import { UseInView } from "../../../hooks/UseInView";
 import FadeSlide from "../../Animations/FadeSlide";
 import { NavLink } from "react-router-dom";
 import AuthModal from "../../Elements/Modal/AuthModal";
@@ -11,9 +11,9 @@ const Edukasi = () => {
   const [active, setActive] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
-  const [refHeader, headerVisible] = useInView(0.3);
-  const [refSec1, sec1Visible] = useInView(0.3);
-  const [refSec4, sec4Visible] = useInView(0.3);
+  const [refHeader, headerVisible] = UseInView(0.3);
+  const [refSec1, sec1Visible] = UseInView(0.3);
+  const [refSec4, sec4Visible] = UseInView(0.3);
 
   return (
     <>
