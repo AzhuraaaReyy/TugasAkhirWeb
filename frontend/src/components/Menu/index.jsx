@@ -1,4 +1,4 @@
-import { Icon } from "../../assets/icons";
+import { Icon } from "../../assets/icons/Index";
 
 export const kaderMenu = [
   {
