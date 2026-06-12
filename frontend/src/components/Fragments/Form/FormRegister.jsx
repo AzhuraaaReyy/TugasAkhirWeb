@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import LabeledInput from "../../Elements/LabeledInput";
+import LabeledInput from "../../Elements/LabeledInput/Index";
 import Button from "../../Elements/Button/Index";
 import api from "../../../services/api"; // axios instance
 import { useState } from "react";
