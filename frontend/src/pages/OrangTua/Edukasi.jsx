@@ -4,7 +4,7 @@ import FadeSlide from "../../components/Animations/FadeSlide";
 import Typewriter from "../../components/Animations/Typewriter";
 import Particles from "../../components/Animations/Particles";
 import FadeUp from "../../components/Animations/FadeUp";
-import { UseInView } from "@/hooks/UseInView";
+import { UseInView } from "../../hooks/UseInView";
 import AnimatedList from "../../components/Animations/AnimatedList";
 import ArtikelPanel from "@/components/Fragments/Edukasi/ArtikelPanel";
 import PengertianDetail from "@/components/Fragments/Stunting/Pengertian";
