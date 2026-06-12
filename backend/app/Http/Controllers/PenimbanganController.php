@@ -29,8 +29,7 @@ class PenimbanganController extends Controller
                     'tgl_penimbangan' => $deteksi->tgl_deteksi?->toDateString(),
                     'berat'           => $deteksi->berat,
                     'tinggi'          => $deteksi->tinggi,
-                    'lingkar_kepala'  => null,
-                    'lingkar_lengan'  => null,
+
                 ];
             });
 
@@ -73,38 +72,47 @@ class PenimbanganController extends Controller
 
     public function update(Request $request, $id)
     {
-        $penimbangan = Penimbangan::findOrFail($id);
+        $deteksi = Deteksi::findOrFail($id);
 
         $validated = $request->validate([
             'balita_id' => 'required|exists:balitas,id',
-            'tgl_penimbangan' => 'required|date',
+            'tgl_deteksi' => 'required|date',
             'berat' => 'required|decimal:0,2',
             'tinggi' => 'required|decimal:0,2',
-            'lingkar_kepala' => 'required|decimal:0,2',
-            'lingkar_lengan' => 'required|decimal:0,2',
+
         ]);
 
         $balita = Balita::findOrFail($validated['balita_id']);
 
+        // hitung umur (bulan) saat deteksi
         $tglLahir = Carbon::parse($balita->tgl_lahir ?? $balita->tanggal);
-        $tglTimbang = Carbon::parse($validated['tgl_penimbangan']);
+        $tglDeteksi = Carbon::parse($validated['tgl_deteksi']);
 
         $bulan =
-            ($tglTimbang->year - $tglLahir->year) * 12 +
-            ($tglTimbang->month - $tglLahir->month);
+            ($tglDeteksi->year - $tglLahir->year) * 12 +
+            ($tglDeteksi->month - $tglLahir->month);
 
-        if ($tglTimbang->day < $tglLahir->day) {
+        if ($tglDeteksi->day < $tglLahir->day) {
             $bulan -= 1;
         }
-        $validated['umur'] = $bulan < 0 ? 0 : $bulan;
+        $umur = $bulan < 0 ? 0 : $bulan;
 
-        $penimbangan->update($validated);
+        // simpan ke kolom yang sesuai: tgl_penimbangan (input) -> tgl_deteksi (kolom)
+        $deteksi->update([
+            'balita_id' => $validated['balita_id'],
+            'tgl_deteksi' => $validated['tgl_deteksi'],
+            'berat' => $validated['berat'],
+            'tinggi' => $validated['tinggi'],
+
+            'umur' => $umur,
+        ]);
 
         return response()->json([
             'message' => 'Data berhasil di update',
-            'data' => $penimbangan
+            'data' => $deteksi->load(['balita', 'user']),
         ]);
     }
+
     public function destroy($id)
     {
         $penimbangan = Penimbangan::findOrFail($id);
@@ -117,20 +125,19 @@ class PenimbanganController extends Controller
 
     public function show($id)
     {
-        $penimbangan = Penimbangan::with(['user', 'balita'])->findOrFail($id);
+        $deteksi = Deteksi::with(['user', 'balita'])->findOrFail($id);
+
         return response()->json([
-            'message' => 'Detail data Penimbangan',
+            'message' => 'Detail data Deteksi',
             'data' => [
-                'id' => $penimbangan->id,
-                'balita_id' => $penimbangan->balita_id,
-                'nama_balita' => $penimbangan->balita?->name,
-                'nama_kader' => $penimbangan->user?->name,
-                'umur' => $penimbangan->umur,
-                'tgl_penimbangan' => $penimbangan->tgl_penimbangan,
-                'berat' => $penimbangan->berat,
-                'tinggi' => $penimbangan->tinggi,
-                'lingkar_kepala' => $penimbangan->lingkar_kepala,
-                'lingkar_lengan' => $penimbangan->lingkar_lengan,
+                'id' => $deteksi->id,
+                'balita_id' => $deteksi->balita_id,
+                'nama_balita' => $deteksi->balita?->name,
+                'nama_kader' => $deteksi->user?->name,
+                'umur' => $deteksi->umur,
+                'tgl_deteksi' => $deteksi->tgl_deteksi?->toDateString(),
+                'berat' => $deteksi->berat,
+                'tinggi' => $deteksi->tinggi,
             ]
         ]);
     }

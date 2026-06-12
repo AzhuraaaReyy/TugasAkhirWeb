@@ -45,15 +45,9 @@ class BalitaController extends Controller
 
     public function index()
     {
-        // Ambil data deteksi yang berelasi dengan balita
-        $deteksis = Deteksi::with('balita')
-            ->orderByDesc('tgl_deteksi')
-            ->get();
-
-        // ✅ Status TERBARU tiap balita berdasarkan TANGGAL PENGUKURAN (bukan created_at)
         $deteksiTerbaru = Deteksi::with('balita')
-            ->orderByDesc('tgl_deteksi')   // pengukuran paling baru di atas
-            ->orderByDesc('id')            // pemecah seri bila tgl_deteksi sama
+            ->orderByDesc('tgl_deteksi')
+            ->orderByDesc('id')
             ->get()
             ->groupBy('balita_id')
             ->map(fn($items) => $items->first()) // ambil pengukuran terbaru tiap balita
@@ -100,8 +94,6 @@ class BalitaController extends Controller
 
     public function store(Request $request)
     {
-        // Normalisasi DULU: 0812xxx / +62812xxx -> 62812xxx
-        // supaya pencarian akun & login konsisten satu format
         $request->merge([
             'no_telp' => $this->normalisasiNoTelp($request->no_telp),
         ]);
@@ -211,7 +203,7 @@ class BalitaController extends Controller
                 'jk' => $balita->jk,
                 'tgl_lahir' => $balita->tgl_lahir,
                 'tmp_lahir' => $balita->tmp_lahir,
-                'alamat' => $balita->alamat,
+                'alamat' => $balita->user?->alamat,
 
                 'posyandu_id' => $balita->posyandu_id,
                 'user_id' => $balita->user_id,
@@ -236,10 +228,24 @@ class BalitaController extends Controller
             'posyandu_id' => 'required|exists:posyandus,id',
         ]);
 
-        $balita->update($validated);
+        // update data balita (alamat tidak ikut, karena milik User)
+        $balita->update([
+            'user_id' => $validated['user_id'],
+            'name' => $validated['name'],
+            'jk' => $validated['jk'],
+            'tgl_lahir' => $validated['tgl_lahir'],
+            'tmp_lahir' => $validated['tmp_lahir'],
+            'posyandu_id' => $validated['posyandu_id'],
+        ]);
+
+        // update alamat di akun wali terpilih
+        User::findOrFail($validated['user_id'])->update([
+            'alamat' => $validated['alamat'],
+        ]);
+
         return response()->json([
             'message' => 'Data berhasil di update',
-            'data' => $balita
+            'data' => $balita->load('user'),
         ]);
     }
     public function destroy($id)
