@@ -1,4 +1,4 @@
-import { useInView } from "../../../hooks/useInView";
+import { useInView } from "../../../hooks/UseInView";
 import FadeSlide from "../../Animations/FadeSlide";
 import FadeUp from "../../Animations/FadeUp";
 import Typewriter from "../../Animations/Typewriter";
