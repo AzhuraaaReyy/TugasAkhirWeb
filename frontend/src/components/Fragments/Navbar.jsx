@@ -31,13 +31,15 @@ function Navbar() {
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
         scrolled
           ? "bg-white/90 shadow-md backdrop-blur-md"
-          : "bg-transparent text-red-600"
+          : "bg-transparent text-emerald-600"
       }`}
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <h1 className="text-xl font-bold text-emerald-600">StuntingCare</h1>
+          <h1 className="text-xl font-bold text-emerald-600">
+            GrowthChildCare
+          </h1>
 
           {/* Desktop Menu */}
           <ul className="hidden md:flex items-center gap-8">
@@ -111,11 +113,21 @@ function Navbar() {
             ))}
 
             <div className="flex flex-col gap-3 pt-4">
-              <button className="text-emerald-600 font-medium">Login</button>
+              <NavLink
+                to="/login"
+                onClick={() => setOpen(false)}
+                className="text-center text-emerald-600 font-medium"
+              >
+                Login
+              </NavLink>
 
-              <button className="bg-emerald-500 text-white py-2 rounded-xl">
+              <NavLink
+                to="/register"
+                onClick={() => setOpen(false)}
+                className="text-center bg-emerald-500 text-white py-2 rounded-xl"
+              >
                 Daftar
-              </button>
+              </NavLink>
             </div>
           </ul>
         </div>

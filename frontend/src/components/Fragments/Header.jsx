@@ -47,7 +47,6 @@ const Header = ({
         />
 
         <div>
-          
           <h1 className="text-2xl font-bold capitalize">{pageName}</h1>
         </div>
       </div>
