@@ -51,9 +51,9 @@ class AuthSocialiteController extends Controller
             $perluHp = $user->no_telp ? 0 : 1;
             // 🔑 token Sanctum
             $token = $user->createToken('auth_token')->plainTextToken;
-
+            $frontendUrl = env('FRONTEND_URL');
             return redirect(
-                "http://localhost:5173/auth/callback?token=$token&role={$user->role}&lengkapi_hp=$perluHp"
+                "{$frontendUrl}/auth/callback?token={$token}&role={$user->role}&lengkapi_hp={$perluHp}"
             );
         } catch (\Exception $e) {
             return redirect("http://localhost:5173/login?error=google_login_failed");
