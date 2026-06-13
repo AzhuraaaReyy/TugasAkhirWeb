@@ -50,9 +50,14 @@ const FormLogin = () => {
     }
   };
   const handleGoogleLogin = () => {
-    // ambil base API, lalu hapus "/api" agar dapat domain backend murni
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
+    console.log("VITE_API_URL =", apiUrl);
+
     const backendUrl = apiUrl.replace(/\/api\/?$/, "");
+
+    console.log("Redirect ke =", `${backendUrl}/auth/google/redirect`);
+
     window.location.href = `${backendUrl}/auth/google/redirect`;
   };
   return (
