@@ -6,7 +6,7 @@ use App\Models\User;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Log;
 
 
 class AuthSocialiteController extends Controller
@@ -56,7 +56,21 @@ class AuthSocialiteController extends Controller
                 "{$frontendUrl}/auth/callback?token={$token}&role={$user->role}&lengkapi_hp={$perluHp}"
             );
         } catch (\Exception $e) {
-            return redirect("http://localhost:5173/login?error=google_login_failed");
+
+            Log::error('Google Login Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            $frontendUrl = env(
+                'FRONTEND_URL',
+                'http://localhost:5173'
+            );
+
+            return redirect(
+                "{$frontendUrl}/login?error=google_login_failed"
+            );
         }
     }
 }
