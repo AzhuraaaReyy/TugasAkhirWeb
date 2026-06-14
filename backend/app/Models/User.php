@@ -24,7 +24,8 @@ class User extends Authenticatable
         'password',
         'no_telp',
         'role',
-        'alamat'
+        'alamat',
+        'posyandu_id'
     ];
 
     /**
@@ -65,5 +66,9 @@ class User extends Authenticatable
     public function deteksis()
     {
         return $this->hasMany(Deteksi::class, 'user_id');
+    }
+    public function posyandu()
+    {
+        return $this->belongsTo(Posyandu::class, 'posyandu_id');
     }
 }

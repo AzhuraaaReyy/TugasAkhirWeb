@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('posyandu_id')->nullable()->constrained('posyandus')->cascadeOnDelete();
             $table->string('name');
             $table->string('email')->unique()->nullable();
             $table->string('password');
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->string('google_token')->nullable();
             $table->string('google_refresh_token')->nullable();
             $table->boolean('akun_aktif')->default(true);
+
             $table->timestamps();
             $table->rememberToken();
         });

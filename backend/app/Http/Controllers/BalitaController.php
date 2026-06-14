@@ -94,99 +94,97 @@ class BalitaController extends Controller
 
     public function store(Request $request)
     {
+        $kader = $request->user(); // kader yang sedang login (Sanctum)
+
+        // pastikan kader sudah ditempatkan di sebuah posyandu
+        if (!$kader->posyandu_id) {
+            return response()->json([
+                'message' => 'Akun kader belum terhubung dengan posyandu. Hubungi admin untuk penempatan posyandu.',
+            ], 422);
+        }
+
         $request->merge([
             'no_telp' => $this->normalisasiNoTelp($request->no_telp),
         ]);
 
         $validated = $request->validate(
             [
-                // ================= DATA BALITA =================
-                'name' => 'required|string|max:255|unique:balitas,name|regex:/^[A-Za-z\s\.\']+$/',
-                'jk' => 'required|in:L,P',
-                'tgl_lahir' => 'required|date',
-                'tmp_lahir' => 'required|string|max:255',
-                'posyandu_id' => 'required|exists:posyandus,id',
+                // ===== DATA BALITA (posyandu_id dihapus dari sini) =====
+                'name'       => 'required|string|max:255|unique:balitas,name|regex:/^[A-Za-z\s\.\']+$/',
+                'jk'         => 'required|in:L,P',
+                'tgl_lahir'  => 'required|date',
+                'tmp_lahir'  => 'required|string|max:255',
 
-                // ================= DATA ORANG TUA =================
+                // ===== DATA ORANG TUA =====
                 'nama_orangtua' => 'required|string|max:255|regex:/^[A-Za-z\s\.\']+$/',
-                'no_telp' => 'required|regex:/^62[0-9]{9,13}$/',
-                'alamat' => 'required|string',
+                'no_telp'       => 'required|regex:/^62[0-9]{9,13}$/',
+                'alamat'        => 'required|string',
             ],
             [
-                // ================= BALITA =================
-                'name.required' => 'Nama balita wajib diisi.',
-                'name.regex' => 'Nama balita hanya boleh berisi huruf.',
-                'name.unique' => 'Balita sudah terdaftar.',
-                'jk.required' => 'Jenis kelamin wajib dipilih.',
-                'jk.in' => 'Jenis kelamin tidak valid.',
+                'name.required'  => 'Nama balita wajib diisi.',
+                'name.regex'     => 'Nama balita hanya boleh berisi huruf.',
+                'name.unique'    => 'Balita sudah terdaftar.',
+                'jk.required'    => 'Jenis kelamin wajib dipilih.',
+                'jk.in'          => 'Jenis kelamin tidak valid.',
                 'tgl_lahir.required' => 'Tanggal lahir wajib diisi.',
-                'tgl_lahir.date' => 'Format tanggal lahir tidak valid.',
+                'tgl_lahir.date'     => 'Format tanggal lahir tidak valid.',
                 'tmp_lahir.required' => 'Tempat lahir wajib diisi.',
-                'posyandu_id.required' => 'Posyandu wajib dipilih.',
-                'posyandu_id.exists' => 'Posyandu tidak ditemukan.',
-
-                // ================= ORANG TUA =================
                 'nama_orangtua.required' => 'Nama orang tua wajib diisi.',
-                'nama_orangtua.regex' => 'Nama orang tua hanya boleh berisi huruf.',
+                'nama_orangtua.regex'    => 'Nama orang tua hanya boleh berisi huruf.',
                 'no_telp.required' => 'Nomor WhatsApp wajib diisi.',
-                'no_telp.regex' => 'Nomor WhatsApp tidak valid. Contoh: 081234567890',
-                'alamat.required' => 'Alamat wajib diisi.',
+                'no_telp.regex'    => 'Nomor WhatsApp tidak valid. Contoh: 081234567890',
+                'alamat.required'  => 'Alamat wajib diisi.',
             ]
         );
 
         try {
-            return DB::transaction(function () use ($validated) {
+            return DB::transaction(function () use ($validated, $kader) {
 
-                /* ============ CARI ATAU BUAT AKUN WALI ============ */
+                /* ===== CARI ATAU BUAT AKUN WALI ===== */
                 $orangtua = User::where('no_telp', $validated['no_telp'])->first();
-
                 $passwordDefault = null;
 
                 if (!$orangtua) {
-                    // password default: tanggal lahir anak (ddmmyyyy),
-                    $passwordDefault = Carbon::parse(
-                        $validated['tgl_lahir']
-                    )->format('dmY');
+                    $passwordDefault = Carbon::parse($validated['tgl_lahir'])->format('dmY');
 
                     $orangtua = User::create([
-                        'name' => $validated['nama_orangtua'],
-                        'no_telp' => $validated['no_telp'],
-                        'alamat' => $validated['alamat'],
-                        'email' => null,
-                        'password' => Hash::make($passwordDefault),
-                        'role' => 'orangtua',
+                        'name'       => $validated['nama_orangtua'],
+                        'no_telp'    => $validated['no_telp'],
+                        'alamat'     => $validated['alamat'],
+                        'email'      => null,
+                        'password'   => Hash::make($passwordDefault),
+                        'role'       => 'orangtua',
                         'akun_aktif' => false,
                     ]);
                 }
 
-                /* ============ SIMPAN DATA BALITA ============ */
+                /* ===== SIMPAN DATA BALITA ===== */
                 $balita = Balita::create([
-                    'user_id' => $orangtua->id,     // <-- koneksi ortu-anak
-                    'name' => $validated['name'],
-                    'jk' => $validated['jk'],
-                    'tgl_lahir' => $validated['tgl_lahir'],
-                    'tmp_lahir' => $validated['tmp_lahir'],
-                    'posyandu_id' => $validated['posyandu_id'],
+                    'user_id'     => $orangtua->id,
+                    'name'        => $validated['name'],
+                    'jk'          => $validated['jk'],
+                    'tgl_lahir'   => $validated['tgl_lahir'],
+                    'tmp_lahir'   => $validated['tmp_lahir'],
+                    'posyandu_id' => $kader->posyandu_id, // <-- OTOMATIS dari kader login
                 ]);
 
                 return response()->json([
                     'message' => $passwordDefault
                         ? 'Data balita berhasil ditambahkan dan akun wali baru dibuat.'
                         : 'Data balita berhasil ditambahkan ke akun wali yang sudah ada.',
-                    'data' => $balita->load('user'),
-                    'info_akun' => $passwordDefault ? [  // Info untuk kader sampaikan ke orang tua (hanya saat akun baru). 
-                        'login_dengan' => 'Nomor WhatsApp', // Bisa juga dikirim otomatis via WhatsAppService.
-                        'no_telp' => $validated['no_telp'],
+                    'data' => $balita->load(['user', 'posyandu']),
+                    'info_akun' => $passwordDefault ? [
+                        'login_dengan'     => 'Nomor WhatsApp',
+                        'no_telp'          => $validated['no_telp'],
                         'password_default' => $passwordDefault,
-                        'catatan' => 'Sarankan orang tua segera mengganti password atau mendaftar mandiri dengan nomor yang sama untuk mengaktifkan akun.',
+                        'catatan'          => 'Sarankan orang tua segera mengganti password atau mendaftar mandiri dengan nomor yang sama untuk mengaktifkan akun.',
                     ] : null,
                 ], 201);
             });
         } catch (\Exception $e) {
-
             return response()->json([
                 'message' => 'Terjadi kesalahan saat menyimpan data',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
