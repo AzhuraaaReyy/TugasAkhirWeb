@@ -51,7 +51,7 @@ const FormLogin = () => {
   };
   const handleGoogleLogin = () => {
     // ambil base API, lalu hapus "/api" agar dapat domain backend murni
-    const apiUrl = "http://127.0.0.1:8000/api";
+    const apiUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
     const backendUrl = apiUrl.replace(/\/api\/?$/, "");
     window.location.href = `${backendUrl}/auth/google/redirect`;
   };
