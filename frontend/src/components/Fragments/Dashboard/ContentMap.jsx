@@ -10,7 +10,8 @@ import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "@/services/api";
 
 import "leaflet.heat/dist/leaflet-heat.js";
@@ -174,6 +175,7 @@ const MapLegend = () => {
 /* MAIN COMPONENT */
 const ContentMap = () => {
   const [data, setData] = useState([]);
+  const sliderRef = useRef(null);
 
   useEffect(() => {
     api.get("/heatmap").then((res) => {
@@ -193,6 +195,12 @@ const ContentMap = () => {
       setData(bersih);
     });
   }, []);
+
+  const scrollByPage = (dir) => {
+    const el = sliderRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth, behavior: "smooth" });
+  };
 
   return (
     <div className="h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -308,62 +316,97 @@ const ContentMap = () => {
           </MapContainer>
         </div>
 
-        {/* ================= LIST DATA ================= */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {data.map((item, index) => {
-            const marker = getMarkerStyle(item);
-
-            return (
-              <div
-                key={index}
-                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md transition"
+        {/* ================= LIST DATA (SLIDER) ================= */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-base font-semibold text-gray-800">
+              Ringkasan Posyandu
+            </h3>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollByPage(-1)}
+                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
+                aria-label="Sebelumnya"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-800 text-base">
-                      {item.wilayah}
-                    </h3>
-                    {item.alamat && (
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {item.alamat}
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollByPage(1)}
+                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-100 transition"
+                aria-label="Berikutnya"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            ref={sliderRef}
+            className="flex gap-4 overflow-x-auto snap-x snap-mandatory hide-scrollbar scroll-smooth pb-2"
+          >
+            {data.length === 0 && (
+              <p className="text-sm text-gray-400 py-6">
+                Belum ada data posyandu.
+              </p>
+            )}
+
+            {data.map((item, index) => {
+              const marker = getMarkerStyle(item);
+
+              return (
+                <div
+                  key={index}
+                  className="snap-start shrink-0 w-[85%] sm:w-[60%] md:w-[calc(50%-0.5rem)] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-800 text-base">
+                        {item.wilayah}
+                      </h3>
+                      {item.alamat && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {item.alamat}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-500 mt-1">
+                        Status wilayah: {marker.label}
                       </p>
-                    )}
-                    <p className="text-sm text-gray-500 mt-1">
-                      Status wilayah: {marker.label}
-                    </p>
+                    </div>
+
+                    <div
+                      className="w-4 h-4 rounded-full mt-1"
+                      style={{ backgroundColor: marker.color }}
+                    />
                   </div>
 
-                  <div
-                    className="w-4 h-4 rounded-full mt-1"
-                    style={{ backgroundColor: marker.color }}
-                  />
-                </div>
+                  <div className="grid grid-cols-3 gap-3 mt-5">
+                    <div className="rounded-xl bg-red-50 p-3 text-center">
+                      <p className="text-xs text-red-500">Stunting</p>
+                      <h4 className="text-lg font-semibold text-red-600 mt-1">
+                        {item.stunting}
+                      </h4>
+                    </div>
 
-                <div className="grid grid-cols-3 gap-3 mt-5">
-                  <div className="rounded-xl bg-red-50 p-3 text-center">
-                    <p className="text-xs text-red-500">Stunting</p>
-                    <h4 className="text-lg font-semibold text-red-600 mt-1">
-                      {item.stunting}
-                    </h4>
-                  </div>
+                    <div className="rounded-xl bg-amber-50 p-3 text-center">
+                      <p className="text-xs text-amber-500">Berisiko</p>
+                      <h4 className="text-lg font-semibold text-amber-600 mt-1">
+                        {item.berisiko}
+                      </h4>
+                    </div>
 
-                  <div className="rounded-xl bg-amber-50 p-3 text-center">
-                    <p className="text-xs text-amber-500">Berisiko</p>
-                    <h4 className="text-lg font-semibold text-amber-600 mt-1">
-                      {item.berisiko}
-                    </h4>
-                  </div>
-
-                  <div className="rounded-xl bg-emerald-50 p-3 text-center">
-                    <p className="text-xs text-emerald-600">Normal</p>
-                    <h4 className="text-lg font-semibold text-emerald-700 mt-1">
-                      {item.normal}
-                    </h4>
+                    <div className="rounded-xl bg-emerald-50 p-3 text-center">
+                      <p className="text-xs text-emerald-600">Normal</p>
+                      <h4 className="text-lg font-semibold text-emerald-700 mt-1">
+                        {item.normal}
+                      </h4>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* ================= LEGEND ================= */}

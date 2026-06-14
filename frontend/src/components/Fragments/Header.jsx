@@ -2,6 +2,7 @@ import { Bell, Settings, Menu } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { useRef, useEffect } from "react";
 import gustimg from "../../assets/images/Guest.jpg";
+
 const Header = ({
   toggleSidebar,
   pageName,
@@ -19,61 +20,55 @@ const Header = ({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!notifRef.current) return;
-
       if (!notifRef.current.contains(e.target)) {
         setShowNotif(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [setShowNotif]);
 
-  // CLASS CLEAN
+  // Offset kiri HANYA di desktop; di HP header penuh dari kiri ke kanan
   const baseHeader =
-    "fixed top-0 right-0 h-16 bg-white shadow-sm flex justify-between items-center px-6 z-30 transition-all duration-300";
+    "fixed top-0 left-0 right-0 h-16 bg-white shadow-sm flex justify-between items-center gap-3 px-4 sm:px-6 z-20 transition-all duration-300";
 
-  const sidebarState = open ? "left-64" : "left-20";
+  const sidebarState = open ? "md:left-64" : "md:left-20";
 
   return (
     <div className={`${baseHeader} ${sidebarState}`}>
       {/* LEFT */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 min-w-0">
         <Menu
           onClick={toggleSidebar}
-          className="cursor-pointer text-gray-600"
+          className="cursor-pointer text-gray-600 shrink-0"
         />
-
-        <div>
-          <h1 className="text-2xl font-bold capitalize">{pageName}</h1>
-        </div>
+        <h1 className="text-lg sm:text-2xl font-bold capitalize truncate">
+          {pageName}
+        </h1>
       </div>
 
       {/* RIGHT */}
-      <div className="flex items-center gap-4" ref={notifRef}>
-        {/* SEARCH */}
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0" ref={notifRef}>
+        {/* SEARCH — sembunyi di HP */}
         <input
           type="text"
           placeholder="Search here"
-          className="border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="hidden md:block border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
 
-        {/* SETTINGS */}
-        <Settings className="cursor-pointer text-gray-600" />
+        {/* SETTINGS — sembunyi di layar sangat kecil */}
+        <Settings className="hidden sm:block cursor-pointer text-gray-600 shrink-0" />
 
         {/* NOTIFICATION */}
-        <div className="relative">
-          {/* BUTTON */}
+        <div className="relative shrink-0">
           <button
             aria-label="Buka notifikasi"
             onClick={() => setShowNotif(!showNotif)}
             className="relative p-2 rounded-full hover:bg-gray-100 transition"
           >
             <Bell className="text-gray-600" />
-
-            {/* BADGE */}
             {notifList?.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1.5 rounded-full">
                 {notifList.length > 9 ? "9+" : notifList.length}
@@ -81,13 +76,10 @@ const Header = ({
             )}
           </button>
 
-          {/* DROPDOWN */}
           {showNotif && (
-            <div className="absolute right-0 mt-3 w-80 bg-gray-900 text-white rounded-xl p-4 z-[9999] shadow-2xl animate-fadeIn">
-              {/* HEADER */}
+            <div className="absolute right-0 mt-3 w-72 sm:w-80 max-w-[calc(100vw-2rem)] bg-gray-900 text-white rounded-xl p-4 z-[9999] shadow-2xl animate-fadeIn">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="font-semibold">Notification</h2>
-
                 <button
                   onClick={markAllAsRead}
                   className="text-xs text-gray-400 hover:text-white"
@@ -96,7 +88,6 @@ const Header = ({
                 </button>
               </div>
 
-              {/* LIST */}
               {notifList?.length > 0 ? (
                 notifList.map((item) => (
                   <div
@@ -120,31 +111,26 @@ const Header = ({
             </div>
           )}
         </div>
-        {/* ===== Profile ===== */}
-        <div
-          className={`flex items-center gap-3 px-4 py-5 border-b border-white/10 transition-all ${
-            !open && "justify-center"
-          }`}
-        >
+
+        {/* PROFILE — avatar selalu tampil, teks hanya di layar lebar */}
+        <div className="flex items-center gap-3 shrink-0">
           <div className="relative">
             <img
               src={gustimg}
               alt="profile"
-              className="w-11 h-11 object-cover rounded-full ring-2 ring-indigo-500"
+              className="w-10 h-10 sm:w-11 sm:h-11 object-cover rounded-full ring-2 ring-indigo-500"
             />
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-slate-900 rounded-full"></span>
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
           </div>
 
-          {open && (
-            <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-lg text-gray-500">
-                {user.name || "User"}
-              </span>
-              <span className="text-sm text-black capitalize">
-                {user.role} Posyandu
-              </span>
-            </div>
-          )}
+          <div className="hidden lg:flex flex-col leading-tight">
+            <span className="font-semibold text-base text-gray-500">
+              {user?.name || "User"}
+            </span>
+            <span className="text-sm text-black capitalize">
+              {user?.role} Posyandu
+            </span>
+          </div>
         </div>
       </div>
     </div>

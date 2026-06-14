@@ -10,11 +10,11 @@ import FormDeteksi from "../Deteksi/FormDeteksi";
 import RiwayatDeteksi from "../Deteksi/HasilAnalisisDeteksi";
 import gambarpencatatan from "../../assets/images/rekamedis.png";
 import gambardeteksigizi from "../../assets/images/deteksisistem.png";
-
+import { useAuth } from "@/context/useAuth";
 export default function DeteksiDini() {
   // Animasi render saat halaman pertama dibuka (seperti dashboard)
   const [pageLoading, setPageLoading] = useState(true);
-
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [step, setStep] = useState(null);
@@ -304,6 +304,10 @@ export default function DeteksiDini() {
     }
   };
 
+  const kaderPosyandu = posyandus.find(
+    (item) => Number(item.id) === Number(user?.posyandu_id),
+  );
+
   // Data aktif sesuai tab + slicing pagination
   const dataAktif = tabAktif === "balita" ? balitas : penimbangans;
   const totalHalaman = Math.max(1, Math.ceil(dataAktif.length / perHalaman));
@@ -549,7 +553,7 @@ export default function DeteksiDini() {
                             <td className="px-4 py-3 text-gray-500">
                               {item.nama_balita || "-"}
                             </td>
-                           
+
                             <td className="px-4 py-3 text-gray-500">
                               {item.tgl_penimbangan
                                 ? new Date(
@@ -557,7 +561,7 @@ export default function DeteksiDini() {
                                   ).toLocaleDateString("id-ID")
                                 : "-"}
                             </td>
-                           
+
                             <td className="px-4 py-3 text-center">
                               <div className="flex justify-center gap-3">
                                 <Link
@@ -608,6 +612,7 @@ export default function DeteksiDini() {
             handleBack={handleBack}
             setForm={setForm}
             errors={errors}
+            kaderPosyandu={kaderPosyandu}
           />
         )}
 

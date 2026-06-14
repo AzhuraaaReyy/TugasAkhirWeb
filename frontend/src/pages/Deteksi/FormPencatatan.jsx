@@ -8,46 +8,46 @@ export default function FormPencatatan({
   handleChange,
   handleSubmit,
   setForm,
-  posyandus,
+  kaderPosyandu, // posyandu tempat kader login bertugas, mis. { id, nama_posyandu }
   handleBack,
   errors,
 }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState("");
+
   const resetStepTwo = () => {
     setForm((prev) => ({
       ...prev,
-      user_id: "",
+      nama_orangtua: "",
+      no_telp: "",
+      alamat: "",
     }));
   };
-  /* ================= REQUIRED FIELDS ================= */
-  const requiredFields = [
-    "name",
-    "jk",
-    "tgl_lahir",
-    "tmp_lahir",
-    "posyandu_id",
-  ];
 
-  /* ================= VALIDASI STEP 1 ================= */
+  // posyandu_id TIDAK wajib di form; ditentukan server dari kader login
+  const requiredFields = ["name", "jk", "tgl_lahir", "tmp_lahir"];
+
   const isStepOneValid = useMemo(() => {
     return requiredFields.every(
       (field) => form[field]?.toString().trim() !== "",
     );
   }, [form]);
 
-  /* ================= NEXT STEP ================= */
   const handleNextStep = () => {
+    if (!kaderPosyandu?.id) {
+      setError(
+        "Akun Anda belum terhubung dengan posyandu. Hubungi admin terlebih dahulu.",
+      );
+      return;
+    }
     if (!isStepOneValid) {
       setError("Lengkapi seluruh data identitas balita terlebih dahulu.");
       return;
     }
-
     setError("");
     setCurrentStep(2);
   };
 
-  /* ================= PREV STEP ================= */
   const handlePrevStep = () => {
     if (currentStep === 1) {
       handleBack();
@@ -56,29 +56,25 @@ export default function FormPencatatan({
     resetStepTwo();
     setCurrentStep(1);
   };
+
   return (
     <div className="min-h-screen bg-slate-100 rounded-3xl p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-200 p-8">
-        {/* ================= HEADER ================= */}
         <div className="border-b border-gray-200 pb-5 mb-8">
           <h2 className="text-2xl font-bold text-gray-800">
             Form Pencatatan Pemeriksaan Balita
           </h2>
-
           <p className="text-sm text-gray-500 mt-1">
             Lengkapi data identitas balita dan orang tua untuk kebutuhan
             monitoring pertumbuhan serta pemeriksaan kesehatan.
           </p>
         </div>
 
-        {/* ================= STEP INDICATOR ================= */}
         <div className="flex items-center justify-center mb-10">
           <div className="flex items-center gap-4">
-            {/* STEP 1 */}
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition
-                ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition ${
                   currentStep >= 1
                     ? "bg-emerald-600 text-white"
                     : "bg-gray-200 text-gray-500"
@@ -86,19 +82,14 @@ export default function FormPencatatan({
               >
                 1
               </div>
-
               <p className="text-sm font-semibold text-gray-700">
                 Identitas Data Balita
               </p>
             </div>
-
             <div className="w-16 h-[2px] bg-gray-300"></div>
-
-            {/* STEP 2 */}
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition
-                ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition ${
                   currentStep >= 2
                     ? "bg-emerald-600 text-white"
                     : "bg-gray-200 text-gray-500"
@@ -106,7 +97,6 @@ export default function FormPencatatan({
               >
                 2
               </div>
-
               <p className="text-sm font-semibold text-gray-700">
                 Identitas Data Orang Tua / Wali
               </p>
@@ -114,23 +104,19 @@ export default function FormPencatatan({
           </div>
         </div>
 
-        {/* ================= ERROR MESSAGE ================= */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm">
             {error}
           </div>
         )}
 
-        {/* ================= FORM ================= */}
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* STEP 1 - IDENTITAS BALITA */}
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
                   Identitas Balita
                 </h3>
-
                 <p className="text-sm text-gray-500 mt-1">
                   Isi data dasar balita secara lengkap dan sesuai.
                 </p>
@@ -198,30 +184,30 @@ export default function FormPencatatan({
                     </p>
                   )}
                 </div>
+
+                {/* POSYANDU - READ ONLY, otomatis dari kader login */}
                 <div>
-                  <FormSelect
+                  <FormInput
                     label="Posyandu"
-                    name="posyandu_id"
-                    value={form.posyandu_id}
-                    onChange={handleChange}
-                    required
-                    options={posyandus.map((item) => ({
-                      label: item.nama_posyandu,
-                      value: item.id,
-                    }))}
+                    name="posyandu"
+                    value={kaderPosyandu?.nama_posyandu || ""}
+                    placeholder="Posyandu kader belum diatur"
+                    readOnly
+                    className="bg-gray-100"
                   />
-                  {errors?.posyandu_id && (
+
+                  {!kaderPosyandu && (
                     <p className="text-sm text-red-500 mt-1">
-                      {errors.posyandu_id[0]}
+                      Posyandu kader belum diatur
                     </p>
                   )}
                 </div>
               </div>
+
               <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
                 <h3 className="text-sm font-semibold text-emerald-700 mb-2">
                   Informasi Pencatatan
                 </h3>
-
                 <p className="text-sm text-gray-600 leading-relaxed">
                   Data balita dan orang tua yang telah dicatat akan digunakan
                   untuk proses monitoring pertumbuhan, pemeriksaan kesehatan,
@@ -231,20 +217,18 @@ export default function FormPencatatan({
             </div>
           )}
 
-          {/* STEP 2 - DATA ORANG TUA */}
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">
                   Identitas Orang Tua / Wali
                 </h3>
-
                 <p className="text-sm text-gray-500 mt-1">
                   Pilih data orang tua atau wali yang terhubung dengan balita.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-5">
+              <div className="grid grid-cols-1 gap-5">
                 <div>
                   <FormInput
                     label="Nama Orang Tua / Wali"
@@ -292,12 +276,10 @@ export default function FormPencatatan({
                 </div>
               </div>
 
-              {/* INFORMASI */}
               <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
                 <h3 className="text-sm font-semibold text-emerald-700 mb-2">
                   Informasi Pencatatan
                 </h3>
-
                 <p className="text-sm text-gray-600 leading-relaxed">
                   Data balita dan orang tua yang telah dicatat akan digunakan
                   untuk proses monitoring pertumbuhan, pemeriksaan kesehatan,
@@ -307,7 +289,6 @@ export default function FormPencatatan({
             </div>
           )}
 
-          {/* ================= ACTION BUTTON ================= */}
           <div className="flex justify-between items-center pt-6 border-t border-gray-200">
             <button
               type="button"
@@ -321,13 +302,12 @@ export default function FormPencatatan({
               <button
                 type="button"
                 onClick={handleNextStep}
-                disabled={!isStepOneValid}
-                className={`px-5 py-2 rounded-xl text-white transition
-    ${
-      isStepOneValid
-        ? "bg-emerald-600 hover:bg-emerald-700"
-        : "bg-gray-300 cursor-not-allowed"
-    }`}
+                disabled={!isStepOneValid || !kaderPosyandu?.id}
+                className={`px-5 py-2 rounded-xl text-white transition ${
+                  isStepOneValid && kaderPosyandu?.id
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
               >
                 Lanjutkan
               </button>
