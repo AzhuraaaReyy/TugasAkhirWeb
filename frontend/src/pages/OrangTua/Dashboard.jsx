@@ -554,7 +554,7 @@ export default function DashboardOrtu() {
           <div className="flex items-center gap-3 rounded-3xl bg-emerald-600 px-5 py-3 shadow-2xl">
             <Bot size={18} className="text-white shrink-0" />
             <span className="text-sm font-medium text-white">
-              Ada istilah atau hasil yang belum dipahami? Tanya Tunas sekarang.
+              Ada istilah atau hasil yang belum dipahami? Tanya GrowthAI sekarang.
             </span>
           </div>
         </div>

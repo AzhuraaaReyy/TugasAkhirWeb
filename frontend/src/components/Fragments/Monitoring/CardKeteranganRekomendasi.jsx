@@ -468,83 +468,73 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         ? `Karena ${alasan[0].teks}, ${FASE[tingkatNum]}.`
         : null;
 
-  // ===== REKOMENDASI TINDAKAN sebagai PARAGRAF yang mengalir =====
-  const gabung = (frags) => {
-    const f = frags.filter(Boolean);
-    if (f.length === 0) return "";
-    if (f.length === 1) return f[0];
-    if (f.length === 2) return `${f[0]} dan ${f[1]}`;
-    return f.slice(0, -1).join(", ") + ", serta " + f[f.length - 1];
-  };
+  // ===== REKOMENDASI berbentuk POIN (minimal 4) — mengacu pada PNPK Tata
+  //       Laksana Stunting (Kepmenkes HK.01.07/MENKES/1928/2022). Fokus pada
+  //       peran posyandu: pemantauan, edukasi gizi (utamakan protein hewani),
+  //       dan rujukan ke FKTP bila terindikasi. =====
+  const poin = [];
 
-  const homeFrags = [];
-  if (cTBU.key === "stunting")
-    homeFrags.push(
-      "beri makanan tinggi protein hewani seperti telur, ikan, atau ayam setiap hari dan lakukan stimulasi tumbuh kembang",
+  // 1) Pemeriksaan / rujukan — prioritas sesuai tingkat perhatian
+  if (tingkatNum === 3)
+    poin.push(
+      `Segera periksakan ${nama} ke Posyandu atau Puskesmas (FKTP) untuk konfirmasi pengukuran dan penanganan oleh tenaga kesehatan; bila perlu, anak akan dirujuk ke dokter spesialis anak.`,
     );
-  else if (tinggiStagnan || tinggiKurangNaik)
-    homeFrags.push(
-      "perbanyak makanan berprotein agar tinggi anak kembali bertambah",
+  else if (tingkatNum === 2)
+    poin.push(
+      `Periksakan ${nama} ke Posyandu/Puskesmas (FKTP) untuk pemeriksaan lanjutan dan penelusuran penyebabnya.`,
+    );
+  else if (tingkatNum === 1)
+    poin.push(
+      `Pantau kembali pada penimbangan bulan depan di Posyandu; bila belum membaik, periksakan ${nama} ke Puskesmas.`,
+    );
+  else
+    poin.push(
+      optimal
+        ? `Pertumbuhan ${nama} sehat dan optimal — lanjutkan pemberian makanan beragam dan seimbang setiap hari dengan protein hewani sebagai sumber utama.`
+        : `Pertahankan pola makan bergizi ${nama} dan pantau kembali perkembangannya pada penimbangan berikutnya di Posyandu.`,
+    );
+
+  // 2) Tindakan gizi sesuai kondisi anak
+  if (cTBU.key === "stunting" || tinggiStagnan || tinggiKurangNaik)
+    poin.push(
+      "Berikan makanan tinggi protein hewani setiap hari — telur, ikan, ayam, daging, atau susu dan olahannya — karena protein hewani terbukti membantu pertambahan tinggi badan.",
     );
   if (cBBTB.key === "wasting")
-    homeFrags.push(
-      "tambah porsi makan yang padat energi dan beri makan lebih sering dalam porsi kecil",
+    poin.push(
+      "Berikan makanan padat energi dengan lauk berprotein dalam porsi kecil namun lebih sering agar berat badan anak bertambah.",
     );
-  else if (beratPosisiAtas)
-    homeFrags.push(
-      "batasi gula, gorengan, dan camilan kemasan, perbanyak sayur dan buah, serta ajak anak aktif bergerak setiap hari",
+  else if (beratTurun || beratStagnan || beratKurangNaik)
+    poin.push(
+      "Tambah porsi dan frekuensi makan dengan lauk berprotein hewani agar kenaikan berat badan kembali mencapai target.",
     );
-  else if (beratTurun)
-    homeFrags.push(
-      "tambah porsi makan dan lauk berprotein (telur, ikan, ayam) karena berat anak menurun",
+  if (beratPosisiAtas)
+    poin.push(
+      "Batasi gula, gorengan, dan makanan/minuman kemasan, perbanyak sayur dan buah, serta ajak anak aktif bergerak setiap hari.",
     );
-  else if (beratStagnan || beratKurangNaik)
-    homeFrags.push(
-      "tambah porsi makan dan lauk berprotein agar berat anak bertambah cukup",
-    );
-  if (optimal)
-    homeFrags.push(
-      "lanjutkan memberi makanan yang beragam dan seimbang setiap hari, lengkapi dengan protein hewani seperti telur, ikan, atau ayam",
-    );
-  const home = gabung(homeFrags);
 
-  const paragraf = [];
-  if (tingkatNum === 3) {
-    paragraf.push(
-      `Hal yang paling penting saat ini adalah segera memeriksakan ${nama} ke Posyandu atau Puskesmas, agar kondisinya bisa dipastikan dan ditangani lebih lanjut oleh tenaga kesehatan.`,
+  // 3) Pencegahan & edukasi umum (selalu, sesuai pencegahan primer PNPK)
+  poin.push(
+    "Lanjutkan ASI sesuai usia; untuk usia 6 bulan ke atas lengkapi dengan MPASI bergizi yang mengutamakan protein hewani.",
+  );
+  poin.push(
+    "Lengkapi imunisasi sesuai usia serta jaga kebersihan diri dan lingkungan untuk mencegah infeksi berulang seperti diare.",
+  );
+
+  // 4) Stimulasi & istirahat (penting pada stunting)
+  if (cTBU.key === "stunting")
+    poin.push(
+      "Berikan stimulasi tumbuh kembang sesuai usia dan pastikan anak cukup tidur untuk mendukung pertumbuhannya.",
     );
-    if (home)
-      paragraf.push(
-        `Sambil menunggu pemeriksaan, di rumah Bunda bisa ${home}, dan tetap menimbang anak setiap bulan agar perkembangannya terpantau.`,
-      );
-  } else if (tingkatNum === 2) {
-    if (home)
-      paragraf.push(`Untuk membantu memperbaikinya, Bunda bisa ${home}.`);
-    paragraf.push(
-      `Sebaiknya periksakan juga ${nama} ke Posyandu agar mendapat pemeriksaan lebih lanjut, dan lakukan penimbangan rutin setiap bulan.`,
-    );
-  } else if (tingkatNum === 1) {
-    if (home)
-      paragraf.push(
-        `Kondisi ini masih bisa diperbaiki dengan langkah sederhana di rumah: ${home}.`,
-      );
-    paragraf.push(
-      `Setelah itu, pantau kembali pada penimbangan bulan depan di Posyandu untuk melihat perkembangannya.`,
-    );
-  } else {
-    if (home)
-      paragraf.push(
-        `Untuk mempertahankan kondisi baik ini, Bunda cukup ${home}.`,
-      );
-    paragraf.push(
-      `Yang terpenting, teruskan kebiasaan baik ini dan tetap timbang serta ukur ${nama} setiap bulan di Posyandu agar pertumbuhannya selalu terpantau.`,
-    );
-  }
-  if (adaErrorData) {
-    paragraf.push(
-      `Namun, karena hasil pengukuran bulan ini tampak tidak wajar, sebaiknya angka tersebut diperiksa atau diukur ulang terlebih dahulu sebelum mengambil tindakan.`,
-    );
-  }
+
+  // 5) Pemantauan rutin (selalu) — deteksi dini weight faltering
+  poin.push(
+    `Timbang dan ukur ${nama} setiap bulan di Posyandu untuk memantau pertumbuhan dan mendeteksi dini bila berat badan tidak naik.`,
+  );
+
+  // Hilangkan duplikat & pastikan minimal 4 poin
+  const poinFinal = [...new Set(poin)];
+  const poinTone =
+    tingkatNum >= 2 ? "red" : tingkatNum === 1 ? "amber" : "emerald";
 
   // ===== KEBUTUHAN GIZI HARIAN (AKG) =====
   const padananKelompok =
@@ -821,30 +811,30 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
               ))}
             </div>
 
-            {/* TAB 0 — YANG DILAKUKAN (langkah untuk kondisi anak) */}
+            {/* TAB 0 — YANG DILAKUKAN (poin tindakan sesuai kondisi anak) */}
             {tabKanan === 0 && (
               <div className="px-1">
                 <p className="text-[11.5px] leading-relaxed text-gray-500">
                   Langkah yang sebaiknya dilakukan untuk kondisi {nama} saat
                   ini, berdasarkan hasil penimbangan dan trennya.
                 </p>
-                {paragraf.length > 0 ? (
-                  <div className="mt-2 space-y-2.5">
-                    {paragraf.map((p, i) => (
-                      <p
-                        key={i}
-                        className="text-[13.5px] leading-relaxed text-gray-700"
-                      >
-                        {p}
-                      </p>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-sm text-gray-500">
-                    Pertahankan kebiasaan baik dan timbang anak rutin tiap
-                    bulan.
+                <div className="mt-2.5">
+                  <DaftarRekomendasi items={poinFinal} tone={poinTone} />
+                </div>
+                {adaErrorData && (
+                  <p className="mt-2.5 text-[11.5px] leading-relaxed text-amber-700">
+                    Karena hasil pengukuran bulan ini tampak tidak wajar,
+                    sebaiknya angka tersebut diperiksa atau diukur ulang lebih
+                    dulu sebelum mengambil tindakan.
                   </p>
                 )}
+                <p className="mt-3 text-[10.5px] leading-relaxed text-gray-400">
+                  Rekomendasi mengacu pada Pedoman Nasional Pelayanan Kedokteran
+                  Tata Laksana Stunting (Kepmenkes RI No.
+                  HK.01.07/MENKES/1928/2022) dan bersifat anjuran, bukan
+                  diagnosis. Untuk pemeriksaan lebih lanjut, hubungi tenaga
+                  kesehatan.
+                </p>
               </div>
             )}
 
