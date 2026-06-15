@@ -19,6 +19,8 @@ import ChartZscoreBb from "@/components/Fragments/Monitoring/ChartZscoreBb";
 import EventCalendar from "@/components/Fragments/Dashboard/EventCalander";
 import CardPerkembanganAnak from "./CardPerkembanganAnak";
 import { useAuth } from "../../context/useAuth";
+import ChartGrowth from "./ChartGrowth ";
+import ChartGrowthZScore from "./ChartGrowthZscore";
 const BASE_PATH = "/orangtua/dashboard";
 
 // Hitung umur ringkas dari tgl_lahir (untuk kartu pemilih anak)
@@ -484,40 +486,12 @@ export default function DashboardOrtu() {
 
             {/* Grid Grafik */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="min-w-0">
-                <ChartTinggi
-                  title="Tinggi Badan vs Usia"
-                  data={chartData}
-                  dataKey="tinggi"
-                  statusKey="statusTinggi"
-                />
+              <div className="min-w-0 lg:col-span-1">
+                <ChartGrowth data={chartData} />
               </div>
 
-              <div className="min-w-0">
-                <ChartBerat
-                  title="Berat Badan vs Usia"
-                  data={chartData}
-                  dataKey="berat"
-                  statusKey="statusBerat"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <ChartZScoreTBU
-                  title="Z-Score TB/U vs Usia"
-                  data={chartData}
-                  dataKey="zscore"
-                  statusKey="statusTBU"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <ChartZscoreBb
-                  title="Z-Score BB/U vs Usia"
-                  data={chartData}
-                  dataKey="ZScoreBBU"
-                  statusKey="statusBBU"
-                />
+              <div className="min-w-0 lg:col-span-1">
+                <ChartGrowthZScore data={chartData} />
               </div>
             </div>
 
@@ -538,9 +512,6 @@ export default function DashboardOrtu() {
             </div>
           </div>
 
-          <div className="flex min-w-0">
-            <CardStatusAnak data={detail} />
-          </div>
           <div className="min-w-0">
             <CardKeteranganRekomendasi data={detail} />
           </div>
@@ -569,73 +540,33 @@ export default function DashboardOrtu() {
       {/* Tombol Kanan */}
       {/* CHATBOT FLOATING */}
       <div
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-3"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 sm:gap-3"
         onMouseEnter={() => setShowChatHint(true)}
         onMouseLeave={() => setShowChatHint(false)}
       >
-        {/* Bubble */}
         <div
-          className={`
-      overflow-hidden
-      transition-all duration-500 ease-out
-      ${
-        showChatHint
-          ? "max-w-lg opacity-100 translate-x-0"
-          : "max-w-0 opacity-0 translate-x-4"
-      }
-    `}
+          className={`overflow-hidden transition-all duration-500 ease-out ${
+            showChatHint
+              ? "max-w-[calc(100vw-6rem)] sm:max-w-sm opacity-100 translate-x-0"
+              : "max-w-0 opacity-0 translate-x-4"
+          }`}
         >
-          <div
-            className="
-        flex items-center gap-3
-        whitespace-nowrap
-        rounded-full
-        bg-emerald-600
-        px-5 py-3
-        shadow-2xl
-      "
-          >
+          <div className="flex items-center gap-3 rounded-3xl bg-emerald-600 px-5 py-3 shadow-2xl">
             <Bot size={18} className="text-white shrink-0" />
-
             <span className="text-sm font-medium text-white">
               Ada istilah atau hasil yang belum dipahami? Tanya Tunas sekarang.
             </span>
           </div>
         </div>
 
-        {/* Tombol Bot */}
         <button
           onClick={() => navigate(`/chatbot/${id}`)}
-          className="
-        group
-        relative
-        w-16 h-16
-        rounded-full
-        bg-emerald-600
-        text-white
-        shadow-xl
-        flex items-center justify-center
-        hover:scale-110
-        transition-all duration-300
-      "
+          className="group relative w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center hover:scale-110 transition-all duration-300"
         >
-          <span
-            className="
-          absolute inset-0
-          rounded-full
-          bg-emerald-500
-          animate-ping
-          opacity-20
-        "
-          />
-
+          <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-20" />
           <Bot
             size={28}
-            className={`
-          relative z-10
-          transition-transform duration-700
-          ${showChatHint ? "rotate-[360deg]" : ""}
-        `}
+            className={`relative z-10 transition-transform duration-700 ${showChatHint ? "rotate-[360deg]" : ""}`}
           />
         </button>
       </div>

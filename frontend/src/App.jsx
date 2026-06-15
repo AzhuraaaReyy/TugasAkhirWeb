@@ -68,8 +68,22 @@ const App = () => {
       element: <Register />,
     },
     { path: "/auth/callback", element: <AuthCallback /> },
-    { path: "chatbot/:id", element: <Chatbot /> },
-    { path: "chatbot/:id/snapshot/:deteksiId", element: <Chatbot /> },
+    {
+      path: "chatbot/:id",
+      element: (
+        <RequireAuth>
+          <Chatbot />
+        </RequireAuth>
+      ),
+    },
+    {
+      path: "chatbot/:id/snapshot/:deteksiId",
+      element: (
+        <RequireAuth>
+          <Chatbot />
+        </RequireAuth>
+      ),
+    },
 
     //kader posyandu
     {

@@ -3,6 +3,7 @@ import { Plus, ArrowUpRight } from "lucide-react";
 import gambar1 from "../../../assets/images/lanang.png";
 import gambar2 from "../../../assets/images/wedok.png";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "@/context/useAuth";
 export default function HeaderProfile({ form }) {
   const statusColor = {
     // TBU
@@ -40,6 +41,9 @@ export default function HeaderProfile({ form }) {
 
   const profileImage =
     form.jk === "L" ? gambar1 : form.jk === "P" ? gambar2 : gambar1;
+
+  const { user } = useAuth();
+  const isKader = user?.role === "kader";
   return (
     <div className="w-full md:w-80 flex flex-col gap-6">
       {/* Card Utama Profil */}
@@ -86,12 +90,14 @@ export default function HeaderProfile({ form }) {
             </span>
           </div>
         </div>
-        <NavLink to="/kader/deteksidini">
-          <button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm shadow-emerald-200">
-            <Plus size={18} />
-            Input Pemeriksaan Baru
-          </button>
-        </NavLink>
+        {isKader && (
+          <NavLink to="/kader/deteksidini" className="w-full">
+            <button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition shadow-sm shadow-emerald-200">
+              <Plus size={18} />
+              Input Pemeriksaan Baru
+            </button>
+          </NavLink>
+        )}
       </div>
     </div>
   );

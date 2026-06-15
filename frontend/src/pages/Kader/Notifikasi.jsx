@@ -12,7 +12,7 @@ const FORM_KOSONG = {
   target: "",
   user_id: "",
   tanggal: "",
-  lokasi: "", // NEW: dipakai untuk lokasi event di kalender
+  lokasi: "",
   pesan: "",
 };
 
@@ -29,11 +29,9 @@ export default function Notifikasi() {
     });
   }, []);
 
-  // FETCH DATA (bisa dipanggil ulang setelah kirim)
   const fetchNotifikasi = async () => {
     try {
       const res = await api.get("/notifikasi");
-
       const data = (res.data || []).map((item) => ({
         id: item.id,
         judul: item.judul ?? item.notifikasi?.judul ?? "-",
@@ -43,13 +41,11 @@ export default function Notifikasi() {
           0,
           10,
         ),
-        // ikut diambil supaya bisa di-prefill saat edit
         pesan: item.pesan ?? item.notifikasi?.pesan ?? "",
         lokasi: item.lokasi ?? item.notifikasi?.lokasi ?? "",
         status_kirim: item.status_kirim ?? "-",
         status_baca: item.status_baca ?? "-",
       }));
-
       setNotifikasiList(data);
     } catch (err) {
       console.error(err.response?.data || err.message);
@@ -62,24 +58,16 @@ export default function Notifikasi() {
     fetchNotifikasi();
   }, []);
 
-  // HANDLE INPUT
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // SUBMIT (buat baru ATAU perbarui jika sedang edit)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validasi inti selalu wajib
     if (!form.judul || !form.tipe || !form.pesan) {
       alert("Judul, jenis, dan isi pesan wajib diisi.");
       return;
     }
-    // Metode & target hanya wajib saat membuat notifikasi baru
     if (!editingId) {
       if (!form.metode || !form.target) {
         alert("Metode dan target penerima wajib diisi.");
@@ -90,20 +78,15 @@ export default function Notifikasi() {
         return;
       }
     }
-
     try {
       setLoading(true);
-
       if (editingId) {
-        // UPDATE
         await api.put(`/notifikasi/${editingId}`, form);
         alert("Notifikasi berhasil diperbarui");
       } else {
-        // CREATE
         await api.post("/notifikasi", form);
         alert("Notifikasi berhasil dikirim");
       }
-
       setForm(FORM_KOSONG);
       setEditingId(null);
       fetchNotifikasi();
@@ -118,7 +101,6 @@ export default function Notifikasi() {
     }
   };
 
-  // EDIT (prefill form dengan data yang ada, termasuk pesan & lokasi)
   const handleEdit = (item) => {
     setForm({
       ...FORM_KOSONG,
@@ -129,15 +111,12 @@ export default function Notifikasi() {
       lokasi: item.lokasi || "",
       pesan: item.pesan || "",
     });
-
     setEditingId(item.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // HAPUS (ke server, lalu update tampilan)
   const handleDelete = async (id) => {
     if (!confirm("Hapus notifikasi ini?")) return;
-
     try {
       await api.delete(`/notifikasi/${id}`);
       setNotifikasiList((prev) => prev.filter((n) => n.id !== id));
@@ -147,41 +126,35 @@ export default function Notifikasi() {
     }
   };
 
-  // STATISTIK
   const totalNotif = notifikasiList.length;
-
   const terkirim = notifikasiList.filter(
     (n) => n.status_kirim === "terkirim",
   ).length;
-
-  // diperbaiki: hitung yang benar-benar 'pending'
   const pending = notifikasiList.filter(
     (n) => n.status_kirim === "pending",
   ).length;
 
   return (
     <MainLayouts type="notifikasi">
-      <div className="p-6 min-h-screen">
-        <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="p-4 sm:p-6 min-h-screen">
+        <div className="relative bg-white rounded-2xl shadow-md p-4 sm:p-6">
           {loading && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
               <Atom color="#10b981" size="medium" text="Memuat..." />
             </div>
           )}
-          {/* TITLE */}
-          <h1 className="text-2xl font-bold mb-8">
+
+          <h1 className="text-xl sm:text-2xl font-bold mb-8">
             Manajemen Notifikasi Orang Tua
           </h1>
 
-          {/* STATISTIK */}
-          <div className="grid md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-10">
             <TotalNotifikasiCard notif={`${totalNotif}`} />
             <TerkirimCard send={`${terkirim}`} />
             <PendingCard pending={`${pending}`} />
           </div>
 
-          {/* FORM BUAT NOTIFIKASI */}
-          <div className="bg-white shadow-lg rounded-2xl p-6 mb-10 border border-gray-200 border-2">
+          <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 mb-10 border border-gray-200 border-2">
             <h2 className="text-lg font-extrabold mb-1">
               {editingId ? "Edit Notifikasi" : "Buat Notifikasi"}
             </h2>
@@ -190,8 +163,10 @@ export default function Notifikasi() {
               Monitoring orang tua.
             </p>
 
-            <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
-              {/* JUDUL */}
+            <form
+              onSubmit={handleSubmit}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+            >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Judul Notifikasi
@@ -206,7 +181,6 @@ export default function Notifikasi() {
                 />
               </div>
 
-              {/* JENIS */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Jenis Notifikasi
@@ -227,7 +201,6 @@ export default function Notifikasi() {
                 </select>
               </div>
 
-              {/* METODE */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Metode Pengiriman
@@ -245,7 +218,6 @@ export default function Notifikasi() {
                 </select>
               </div>
 
-              {/* TARGET */}
               {form.metode && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -264,7 +236,6 @@ export default function Notifikasi() {
                 </div>
               )}
 
-              {/* PILIH ORANG TUA */}
               {form.target === "tertentu" && (
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -286,7 +257,6 @@ export default function Notifikasi() {
                 </div>
               )}
 
-              {/* TANGGAL */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {form.tipe === "Jadwal Posyandu"
@@ -305,7 +275,6 @@ export default function Notifikasi() {
                 </p>
               </div>
 
-              {/* LOKASI (NEW) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Lokasi Kegiatan
@@ -323,7 +292,6 @@ export default function Notifikasi() {
                 </p>
               </div>
 
-              {/* PESAN */}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Isi Pesan
@@ -338,8 +306,7 @@ export default function Notifikasi() {
                 />
               </div>
 
-              {/* BUTTON */}
-              <div className="md:col-span-2 flex gap-3">
+              <div className="md:col-span-2 flex flex-wrap gap-3">
                 <button
                   type="submit"
                   disabled={loading}
@@ -374,12 +341,11 @@ export default function Notifikasi() {
             </form>
           </div>
 
-          {/* RIWAYAT NOTIFIKASI */}
-          <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200 border-2 mb-5">
+          <div className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 border border-gray-200 border-2 mb-5">
             <h2 className="text-lg font-extrabold mb-6">Riwayat Notifikasi</h2>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-200 text-center">
-              <table className="w-full text-sm text-left border-collapse">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 text-center hide-scrollbar">
+              <table className="w-full min-w-[850px] text-sm text-left border-collapse">
                 <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
                   <tr className="text-center">
                     <th className="px-4 py-3">NO</th>
@@ -398,12 +364,14 @@ export default function Notifikasi() {
                     notifikasiList.map((item, index) => (
                       <tr key={item.id} className="hover:bg-gray-50 transition">
                         <td className="px-4 py-3 text-gray-500">{index + 1}</td>
-                        <td className="py-3">{item.judul}</td>
-                        <td>{item.tipe}</td>
-                        <td>{item.metode}</td>
-                        <td>{item.tanggal}</td>
-                        <td>{item.lokasi || "-"}</td>
-                        <td>
+                        <td className="py-3 px-4">{item.judul}</td>
+                        <td className="px-4 whitespace-nowrap">{item.tipe}</td>
+                        <td className="px-4">{item.metode}</td>
+                        <td className="px-4 whitespace-nowrap">
+                          {item.tanggal}
+                        </td>
+                        <td className="px-4">{item.lokasi || "-"}</td>
+                        <td className="px-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs ${
                               item.status_kirim === "terkirim"
@@ -416,21 +384,21 @@ export default function Notifikasi() {
                             {item.status_kirim}
                           </span>
                         </td>
-
-                        <td className="flex gap-2 justify-center py-2">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="bg-yellow-400 px-3 py-1 rounded text-white text-xs"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="bg-red-500 px-3 py-1 rounded text-white text-xs"
-                          >
-                            Hapus
-                          </button>
+                        <td className="px-4 py-2">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="bg-yellow-400 px-3 py-1 rounded text-white text-xs"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="bg-red-500 px-3 py-1 rounded text-white text-xs"
+                            >
+                              Hapus
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

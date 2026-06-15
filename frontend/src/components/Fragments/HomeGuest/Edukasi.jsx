@@ -5,8 +5,32 @@ import { useState } from "react";
 import Typewriter from "../../Animations/Typewriter";
 import { UseInView } from "../../../hooks/useInView";
 import FadeSlide from "../../Animations/FadeSlide";
-import { NavLink } from "react-router-dom";
 import AuthModal from "../../Elements/Modal/AuthModal";
+
+/**
+ * Galeri versi mobile: grid statis 3 foto, tanpa posisi absolut & tanpa hover
+ * (hover tidak berfungsi di layar sentuh). Tampil hanya di bawah breakpoint md.
+ */
+const MobileGallery = ({ images }) => (
+  <div className="grid grid-cols-2 gap-3 md:hidden">
+    <img
+      src={images[0]}
+      alt=""
+      className="col-span-2 w-full h-48 object-cover rounded-2xl shadow-lg"
+    />
+    <img
+      src={images[1]}
+      alt=""
+      className="w-full h-40 object-cover rounded-2xl shadow-lg"
+    />
+    <img
+      src={images[2]}
+      alt=""
+      className="w-full h-40 object-cover rounded-2xl shadow-lg"
+    />
+  </div>
+);
+
 const Edukasi = () => {
   const [active, setActive] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
@@ -14,6 +38,10 @@ const Edukasi = () => {
   const [refHeader, headerVisible] = UseInView(0.3);
   const [refSec1, sec1Visible] = UseInView(0.3);
   const [refSec4, sec4Visible] = UseInView(0.3);
+
+  const openAuth = () => {
+    if (!isLogin) setShowAuth(true);
+  };
 
   return (
     <>
@@ -28,7 +56,7 @@ const Edukasi = () => {
       {/* SECTION STUNTING */}
       <section
         id="edukasi"
-        className="relative py-28 bg-emerald-50 overflow-hidden z-10 "
+        className="relative py-16 md:py-28 bg-emerald-50 overflow-hidden z-10 "
       >
         {/* Background Decoration */}
         <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
@@ -53,7 +81,7 @@ const Edukasi = () => {
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
           <svg
-            className="block w-full h-[160px] wave-float"
+            className="block w-full h-[90px] sm:h-[160px] wave-float"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -66,7 +94,7 @@ const Edukasi = () => {
 
           {/* Layer 2 */}
           <svg
-            className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+            className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -79,20 +107,20 @@ const Edukasi = () => {
         </div>
         <div
           ref={refHeader}
-          className={`max-w-6xl mx-auto px-6 relative z-10 mb-20 transition-all duration-700 ${
+          className={`max-w-6xl mx-auto px-4 sm:px-6 relative z-10 mb-12 md:mb-20 transition-all duration-700 ${
             headerVisible
               ? "opacity-100 translate-y-0"
               : "opacity-0 translate-y-10"
           }`}
         >
           <div className="text-center"></div>
-          <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
+          <h2 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
             {headerVisible && (
               <Typewriter speed={20}>Edukasi Stunting Pada Anak</Typewriter>
             )}
           </h2>
 
-          <p className="mt-4 max-w-2xl mx-auto text-gray-600 text-center">
+          <p className="mt-4 max-w-2xl mx-auto text-sm sm:text-base text-gray-600 text-center">
             {headerVisible && (
               <Typewriter speed={20}>
                 Pelajari apa itu stunting dan bagaimana pengaruhnya pada anak.
@@ -103,66 +131,71 @@ const Edukasi = () => {
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6  relative z-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
           {/* ================= SECTION 1 ================= */}
 
           <div
             ref={refSec1}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700  ${
+            className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center transition-all duration-700  ${
               sec1Visible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-12"
             }`}
           >
             {/* IMAGE */}
+            <div>
+              {/* MOBILE: grid statis */}
+              <MobileGallery images={[stunting1, stunting2, stunting3]} />
 
-            <div
-              className="relative w-full h-[520px] flex items-center justify-center"
-              onMouseLeave={() => setActive(null)}
-            >
-              {/* FOTO KIRI */}
+              {/* DESKTOP: galeri hover (md ke atas) */}
               <div
-                onMouseEnter={() => setActive("kiri1")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
+                className="relative w-full h-[520px] hidden md:flex items-center justify-center"
+                onMouseLeave={() => setActive(null)}
+              >
+                {/* FOTO KIRI */}
+                <div
+                  onMouseEnter={() => setActive("kiri1")}
+                  className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kiri1"
         ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
         : "top-30 left-0 top-20 w-[270px] h-[270px] rotate-[-6deg] z-10 "
     }`}
-              >
-                <img src={stunting1} className="w-full h-full object-cover" />
-              </div>
+                >
+                  <img src={stunting1} className="w-full h-full object-cover" />
+                </div>
 
-              {/* FOTO TENGAH */}
-              <div
-                onMouseEnter={() => setActive("tengah1")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
+                {/* FOTO TENGAH */}
+                <div
+                  onMouseEnter={() => setActive("tengah1")}
+                  className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "tengah1"
         ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
         : "top-23 left-1/2 -translate-x-1/2 w-[270px] h-[320px] z-10 bg-white z-20"
     }`}
-              >
-                <img src={stunting2} className="w-full h-full object-cover" />
-              </div>
+                >
+                  <img src={stunting2} className="w-full h-full object-cover" />
+                </div>
 
-              {/* FOTO KANAN */}
-              <div
-                onMouseEnter={() => setActive("kanan1")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
+                {/* FOTO KANAN */}
+                <div
+                  onMouseEnter={() => setActive("kanan1")}
+                  className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kanan1"
         ? "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
         : "right-0 top-30 w-[270px] h-[270px] z-10 rotate-[6deg] z-10"
     }`}
-              >
-                <img src={stunting3} className="w-full h-full object-cover" />
+                >
+                  <img src={stunting3} className="w-full h-full object-cover" />
+                </div>
               </div>
             </div>
 
             {/* TEXT */}
             <div className="mb-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
                 {sec1Visible && (
                   <Typewriter
                     key="sec1"
@@ -176,7 +209,7 @@ const Edukasi = () => {
                 )}
               </h2>
 
-              <p className="mt-6 text-gray-600 leading-relaxed text-justify">
+              <p className="mt-6 text-sm sm:text-base text-gray-600 leading-relaxed text-left md:text-justify">
                 {sec1Visible && (
                   <Typewriter
                     speed={25}
@@ -201,11 +234,7 @@ const Edukasi = () => {
               </p>
               <FadeSlide direction="right" delay={2100}>
                 <button
-                  onClick={() => {
-                    if (!isLogin) {
-                      setShowAuth(true);
-                    }
-                  }}
+                  onClick={openAuth}
                   className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400"
                 >
                   Baca Selengkapnya →
@@ -216,15 +245,15 @@ const Edukasi = () => {
           {/* ================= SECTION 4 ================= */}
           <div
             ref={refSec4}
-            className={`grid md:grid-cols-2 gap-16 items-center transition-all duration-700 ${
+            className={`grid md:grid-cols-2 gap-10 md:gap-16 items-center mt-12 md:mt-0 transition-all duration-700 ${
               sec4Visible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-12"
             }`}
           >
             {/* TEXT */}
-            <div className="order-2 md:order-1 mt-20">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
+            <div className="md:order-1 md:mt-20">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 leading-snug">
                 {sec4Visible && (
                   <Typewriter
                     key="sec4"
@@ -237,7 +266,7 @@ const Edukasi = () => {
                 )}
               </h2>
 
-              <p className="mt-6 text-gray-600 leading-relaxed text-justify">
+              <p className="mt-6 text-sm sm:text-base text-gray-600 leading-relaxed text-left md:text-justify">
                 {sec4Visible && (
                   <Typewriter
                     key="sec4"
@@ -262,11 +291,7 @@ const Edukasi = () => {
 
               <FadeSlide direction="left" delay={2100}>
                 <button
-                  onClick={() => {
-                    if (!isLogin) {
-                      setShowAuth(true);
-                    }
-                  }}
+                  onClick={openAuth}
                   className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400"
                 >
                   Baca Selengkapnya →
@@ -275,47 +300,53 @@ const Edukasi = () => {
             </div>
 
             {/* IMAGE */}
-            <div
-              className="relative w-full h-[520px] flex items-center justify-center order-2 md:order-2"
-              onMouseLeave={() => setActive(null)}
-            >
-              {/* FOTO KIRI */}
+            <div className="md:order-2">
+              {/* MOBILE: grid statis */}
+              <MobileGallery images={[stunting1, stunting2, stunting3]} />
+
+              {/* DESKTOP: galeri hover (md ke atas) */}
               <div
-                onMouseEnter={() => setActive("kiri4")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
+                className="relative w-full h-[520px] hidden md:flex items-center justify-center"
+                onMouseLeave={() => setActive(null)}
+              >
+                {/* FOTO KIRI */}
+                <div
+                  onMouseEnter={() => setActive("kiri4")}
+                  className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kiri4"
         ? "left-1/2 top-80 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
         : "left-5 top-42 w-[270px] h-[270px] z-10"
     }`}
-              >
-                <img src={stunting1} className="w-full h-full object-cover" />
-              </div>
+                >
+                  <img src={stunting1} className="w-full h-full object-cover" />
+                </div>
 
-              {/* FOTO TENGAH */}
-              <div
-                onMouseEnter={() => setActive("tengah4")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
+                {/* FOTO TENGAH */}
+                <div
+                  onMouseEnter={() => setActive("tengah4")}
+                  className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "tengah4"
         ? "left-1/2 top-[300px] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[520px] z-40"
         : "left-[140px] top-[300px] w-[270px] h-[270px] z-20"
     }`}
-              >
-                <img src={stunting2} className="w-full h-full object-cover" />
-              </div>
+                >
+                  <img src={stunting2} className="w-full h-full object-cover" />
+                </div>
 
-              {/* FOTO KANAN */}
-              <div
-                onMouseEnter={() => setActive("kanan4")}
-                className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
+                {/* FOTO KANAN */}
+                <div
+                  onMouseEnter={() => setActive("kanan4")}
+                  className={`absolute transition-all duration-700 ease-in-out rounded-3xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.65)] cursor-pointer
     ${
       active === "kanan4"
         ? "left-1/2 top-80 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] z-40"
         : "left-[280px] top-25 w-[270px] h-[270px] z-30"
     }`}
-              >
-                <img src={stunting3} className="w-full h-full object-cover" />
+                >
+                  <img src={stunting3} className="w-full h-full object-cover" />
+                </div>
               </div>
             </div>
           </div>

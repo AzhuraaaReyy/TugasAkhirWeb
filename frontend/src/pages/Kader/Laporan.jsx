@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import MainLayouts from "../../layouts/MainLayouts";
 import { useEffect } from "react";
 import api from "@/services/api";
@@ -10,11 +9,9 @@ import { Atom } from "react-loading-indicators";
 export default function Laporan() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
   const [search, setSearch] = useState("");
   const [tanggal, setTanggal] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [balita, setBalita] = useState([]);
   const [deteksi, setDeteksi] = useState([]);
 
@@ -23,16 +20,9 @@ export default function Laporan() {
       setLoading(true);
       try {
         const res = await api.get("/laporan", {
-          params: {
-            page: currentPage,
-            search: search,
-            tanggal: tanggal,
-          },
+          params: { page: currentPage, search: search, tanggal: tanggal },
         });
-
-        // Controller hanya mengembalikan { balita, deteksi } (paginator)
         const balitaPg = res.data.balita;
-
         setBalita(balitaPg?.data || []);
         setDeteksi(res.data.deteksi?.data || []);
         setCurrentPage(balitaPg?.current_page || 1);
@@ -43,7 +33,6 @@ export default function Laporan() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [currentPage, search, tanggal]);
 
@@ -81,67 +70,63 @@ export default function Laporan() {
 
   return (
     <MainLayouts type="laporan">
-      {loading && (
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
-          <Atom color="#10b981" size="medium" text="Memuat..." />
-        </div>
-      )}
-      <div className="p-6  min-h-screen">
-        <div className="bg-white rounded-2xl shadow-md p-6">
+      <div className="relative p-4 sm:p-6 min-h-screen">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
+        <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
           <div className="print-area">
-            <h1 className="text-2xl font-bold mb-6">Laporan & Export Data</h1>
+            <h1 className="text-xl sm:text-2xl font-bold mb-6">
+              Laporan & Export Data
+            </h1>
 
             {/* FILTER */}
-            <div className="mb-6 flex gap-4 items-center">
+            <div className="mb-6 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center">
               <input
                 type="text"
                 placeholder="Cari nama balita..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full sm:w-64 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
               />
               <input
                 type="date"
                 value={tanggal}
                 onChange={(e) => setTanggal(e.target.value)}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                className="w-full sm:w-auto border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
               />
-
               {tanggal && (
                 <button
                   onClick={() => setTanggal("")}
-                  className="text-sm bg-gray-100 px-3 py-2 rounded-lg"
+                  className="w-full sm:w-auto text-sm bg-gray-100 px-3 py-2 rounded-lg"
                 >
                   Reset Filter
                 </button>
               )}
-
               <button
                 onClick={() => exportExcel(balita, [], deteksi)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg"
+                className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-lg"
               >
                 Export Excel
               </button>
-
               <button
                 onClick={() => exportPDF(balita, [], deteksi)}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg"
+                className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg"
               >
                 Export PDF
               </button>
             </div>
 
-            {/* SUMMARY */}
-
-            {/* REKAP DUSUN */}
-            <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
-              <h2 className="font-extrabold text-lg ">Laporan Data Balita</h2>
+            {/* REKAP BALITA */}
+            <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
+              <h2 className="font-extrabold text-lg">Laporan Data Balita</h2>
               <p className="text-gray-500 text-sm mb-5">
                 Data identitas balita yang terdaftar pada sistem Posyandu
               </p>
-
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm text-left border-collapse">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
+                <table className="w-full min-w-[800px] text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                     <tr>
                       <th className="px-4 py-3">No</th>
@@ -153,7 +138,6 @@ export default function Laporan() {
                       <th className="px-4 py-3">Posyandu</th>
                     </tr>
                   </thead>
-
                   <tbody className="divide-y divide-gray-200 text-center">
                     {balita.length > 0 ? (
                       balita.map((item, index) => (
@@ -164,7 +148,6 @@ export default function Laporan() {
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {(currentPage - 1) * 10 + index + 1}
                           </td>
-
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.name}
                           </td>
@@ -203,12 +186,10 @@ export default function Laporan() {
                   </tbody>
                 </table>
               </div>
-              {/* PAGINATION */}
-              <div className="flex justify-between items-center mt-6">
-                <p className="text-sm text-gray-500 ml-3 ">
+              <div className="flex flex-wrap justify-between items-center gap-3 mt-6">
+                <p className="text-sm text-gray-500 ml-3">
                   Halaman {currentPage} dari {totalPages}
                 </p>
-
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -217,7 +198,8 @@ export default function Laporan() {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
+            {/* PENIMBANGAN */}
+            <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
               <h2 className="font-extrabold text-lg">
                 Laporan Data Penimbangan
               </h2>
@@ -225,8 +207,8 @@ export default function Laporan() {
                 Data monitoring umur, berat, dan tinggi badan balita dari hasil
                 pemeriksaan.
               </p>
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm text-left border-collapse">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
+                <table className="w-full min-w-[700px] text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
                     <tr>
                       <th className="px-4 py-3">No</th>
@@ -237,7 +219,6 @@ export default function Laporan() {
                       <th className="px-4 py-3">Tinggi Badan(cm)</th>
                     </tr>
                   </thead>
-
                   <tbody className="divide-y divide-gray-200 text-center">
                     {deteksi.length > 0 ? (
                       deteksi.map((item, index) => (
@@ -248,7 +229,6 @@ export default function Laporan() {
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {(currentPage - 1) * 10 + index + 1}
                           </td>
-
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.balitaname}
                           </td>
@@ -279,12 +259,10 @@ export default function Laporan() {
                   </tbody>
                 </table>
               </div>
-              {/* PAGINATION */}
-              <div className="flex justify-between items-center mt-6">
-                <p className="text-sm text-gray-500 ml-3 ">
+              <div className="flex flex-wrap justify-between items-center gap-3 mt-6">
+                <p className="text-sm text-gray-500 ml-3">
                   Halaman {currentPage} dari {totalPages}
                 </p>
-
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -293,14 +271,15 @@ export default function Laporan() {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-lg p-6 mb-10 border border-gray-200 border-2">
+            {/* DETEKSI */}
+            <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
               <h2 className="font-extrabold text-lg">Laporan Data Deteksi</h2>
               <p className="text-gray-500 text-sm mb-5">
                 Hasil klasifikasi status gizi balita berdasarkan indikator
                 antropometri.
               </p>
-              <div className="overflow-x-auto rounded-xl border border-gray-200 text-center">
-                <table className="w-full text-sm text-left border-collapse">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 text-center hide-scrollbar">
+                <table className="w-full min-w-[1000px] text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider">
                     <tr>
                       <th className="px-4 py-3">No</th>
@@ -320,8 +299,7 @@ export default function Laporan() {
                       </th>
                     </tr>
                   </thead>
-
-                  <tbody className="divide-y divide-gray-200 ">
+                  <tbody className="divide-y divide-gray-200">
                     {deteksi.length > 0 ? (
                       deteksi.map((item, index) => (
                         <tr
@@ -331,7 +309,6 @@ export default function Laporan() {
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {(currentPage - 1) * 10 + index + 1}
                           </td>
-
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.balitaname}
                           </td>
@@ -383,12 +360,10 @@ export default function Laporan() {
                   </tbody>
                 </table>
               </div>
-              {/* PAGINATION */}
-              <div className="flex justify-between items-center mt-6">
-                <p className="text-sm text-gray-500 ml-3 ">
+              <div className="flex flex-wrap justify-between items-center gap-3 mt-6">
+                <p className="text-sm text-gray-500 ml-3">
                   Halaman {currentPage} dari {totalPages}
                 </p>
-
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}

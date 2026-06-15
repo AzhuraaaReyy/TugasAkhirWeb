@@ -2,16 +2,16 @@ import { Facebook, Instagram, Mail, Phone, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="relative bg-gray-900 text-gray-300 pt-20 pb-8 overflow-hidden">
+    <footer className="relative bg-gray-900 text-gray-300 pt-16 md:pt-20 pb-8 overflow-hidden">
       {/* Background Blob */}
       <div className="absolute -top-20 left-0 w-[300px] h-[300px] bg-emerald-500 rounded-full blur-3xl opacity-20"></div>
       <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-blue-500 rounded-full blur-3xl opacity-20"></div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6">
-        <div className="grid md:grid-cols-4 gap-10">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
           {/* Brand */}
-          <div>
-            <h2 className="text-2xl font-bold text-white">StuntingCare</h2>
+          <div className="sm:col-span-2 md:col-span-1">
+            <h2 className="text-2xl font-bold text-white">GrowthChildCare</h2>
             <p className="mt-4 text-sm leading-relaxed">
               Platform digital untuk membantu deteksi dini stunting serta
               memantau pertumbuhan anak secara lebih mudah, cepat, dan akurat.
@@ -57,17 +57,17 @@ const Footer = () => {
 
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2">
-                <Phone size={16} />
+                <Phone size={16} className="shrink-0" />
                 <span>0812-3456-7890</span>
               </li>
 
               <li className="flex items-center gap-2">
-                <Mail size={16} />
+                <Mail size={16} className="shrink-0" />
                 <span>info@stuntingcare.id</span>
               </li>
 
               <li className="flex items-center gap-2">
-                <MapPin size={16} />
+                <MapPin size={16} className="shrink-0" />
                 <span>Semarang, Jawa Tengah</span>
               </li>
             </ul>
@@ -80,6 +80,7 @@ const Footer = () => {
             <div className="flex gap-4">
               <a
                 href="#"
+                aria-label="Facebook"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-emerald-500 transition"
               >
                 <Facebook size={18} />
@@ -87,6 +88,7 @@ const Footer = () => {
 
               <a
                 href="#"
+                aria-label="Instagram"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-emerald-500 transition"
               >
                 <Instagram size={18} />
@@ -97,7 +99,7 @@ const Footer = () => {
 
         {/* Divider */}
         <div className="border-t border-gray-700 mt-12 pt-6 text-center text-sm">
-          © {new Date().getFullYear()} StuntingCare. All rights reserved.
+          © {new Date().getFullYear()} GrowthChildCare. All rights reserved.
         </div>
       </div>
     </footer>

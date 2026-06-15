@@ -29,13 +29,13 @@ const Testimoni = () => {
   return (
     <section
       id="testimoni"
-      className="py-24 px-6 bg-emerald-50 relative overflow-hidden"
+      className="py-16 md:py-24 px-4 sm:px-6 bg-emerald-50 relative overflow-hidden"
     >
       {/* 🌊 FLOATING WAVE */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
         {/* Layer 1 */}
         <svg
-          className="block w-full h-[160px] wave-float"
+          className="block w-full h-[90px] sm:h-[160px] wave-float"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
@@ -48,7 +48,7 @@ const Testimoni = () => {
 
         {/* Layer 2 */}
         <svg
-          className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+          className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
@@ -68,30 +68,30 @@ const Testimoni = () => {
 
       <div className="max-w-6xl mx-auto text-center relative z-10">
         <FadeUp delay={300}>
-          <h2 className="mt-4 text-4xl font-bold text-gray-800">
+          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-800">
             Apa Kata Mereka?
           </h2>
         </FadeUp>
 
         <FadeSlide direction="left" delay={500}>
-          <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-4 text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
             Cerita dan pengalaman dari mereka yang telah menggunakan sistem ini.
           </p>
         </FadeSlide>
 
         <FadeUp delay={700}>
           <div className="mt-14 relative">
-            {/* Custom Navigation */}
+            {/* Custom Navigation - hanya tampil mulai md (di mobile cukup swipe) */}
             <div
               ref={prevRef}
-              className="absolute left-[-60px] top-1/2 -translate-y-1/2 z-20 cursor-pointer"
+              className="hidden md:block absolute left-[-60px] top-1/2 -translate-y-1/2 z-20 cursor-pointer"
             >
               <PrevArrow />
             </div>
 
             <div
               ref={nextRef}
-              className="absolute right-[-60px] top-1/2 -translate-y-1/2 z-20 cursor-pointer"
+              className="hidden md:block absolute right-[-60px] top-1/2 -translate-y-1/2 z-20 cursor-pointer"
             >
               <NextArrow />
             </div>
@@ -129,7 +129,7 @@ const Testimoni = () => {
                 <SwiperSlide key={index} className="flex">
                   <div
                     className="
-bg-white p-8 rounded-2xl 
+bg-white p-6 sm:p-8 rounded-2xl
 flex flex-col w-full h-[400px] text-center
 shadow-md
 transition-all duration-500 ease-out

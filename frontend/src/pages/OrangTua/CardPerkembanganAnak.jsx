@@ -16,6 +16,10 @@ import {
   ChevronUp,
 } from "lucide-react";
 
+const ARAH_TURUN = "turun";
+const TOLERANSI_STAGNAN = 0.05;
+const PERINGATAN_TENGGAT_AKTIF = false;
+
 const formatTanggal = (tanggal) => {
   if (!tanggal) return "-";
   const d = new Date(tanggal);
@@ -26,241 +30,440 @@ const formatTanggal = (tanggal) => {
     year: "numeric",
   });
 };
+const addBulan = (tgl, n) => {
+  if (!tgl) return null;
+  const d = new Date(tgl);
+  if (isNaN(d.getTime())) return null;
+  d.setMonth(d.getMonth() + n);
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  return `${y}-${mo}-${da}`;
+};
 
-const ARAH_TURUN = "turun";
-
-// ============================================================
-// Peringatan "batas waktu target terlewat" membandingkan tenggat
-// dengan TANGGAL KOMPUTER HARI INI, sehingga data uji bertanggal
-// lampau akan selalu memicunya. Matikan (false) selama pengujian,
-// nyalakan (true) saat aplikasi dipakai dengan data sungguhan.
-// ============================================================
-const PERINGATAN_TENGGAT_AKTIF = true;
+const angka = (x) => {
+  if (x === null || x === undefined || x === "") return null;
+  const n = Number(x);
+  return isNaN(n) ? null : n;
+};
+const clamp = (v, min = 0, max = 100) => Math.min(max, Math.max(min, v));
+const round1 = (x) => Math.round(x * 10) / 10;
+const tandai = (x) => (x > 0 ? `+${x}` : `${x}`);
 
 const warnaPerubahan = (perubahan, arah) => {
-  const baik =
-    arah === ARAH_TURUN ? Number(perubahan) < 0 : Number(perubahan) > 0;
-  const buruk =
-    arah === ARAH_TURUN ? Number(perubahan) > 0 : Number(perubahan) < 0;
+  if (perubahan === null) return { text: "text-gray-500", bg: "bg-gray-50" };
+  const baik = arah === ARAH_TURUN ? perubahan < 0 : perubahan > 0;
+  const buruk = arah === ARAH_TURUN ? perubahan > 0 : perubahan < 0;
   if (baik) return { text: "text-emerald-500", bg: "bg-emerald-50" };
   if (buruk) return { text: "text-red-500", bg: "bg-red-50" };
   return { text: "text-yellow-500", bg: "bg-yellow-50" };
 };
 
 const ikonPerubahan = (perubahan) => {
-  if (Number(perubahan) > 0)
-    return <ArrowUpRight size={14} className="mr-0.5" />;
-  if (Number(perubahan) < 0)
-    return <ArrowDownRight size={14} className="mr-0.5" />;
+  if (perubahan === null) return <Minus size={14} className="mr-0.5" />;
+  if (perubahan > 0) return <ArrowUpRight size={14} className="mr-0.5" />;
+  if (perubahan < 0) return <ArrowDownRight size={14} className="mr-0.5" />;
   return <Minus size={14} className="mr-0.5" />;
 };
 
 const GAYA_STATUS_GIZI = (statusGizi = "") => {
-  const s = statusGizi.toLowerCase();
-  if (s.includes("baik") || s.includes("normal"))
+  const s = String(statusGizi).toLowerCase();
+  if (!s) return "bg-gray-100 text-gray-600";
+  if (/(buruk|severe|sangat|parah|obes)/.test(s))
+    return "bg-red-100 text-red-700";
+  if (/(baik|normal|ideal|cukup)/.test(s))
     return "bg-emerald-100 text-emerald-700";
-  if (
-    s.includes("kurang") ||
-    s.includes("lebih") ||
-    s.includes("risiko") ||
-    s.includes("pendek")
-  )
+  if (/(kurang|lebih|risiko|resiko|pendek|gemuk|kurus|tinggi)/.test(s))
     return "bg-amber-100 text-amber-700";
-  return "bg-red-100 text-red-700";
+  return "bg-gray-100 text-gray-600";
 };
 
-const GAYA_TREN = {
-  membaik: {
-    text: "text-emerald-600",
-    label: "Membaik",
-    icon: <TrendingUp size={13} />,
-  },
-  memburuk: {
-    text: "text-red-600",
-    label: "Perlu perhatian",
-    icon: <TrendingDown size={13} />,
-  },
-  tetap: {
-    text: "text-gray-500",
-    label: "Stabil",
-    icon: <Minus size={13} />,
-  },
+// status_gizi -> kelas
+const klasifikasiGizi = (s) => {
+  const x = String(s || "").toLowerCase();
+  if (!x) return "tidak";
+  if (/(buruk|sangat|severe|parah)/.test(x)) return "buruk";
+  if (/(obes|gemuk)/.test(x)) return "lebih";
+  if (/lebih/.test(x)) return "lebih";
+  if (/(pendek|kurus|kurang|wasting|stunt)/.test(x)) return "kurang";
+  if (/tinggi/.test(x)) return "lebih";
+  if (/(normal|baik|ideal|cukup)/.test(x)) return "normal";
+  return "tidak";
 };
 
-function MetrikCard({ icon, label, unit, metrik }) {
+/* ---------- Komponen kecil untuk detail ---------- */
+const Eyebrow = ({ children }) => (
+  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1.5">
+    {children}
+  </p>
+);
+const Baris = ({ label, children, kuat = false }) => (
+  <div className="flex justify-between gap-3">
+    <span className={kuat ? "text-gray-700 font-semibold" : "text-gray-500"}>
+      {label}
+    </span>
+    <span className="font-bold text-gray-800 text-right">{children}</span>
+  </div>
+);
+
+function MetrikCard({ icon, label, unit, metrik, usiaBulan, tinggiRef }) {
   const m = metrik || {};
   const [lihatDetail, setLihatDetail] = useState(false);
 
-  const bulanLalu = Number(m.bulan_lalu) || 0;
-  const bulanIni = Number(m.bulan_ini) || 0;
-
-  const arah = m.arah_target === ARAH_TURUN ? ARAH_TURUN : "naik";
   const jenis = unit === "cm" ? "tinggi" : "berat";
+  const arah = m.arah_target === ARAH_TURUN ? ARAH_TURUN : "naik";
+  const labelStandar = unit === "cm" ? "KPT" : "KBM";
+  const glosStandar =
+    unit === "cm"
+      ? "KPT = Kenaikan Panjang/Tinggi badan minimum"
+      : "KBM = Kenaikan Berat badan Minimum";
+  const indeksZ = unit === "cm" ? "TB/U" : "BB/TB";
+
+  // ---- Nilai dasar ----
+  const adaPembanding = m.tanggal_lalu != null && m.bulan_lalu != null;
+  const bulanLalu = adaPembanding ? angka(m.bulan_lalu) : null;
+  const bulanIni = angka(m.bulan_ini);
+  const perubahan = angka(m.perubahan);
+  const interval = angka(m.interval_bulan) || 1;
+  const lajuPerBulan =
+    perubahan !== null && interval > 1 ? round1(perubahan / interval) : null;
 
   // ---- Rentang ideal ----
-  const idealMin = m.ideal_min != null ? Number(m.ideal_min) : null;
-  const idealMax = m.ideal_max != null ? Number(m.ideal_max) : null;
-  const punyaRentangIdeal = idealMin != null && idealMax != null;
-
-  const posisi = punyaRentangIdeal
-    ? bulanIni < idealMin
-      ? "bawah"
-      : bulanIni > idealMax
-        ? "atas"
-        : "dalam"
-    : null;
-  const dalamRentang = posisi === "dalam";
-
+  const idealMin = angka(m.ideal_min);
+  const idealMax = angka(m.ideal_max);
+  const punyaRentangIdeal = idealMin !== null && idealMax !== null;
   const infoSaja = m.ideal_info === true;
+  const posisi =
+    punyaRentangIdeal && bulanIni !== null
+      ? bulanIni < idealMin
+        ? "bawah"
+        : bulanIni > idealMax
+          ? "atas"
+          : "dalam"
+      : null;
+  const dalamRentang = posisi === "dalam";
   const dalamRentangIdeal = !infoSaja && dalamRentang;
+  const diAtasIdeal = posisi === "atas";
 
-  const perubahanAktual = Number((bulanIni - bulanLalu).toFixed(2));
+  // Konteks rentang: tinggi -> usia (TB/U), berat -> tinggi anak (BB/TB)
+  const rentangKonteks =
+    jenis === "tinggi"
+      ? usiaBulan != null
+        ? ` (usia ${usiaBulan} bln)`
+        : ""
+      : tinggiRef != null
+        ? ` (untuk tinggi ${round1(Number(tinggiRef))} cm)`
+        : "";
+
+  // ---- Kebutuhan ----
   const perubahanEfektif =
-    arah === ARAH_TURUN ? -perubahanAktual : perubahanAktual;
-
+    perubahan === null ? null : arah === ARAH_TURUN ? -perubahan : perubahan;
+  const penurunanDibutuhkan = angka(m.penurunan_dibutuhkan);
+  const kenaikanDibutuhkan = angka(m.kenaikan_dibutuhkan);
   const kebutuhan =
     arah === ARAH_TURUN
-      ? m.penurunan_dibutuhkan != null
-        ? Number(m.penurunan_dibutuhkan)
-        : punyaRentangIdeal
-          ? Math.max(0, Number((bulanIni - idealMax).toFixed(2)))
-          : 0
-      : m.kenaikan_dibutuhkan != null
-        ? Number(m.kenaikan_dibutuhkan)
-        : 0;
+      ? (penurunanDibutuhkan ?? 0)
+      : (kenaikanDibutuhkan ?? 0);
 
   const memenuhi = dalamRentangIdeal
     ? true
     : typeof m.memenuhi_standar === "boolean"
       ? m.memenuhi_standar
-      : kebutuhan > 0
-        ? perubahanEfektif >= kebutuhan
-        : null;
+      : null;
+  const stagnan =
+    adaPembanding &&
+    perubahan !== null &&
+    Math.abs(perubahan) < TOLERANSI_STAGNAN &&
+    memenuhi !== true &&
+    !dalamRentangIdeal;
 
-  const stagnan = perubahanAktual === 0 && !dalamRentangIdeal;
+  // ---- Status gizi (stunting/wasting/lebih) ----
+  const giziKelas = klasifikasiGizi(m.status_gizi);
+  const giziKurang = giziKelas === "kurang" || giziKelas === "buruk";
+  const alertLebih =
+    jenis === "berat" && (diAtasIdeal || giziKelas === "lebih");
 
-  const statusKenaikan = dalamRentangIdeal
-    ? "Berat Badan Ideal"
-    : stagnan
-      ? "Pertumbuhan Stagnan"
-      : perubahanEfektif > 0
-        ? arah === ARAH_TURUN
-          ? "Penurunan Sesuai Target"
-          : "Mengalami Kenaikan"
-        : arah === ARAH_TURUN
-          ? "Berat Masih Naik"
-          : "Mengalami Penurunan";
+  const tone =
+    dalamRentangIdeal || memenuhi === true
+      ? "ok"
+      : memenuhi === false
+        ? "bad"
+        : "netral";
 
-  const sisaKeTarget = Math.max(
-    0,
-    Number((kebutuhan - perubahanEfektif).toFixed(2)),
-  );
+  // ---- KONDISI pertumbuhan (badge utama, ganti status "Normal") ----
+  let kondisiLabel = "Belum dinilai";
+  let kondisiCls = "bg-gray-100 text-gray-600";
+  if (m.peringatan) {
+    kondisiLabel = "Periksa data";
+    kondisiCls = "bg-amber-100 text-amber-700";
+  } else if (!adaPembanding) {
+    kondisiLabel = "Data pertama";
+    kondisiCls = "bg-gray-100 text-gray-600";
+  } else if (m.gagal_berturut === true) {
+    kondisiLabel = "Segera rujuk";
+    kondisiCls = "bg-red-100 text-red-700";
+  } else if (alertLebih) {
+    kondisiLabel = "Perlu perhatian";
+    kondisiCls = "bg-amber-100 text-amber-700";
+  } else if (stagnan) {
+    kondisiLabel = "Pertumbuhan stagnan";
+    kondisiCls = "bg-amber-100 text-amber-700";
+  } else if (tone === "ok") {
+    kondisiLabel = giziKurang ? "Membaik" : "Tumbuh optimal";
+    kondisiCls = "bg-emerald-100 text-emerald-700";
+  } else if (tone === "bad") {
+    kondisiLabel = "Perlu perhatian";
+    kondisiCls = "bg-red-100 text-red-700";
+  } else if (diAtasIdeal && jenis === "tinggi") {
+    kondisiLabel = "Di atas rata-rata";
+    kondisiCls = "bg-amber-100 text-amber-700";
+  }
+
+  const toneBadge =
+    tone === "ok"
+      ? "bg-emerald-500 text-white"
+      : tone === "bad"
+        ? "bg-red-500 text-white"
+        : "bg-gray-400 text-white";
+  const toneText =
+    tone === "ok"
+      ? "text-emerald-600"
+      : tone === "bad"
+        ? "text-red-500"
+        : "text-gray-500";
+
+  let statusKenaikan;
+  if (dalamRentangIdeal)
+    statusKenaikan = jenis === "berat" ? "Berat sudah ideal" : "Sesuai rentang";
+  else if (memenuhi === true)
+    statusKenaikan =
+      arah === ARAH_TURUN ? "Penurunan sesuai target" : "Memenuhi standar";
+  else if (memenuhi === false)
+    statusKenaikan = stagnan
+      ? "Pertumbuhan stagnan"
+      : arah === ARAH_TURUN
+        ? "Belum mencapai berat ideal"
+        : "Belum memenuhi standar";
+  else statusKenaikan = "Belum dapat dinilai";
+
+  const progres =
+    dalamRentangIdeal || memenuhi === true
+      ? 100
+      : memenuhi === false
+        ? kebutuhan > 0 && perubahanEfektif !== null
+          ? clamp((perubahanEfektif / kebutuhan) * 100)
+          : 0
+        : 0;
   const sisaTampil =
     arah === ARAH_TURUN
-      ? m.penurunan_dibutuhkan != null
-        ? Number(m.penurunan_dibutuhkan)
-        : kebutuhan
-      : sisaKeTarget;
-
-  const progres = dalamRentangIdeal
-    ? 100
-    : kebutuhan > 0
-      ? Math.min(100, Math.max(0, (perubahanEfektif / kebutuhan) * 100))
-      : memenuhi
-        ? 100
-        : 0;
-
-  const warna = warnaPerubahan(perubahanAktual, arah);
+      ? (penurunanDibutuhkan ?? Math.max(0, round1(kebutuhan)))
+      : Math.max(0, round1(kebutuhan - (perubahanEfektif ?? 0)));
 
   const modeKejar = m.mode_target === "kejar";
-  const catatan = m.catatan || null;
+  // sembunyikan catatan "jendela 3 bulan" (posyandu bulanan)
+  const catatan =
+    m.catatan && !/jendela 3 bulan/i.test(m.catatan) ? m.catatan : null;
   const peringatan = m.peringatan || null;
+  const gagalBerturut = m.gagal_berturut === true;
 
   const berlakuRaw = m.kbm_berlaku ?? m.kpt_berlaku;
   const standarBerlaku = berlakuRaw == null ? true : berlakuRaw;
-
   const pakaiIdeal = arah === ARAH_TURUN || dalamRentangIdeal;
-  const tampilkanEvaluasi = pakaiIdeal || standarBerlaku;
+  const tampilkanEvaluasi =
+    adaPembanding && !peringatan && (pakaiIdeal || standarBerlaku);
 
-  const adaTargetBerikutnya = m.target_berikutnya != null && m.tanggal_target;
+  // ---- TARGET PER BULAN (konsisten: KPT/KBM 3 bln ÷ 3) ----
+  const kenaikanBerikutnya = angka(m.kenaikan_berikutnya);
+  const intervalTarget = angka(m.interval_target) || 3;
+  const targetNaikPerBulan =
+    kenaikanDibutuhkan != null && interval
+      ? round1(kenaikanDibutuhkan / interval)
+      : kenaikanBerikutnya != null && intervalTarget
+        ? round1(kenaikanBerikutnya / intervalTarget)
+        : null;
+  const capaiBulanDepan =
+    targetNaikPerBulan != null && bulanIni != null
+      ? round1(bulanIni + targetNaikPerBulan)
+      : null;
+  const tglBulanDepan = addBulan(m.tanggal_ini, 1);
+  const adaTargetBulanDepan =
+    arah === ARAH_TURUN ? idealMax != null : capaiBulanDepan != null;
 
-  const labelKebutuhan =
-    arah === ARAH_TURUN
-      ? "Harus turun (menuju berat ideal)"
-      : "Harus naik minimal";
+  // Arah Z-score terhadap standar WHO — KONTEKSTUAL (khusus TINGGI / TB/U).
+  const zNow = angka(m.zscore);
+  let trenZ = null;
+  if (jenis === "tinggi" && m.tren_zscore && adaPembanding && !peringatan) {
+    const dekatRisiko = (zNow != null && zNow < -1) || giziKurang;
+    if (m.tren_zscore === "membaik") {
+      trenZ = {
+        cls: "text-emerald-700",
+        icon: <TrendingUp size={12} />,
+        label: giziKurang ? "Membaik, mendekati normal" : "Naik",
+        ket: giziKurang
+          ? "Posisi tinggi anak terhadap standar membaik mendekati normal. Pertahankan."
+          : null,
+      };
+    } else if (m.tren_zscore === "memburuk") {
+      trenZ = dekatRisiko
+        ? {
+            cls: "text-amber-700",
+            icon: <TrendingDown size={12} />,
+            label: "Menurun perlu dipantau",
+            ket: "Posisi anak menurun mendekati batas bawah standar. Pantau ketat dan tambah asupan protein agar tidak jatuh ke bawah −2 SD (pendek).",
+          }
+        : {
+            cls: "text-gray-500",
+            icon: <Minus size={12} />,
+            label: "Stabil di rentang aman",
+            ket: "Sedikit mendekati rata-rata, tetapi masih jauh dari batas bawah wajar dan tidak perlu dikhawatirkan.",
+          };
+    } else {
+      trenZ = {
+        cls: "text-gray-500",
+        icon: <Minus size={12} />,
+        label: "Stabil",
+        ket: null,
+      };
+    }
+  }
 
-  // ---- Deadline ----
-  const deadline = m.tanggal_target ? new Date(m.tanggal_target) : null;
-  const hariIni = new Date();
-  hariIni.setHours(0, 0, 0, 0);
-  const lewatDeadline =
-    PERINGATAN_TENGGAT_AKTIF &&
-    deadline &&
-    !isNaN(deadline.getTime()) &&
-    hariIni > deadline &&
-    memenuhi === false;
-  const hariTerlambat = lewatDeadline
-    ? Math.floor((hariIni - deadline) / (1000 * 60 * 60 * 24))
-    : 0;
+  // Arah menuju BERAT IDEAL — sadar dua sisi (khusus BERAT / BB/TB).
+  let arahIdeal = null;
+  if (
+    jenis === "berat" &&
+    adaPembanding &&
+    punyaRentangIdeal &&
+    perubahan != null &&
+    !peringatan
+  ) {
+    const TOL = TOLERANSI_STAGNAN;
+    if (dalamRentangIdeal) {
+      arahIdeal = {
+        cls: "text-emerald-700",
+        icon: <CircleCheck size={12} />,
+        label: "Di rentang ideal",
+        ket: "Berat anak berada di rentang ideal terhadap tingginya. Pertahankan pola makan bergizi.",
+      };
+    } else if (posisi === "bawah") {
+      if (perubahan > TOL)
+        arahIdeal = {
+          cls: "text-emerald-700",
+          icon: <TrendingUp size={12} />,
+          label: "Bergerak menuju ideal",
+          ket: "Berat naik mendekati rentang ideal. Lanjutkan pemberian makan bergizi.",
+        };
+      else if (perubahan < -TOL)
+        arahIdeal = {
+          cls: "text-red-600",
+          icon: <TrendingDown size={12} />,
+          label: "Menjauh dari ideal",
+          ket: "Berat menurun sehingga makin jauh dari ideal. Tambah asupan protein dan konsultasikan ke Posyandu.",
+        };
+      else
+        arahIdeal = {
+          cls: "text-amber-700",
+          icon: <Minus size={12} />,
+          label: "Belum bergerak naik",
+          ket: "Berat belum bertambah menuju ideal. Tambah porsi makan bergizi, lalu timbang lagi bulan depan.",
+        };
+    } else {
+      // posisi atas
+      if (perubahan < -TOL)
+        arahIdeal = {
+          cls: "text-emerald-700",
+          icon: <TrendingDown size={12} />,
+          label: "Bergerak menuju ideal",
+          ket: "Berat menurun perlahan mendekati ideal. Lanjutkan pola makan sehat, jangan diet ketat.",
+        };
+      else if (perubahan > TOL)
+        arahIdeal = {
+          cls: "text-red-600",
+          icon: <TrendingUp size={12} />,
+          label: "Menjauh dari ideal",
+          ket: "Berat bertambah sehingga makin jauh dari ideal (risiko gizi lebih). Perlu penanganan, bukan dibiarkan naik.",
+        };
+      else
+        arahIdeal = {
+          cls: "text-gray-500",
+          icon: <Minus size={12} />,
+          label: "Bertahan",
+          ket: "Berat tidak bertambah; seiring anak makin tinggi, berat akan lebih mendekati ideal. Jaga pola makan.",
+        };
+    }
+  }
+
+  const arahInfo = jenis === "tinggi" ? trenZ : arahIdeal;
+  const warna = warnaPerubahan(perubahan, arah);
 
   // ============================================================
-  //  RINGKASAN SEDERHANA
+  //  RINGKASAN UNTUK ORANG TUA
   // ============================================================
-  let ringkasan = null;
+  let ringkasan;
+  const anjuranEskalasi =
+    " Jika bulan depan masih belum tercapai, sebaiknya segera konsultasikan/rujuk ke Posyandu atau Puskesmas.";
   if (peringatan) {
     ringkasan =
       "Mohon periksa kembali kebenaran data pengukuran di atas sebelum membaca hasil lainnya.";
+  } else if (!adaPembanding) {
+    ringkasan =
+      "Ini data pengukuran pertama sehingga belum ada pembanding. Lakukan pengukuran rutin bulan depan di Posyandu agar perkembangan anak dapat dinilai.";
   } else if (jenis === "berat") {
-    if (arah === ARAH_TURUN) {
-      ringkasan = dalamRentang
-        ? "Berat badan anak telah kembali ke rentang ideal. Pertahankan pola makan sehat dan lakukan penimbangan secara rutin."
-        : "Berat badan anak melebihi rentang ideal. Penurunan tidak perlu dilakukan secara drastis; jaga agar berat tidak terus bertambah seiring pertambahan tinggi, dan konsultasikan ke Posyandu.";
-    } else if (dalamRentangIdeal) {
+    if (alertLebih) {
       ringkasan =
-        "Berat badan anak sudah ideal terhadap tinggi badannya. Pertahankan pola makan dan lakukan penimbangan setiap bulan.";
-    } else if (memenuhi === true) {
+        "Berat badan anak berada di atas rentang ideal (berisiko gizi lebih/obesitas). Kurangi camilan manis & gorengan, perbanyak sayur dan buah, ajak anak aktif bergerak, dan konsultasikan ke Posyandu. Jangan lakukan diet ketat.";
+    } else if (dalamRentangIdeal || memenuhi === true) {
       ringkasan =
-        "Kenaikan berat badan anak telah memenuhi standar. Lanjutkan pola makan yang sudah berjalan.";
+        "Kenaikan berat badan anak sudah sesuai. Lanjutkan pemberian makan bergizi seimbang dan timbang anak setiap bulan.";
     } else if (memenuhi === false) {
       ringkasan =
-        "Kenaikan berat badan anak belum memenuhi standar. Tambahkan porsi makan dan lauk berprotein (telur, ikan, ayam), kemudian timbang kembali sesuai jadwal.";
+        (stagnan
+          ? "Berat badan anak tidak bertambah pada periode ini. Tambahkan porsi makan dan lauk berprotein (telur, ikan, ayam), lalu timbang kembali bulan depan."
+          : "Kenaikan berat badan anak belum mencukupi. Tambahkan porsi makan dan lauk berprotein, lalu timbang kembali bulan depan.") +
+        anjuranEskalasi;
     } else {
       ringkasan =
-        "Hasil kenaikan berat badan akan dinilai pada penimbangan berikutnya.";
+        "Kenaikan berat badan akan dinilai pada penimbangan berikutnya.";
     }
   } else {
-    if (modeKejar) {
+    if (diAtasIdeal) {
       ringkasan =
-        "Tinggi badan anak masih di bawah standar usianya sehingga diberikan target kejar (catch-up). Penuhi asupan protein hewani setiap hari dan ukur tinggi anak secara rutin di Posyandu.";
+        "Tinggi badan anak di atas rata-rata usianya. Umumnya tidak perlu dikhawatirkan dan tinggi tidak diturunkan. Bila ragu, konsultasikan ke tenaga kesehatan.";
+    } else if (modeKejar) {
+      ringkasan =
+        "Tinggi badan anak masih di bawah standar usianya, sehingga diberi target kejar (catch-up). Penuhi protein hewani setiap hari dan ukur tinggi anak rutin di Posyandu.";
     } else if (memenuhi === true) {
       ringkasan =
-        "Pertambahan tinggi badan anak telah memenuhi standar. Pertahankan asupan gizi dan pengukuran rutin.";
+        "Pertambahan tinggi badan anak sudah memenuhi standar. Pertahankan asupan gizi dan pengukuran rutin.";
     } else if (memenuhi === false) {
       ringkasan =
-        "Pertambahan tinggi badan anak belum mencapai target minimal. Perbanyak makanan berprotein dan ukur kembali sesuai jadwal di Posyandu.";
+        "Pertambahan tinggi badan anak belum mencapai target minimal. Perbanyak makanan berprotein dan ukur kembali bulan depan." +
+        anjuranEskalasi;
     } else {
       ringkasan =
-        "Tinggi badan anak masih sesuai dengan usianya. Pertambahan tinggi akan dinilai pada pengukuran berikutnya.";
+        "Tinggi badan anak masih sesuai usianya. Pertambahan tinggi akan dinilai pada pengukuran berikutnya.";
     }
   }
 
   return (
-    <div className="border border-gray-200 border-2 rounded-2xl p-4 bg-white hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative">
-      {/* ===================== TAMPILAN UTAMA (RINGKAS) ===================== */}
-
-      {/* HEADER: nama metrik + status gizi */}
+    <div className="border-2 border-gray-200 rounded-2xl p-4 bg-white hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative">
+      {/* HEADER */}
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-blue-50 rounded-xl text-blue-500">{icon}</div>
           <span className="text-sm font-bold text-gray-700">{label}</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end">
           {modeKejar && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-100 text-indigo-700">
               Catch-up
             </span>
           )}
-          {m.status_gizi && (
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${kondisiCls}`}
+          >
+            {kondisiLabel}
+          </span>
+          {m.status_gizi && giziKelas !== "normal" && (
             <span
               className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${GAYA_STATUS_GIZI(m.status_gizi)}`}
             >
@@ -270,15 +473,25 @@ function MetrikCard({ icon, label, unit, metrik }) {
         </div>
       </div>
 
-      {/* UKURAN: lalu, ini, perubahan */}
+      {/* UKURAN (RINGKAS) */}
       <div className="space-y-2 text-sm text-gray-600 mb-3">
         <div className="flex justify-between">
           <span className="text-gray-500">
             Bulan Lalu
-            <span className="ml-1">({formatTanggal(m.tanggal_lalu)})</span>
+            {adaPembanding && (
+              <span className="ml-1">({formatTanggal(m.tanggal_lalu)})</span>
+            )}
           </span>
           <span className="font-bold text-black">
-            {bulanLalu} {unit}
+            {adaPembanding ? (
+              <>
+                {bulanLalu} {unit}
+              </>
+            ) : (
+              <span className="text-gray-400 font-semibold">
+                Belum ada data
+              </span>
+            )}
           </span>
         </div>
         <div className="flex justify-between">
@@ -293,53 +506,66 @@ function MetrikCard({ icon, label, unit, metrik }) {
         <hr className="border-gray-100 my-1" />
         <div className="flex justify-between items-center pt-1">
           <span className="text-gray-500">Perubahan</span>
-          <span
-            className={`${warna.text} font-bold flex items-center text-xs ${warna.bg} px-2 py-0.5 rounded-lg`}
-          >
-            {ikonPerubahan(perubahanAktual)}
-            {Math.abs(m.perubahan ?? perubahanAktual)} {unit}
-          </span>
+          {perubahan === null ? (
+            <span className="text-gray-400 font-semibold text-xs">
+              Belum dapat dihitung
+            </span>
+          ) : (
+            <span
+              className={`${warna.text} font-bold flex items-center text-xs ${warna.bg} px-2 py-0.5 rounded-lg`}
+            >
+              {ikonPerubahan(perubahan)}
+              {Math.abs(perubahan)} {unit}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* TARGET BERIKUTNYA — satu baris paling penting */}
-      {adaTargetBerikutnya && (
+      {/* TARGET BULAN DEPAN (RINGKAS) */}
+      {!peringatan && adaTargetBulanDepan && (
         <div className="bg-white border border-gray-100 rounded-xl p-3 mb-3">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-[12px] text-gray-500">
               <Target size={15} className="text-indigo-500" />
-              Target {arah === ARAH_TURUN ? "berat ideal" : "berikutnya"}
-              {m.interval_target ? ` (${m.interval_target} bln lagi)` : ""}
+              {arah === ARAH_TURUN
+                ? "Target berat ideal"
+                : "Target bulan depan"}
             </span>
             <span className="font-bold text-gray-800 text-right text-[13px]">
-              {m.target_berikutnya} {unit}
+              {arah === ARAH_TURUN
+                ? `${idealMax} ${unit}`
+                : `${capaiBulanDepan} ${unit}`}
               <span className="block text-[11px] font-normal text-gray-500">
-                sebelum {formatTanggal(m.tanggal_target)}
+                {arah === ARAH_TURUN
+                  ? "turunkan perlahan"
+                  : `sebelum ${formatTanggal(tglBulanDepan)}`}
               </span>
             </span>
           </div>
         </div>
       )}
-      {/* PERINGATAN DATA — selalu tampil karena mendesak */}
+
+      {/* PERINGATAN DATA */}
       {peringatan && (
         <div className="mb-3 flex items-start gap-1.5 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0" />
           <span>{peringatan}</span>
         </div>
       )}
-      {/* LEWAT DEADLINE — selalu tampil karena mendesak */}
-      {lewatDeadline && (
+
+      {/* PERINGATAN 2T (dua bulan berturut) */}
+      {!peringatan && gagalBerturut && (
         <div className="mb-3 flex items-start gap-1.5 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-2 py-1.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0" />
           <span>
-            Batas waktu target terlewat
-            {hariTerlambat > 0 ? ` ${hariTerlambat} hari` : ""}. Segera lakukan
-            penimbangan ulang dan konsultasikan ke Posyandu/tenaga kesehatan.
+            {arah === ARAH_TURUN
+              ? "Sudah 2 bulan berturut berat badan belum berkurang menuju ideal. Segera konsultasikan penanganan gizi lebih ke Posyandu atau Puskesmas."
+              : `Sudah 2 bulan berturut ${jenis === "tinggi" ? "tinggi" : "berat"} badan anak tidak naik cukup (tanda 2T). Segera bawa anak ke Posyandu atau Puskesmas untuk pemeriksaan lanjutan.`}
           </span>
         </div>
       )}
 
-      {/* RINGKASAN SEDERHANA */}
+      {/* RINGKASAN */}
       {ringkasan && (
         <div className="text-[12px] text-gray-700 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 leading-relaxed mb-3">
           <span className="font-bold text-gray-800">Singkatnya: </span>
@@ -364,163 +590,153 @@ function MetrikCard({ icon, label, unit, metrik }) {
         )}
       </button>
 
-      {/* ===================== DETAIL (DILIPAT) ===================== */}
+      {/* DETAIL */}
       {lihatDetail && (
-        <div className="mt-2 pt-3 border-t border-gray-100 space-y-3">
-          {/* Rentang ideal & arah kurva */}
-          <div className="space-y-2 text-[12px] text-gray-600">
-            {punyaRentangIdeal && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">
-                  {jenis === "tinggi"
-                    ? "Tinggi ideal untuk usianya"
-                    : "Berat ideal untuk tingginya"}
-                </span>
-                <span className="text-right">
+        <div className="mt-2 pt-3 border-t border-gray-100 space-y-4 text-[12px]">
+          {/* 1) PERBANDINGAN */}
+          <section>
+            <Eyebrow>Perbandingan pengukuran</Eyebrow>
+            <div className="space-y-1.5 text-gray-600">
+              <Baris
+                label={`Bulan lalu${adaPembanding ? ` (${formatTanggal(m.tanggal_lalu)})` : ""}`}
+              >
+                {adaPembanding ? (
+                  `${bulanLalu} ${unit}`
+                ) : (
+                  <span className="text-gray-400">Belum ada data</span>
+                )}
+              </Baris>
+              <Baris label={`Bulan ini (${formatTanggal(m.tanggal_ini)})`} kuat>
+                {bulanIni} {unit}
+              </Baris>
+              {adaPembanding && perubahan !== null && (
+                <Baris
+                  label={`Selisih${interval ? ` (jarak ${interval} bln)` : ""}`}
+                >
+                  <span className={warna.text}>
+                    {tandai(perubahan)} {unit}
+                  </span>
+                  {lajuPerBulan !== null && (
+                    <span className="block text-[11px] font-normal text-gray-400">
+                      ≈ {tandai(lajuPerBulan)} {unit}/bln
+                    </span>
+                  )}
+                </Baris>
+              )}
+            </div>
+          </section>
+
+          {/* 2) RENTANG IDEAL */}
+          {punyaRentangIdeal && (
+            <section>
+              <Eyebrow>
+                Rentang ideal{" "}
+                {jenis === "tinggi"
+                  ? "(TB/U sesuai usia)"
+                  : "(BB/TB sesuai tinggi)"}
+              </Eyebrow>
+              <div className="space-y-1">
+                <Baris label={`Rentang sehat${rentangKonteks}`}>
                   <span
-                    className={`font-bold ${dalamRentang ? "text-emerald-600" : "text-gray-700"}`}
+                    className={
+                      dalamRentang ? "text-emerald-600" : "text-gray-800"
+                    }
                   >
                     {idealMin} – {idealMax} {unit}
                   </span>
-                  <span
-                    className={`block text-[11px] font-semibold ${
-                      posisi === "dalam"
-                        ? "text-emerald-600"
+                </Baris>
+                {bulanIni !== null && (
+                  <Baris label="Posisi anak saat ini">
+                    <span
+                      className={
+                        posisi === "dalam"
+                          ? "text-emerald-600"
+                          : posisi === "atas"
+                            ? "text-amber-600"
+                            : "text-red-500"
+                      }
+                    >
+                      {posisi === "dalam"
+                        ? "✓ di dalam rentang"
                         : posisi === "atas"
-                          ? "text-amber-600"
-                          : "text-red-500"
-                    }`}
-                  >
-                    {posisi === "dalam"
-                      ? "✓ sesuai rentang"
-                      : posisi === "atas"
-                        ? "di atas rentang"
-                        : "di bawah rentang"}
-                  </span>
-                </span>
+                          ? "di atas rentang"
+                          : "di bawah rentang"}
+                    </span>
+                  </Baris>
+                )}
               </div>
-            )}
-          </div>
+              {diAtasIdeal && jenis === "berat" && (
+                <p className="text-[11px] text-amber-600 leading-snug mt-1.5">
+                  Berat di atas ideal, berisiko gizi lebih/obesitas. Perlu
+                  penanganan, bukan dibiarkan terus naik.
+                </p>
+              )}
+              {diAtasIdeal && jenis === "tinggi" && (
+                <p className="text-[11px] text-gray-400 leading-snug mt-1.5">
+                  Tinggi di atas rata-rata; ini aman dari stunting dan tidak
+                  perlu diturunkan.
+                </p>
+              )}
+              {jenis === "tinggi" && !diAtasIdeal && (
+                <p className="text-[11px] text-gray-400 leading-snug mt-1.5">
+                  Rentang ini pembanding terhadap anak seusianya. Penilaian
+                  utama tinggi memakai target kenaikan (KPT) di bawah.
+                </p>
+              )}
+            </section>
+          )}
 
-          {/* Rincian target */}
-          <div className="bg-white border border-gray-100 rounded-xl p-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-gray-700">
-                Rincian Target
-              </span>
-              {tampilkanEvaluasi && statusKenaikan && (
+          {/* 3) PENCAPAIAN KPT/KBM (per bulan) */}
+          {tampilkanEvaluasi ? (
+            <section>
+              <div className="flex items-center justify-between mb-1.5">
+                <Eyebrow>
+                  {arah === ARAH_TURUN
+                    ? "Pencapaian berat ideal"
+                    : `Pencapaian standar ${labelStandar}`}
+                </Eyebrow>
                 <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${
-                    stagnan
-                      ? "bg-amber-500 text-white"
-                      : memenuhi
-                        ? "bg-emerald-500 text-white"
-                        : "bg-red-500 text-white"
-                  }`}
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${toneBadge}`}
                 >
                   {statusKenaikan}
                 </span>
-              )}
-            </div>
-
-            {jenis === "tinggi" && punyaRentangIdeal && (
-              <p className="text-[11px] text-gray-400 leading-snug mb-2">
-                Target dihitung dari pertumbuhan anak itu sendiri (tinggi
-                terakhir ditambah kenaikan minimal). Rentang ideal di atas hanya
-                pembanding dengan anak seusianya.
-              </p>
-            )}
-
-            <div className="space-y-1.5 text-[12px] text-gray-600">
-              {m.target != null && m.bulan_lalu != null && (
-                <div className="flex items-start justify-between">
-                  <span className="text-gray-500">Target sebelumnya</span>
-                  <span className="font-bold text-gray-800 text-right">
-                    {m.target} {unit}
-                    <span className="block font-normal text-gray-500">
-                      dinilai {formatTanggal(m.tanggal_ini)}
-                      {m.memenuhi_standar != null && (
-                        <span
-                          className={
-                            m.memenuhi_standar
-                              ? "text-emerald-600"
-                              : "text-red-500"
-                          }
-                        >
-                          {" "}
-                          • {m.memenuhi_standar ? "tercapai" : "belum tercapai"}
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                </div>
-              )}
-
-              {tampilkanEvaluasi && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      {labelKebutuhan}
-                      {arah !== ARAH_TURUN && m.interval_bulan
-                        ? ` (dalam ${m.interval_bulan} bln)`
-                        : ""}
-                    </span>
-                    <span className="font-bold text-gray-800">
-                      {kebutuhan} {unit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Kenaikan pertumbuhan</span>
-                    <span
-                      className={`font-bold ${
-                        memenuhi
-                          ? "text-emerald-600"
-                          : memenuhi === false
-                            ? "text-red-500"
-                            : "text-gray-700"
-                      }`}
-                    >
-                      {perubahanAktual > 0 ? "+" : ""}
-                      {perubahanAktual} {unit}
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {arah !== ARAH_TURUN && m.kenaikan_berikutnya != null && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">
-                    Naik minimal berikutnya ({m.interval_target ?? 3} bln,{" "}
-                    {unit === "cm" ? "KPT" : "KBM"})
-                  </span>
-                  <span className="font-bold text-gray-800">
-                    {m.kenaikan_berikutnya} {unit}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {tampilkanEvaluasi && (
+              </div>
+              <div className="space-y-1.5 text-gray-600">
+                {arah === ARAH_TURUN ? (
+                  <Baris label="Penurunan yang dibutuhkan">
+                    {penurunanDibutuhkan ?? sisaTampil} {unit}
+                  </Baris>
+                ) : (
+                  <>
+                    <Baris label="Kenaikan minimal per bulan">
+                      {round1(kebutuhan)} {unit}
+                    </Baris>
+                    <Baris label="Pertumbuhan tercatat">
+                      <span className={toneText}>
+                        {perubahan !== null ? tandai(perubahan) : "-"} {unit}
+                      </span>
+                    </Baris>
+                  </>
+                )}
+              </div>
               <div className="mt-2.5">
                 <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      memenuhi ? "bg-emerald-500" : "bg-indigo-400"
-                    }`}
+                    className={`h-full rounded-full transition-all duration-500 ${tone === "ok" ? "bg-emerald-500" : "bg-indigo-400"}`}
                     style={{ width: `${progres}%` }}
                   />
                 </div>
                 <p className="text-[11px] mt-1 font-semibold">
-                  {memenuhi ? (
-                    <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                  {tone === "ok" ? (
+                    <span className="text-emerald-600 flex items-center gap-1">
                       <CircleCheck size={12} />
                       {dalamRentangIdeal
-                        ? "Berat sudah ideal sesuai status gizi (Tercapai)"
+                        ? "Sudah ideal sesuai status gizi (Tercapai)"
                         : arah === ARAH_TURUN
                           ? "Berat sudah masuk rentang ideal (Tercapai)"
-                          : "Kenaikan memenuhi standar (Tercapai)"}
+                          : `Kenaikan memenuhi standar ${labelStandar} (Tercapai)`}
                     </span>
-                  ) : (
+                  ) : tone === "bad" ? (
                     <span className="flex items-center gap-1 text-red-600">
                       <CircleX size={12} />
                       {arah === ARAH_TURUN ? (
@@ -529,7 +745,7 @@ function MetrikCard({ icon, label, unit, metrik }) {
                           <span className="font-bold text-gray-700">
                             {sisaTampil} {unit}
                           </span>{" "}
-                          menuju berat ideal (Belum Tercapai).
+                          menuju berat ideal (Belum tercapai).
                         </>
                       ) : (
                         <>
@@ -537,22 +753,132 @@ function MetrikCard({ icon, label, unit, metrik }) {
                           <span className="font-bold text-gray-700">
                             {sisaTampil} {unit}
                           </span>{" "}
-                          lagi dari kenaikan minimal (Belum Tercapai).
+                          lagi dari kenaikan minimal (Belum tercapai).
                         </>
                       )}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <Info size={12} /> Belum dapat dinilai pada periode ini.
                     </span>
                   )}
                 </p>
               </div>
-            )}
+              {arah !== ARAH_TURUN && memenuhi === false && !gagalBerturut && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5 mt-2 flex items-start gap-1.5">
+                  <Info size={13} className="mt-0.5 shrink-0" />
+                  <span>
+                    Bila bulan depan masih belum tercapai (dua bulan berturut),
+                    segera konsultasikan/rujuk ke Posyandu atau Puskesmas.
+                  </span>
+                </p>
+              )}
+              {arah !== ARAH_TURUN && (
+                <p className="text-[10px] text-gray-400 mt-1.5">
+                  {glosStandar}.
+                </p>
+              )}
+            </section>
+          ) : (
+            catatan && (
+              <section>
+                <Eyebrow>Catatan penilaian</Eyebrow>
+                <div className="flex items-start gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                  <Info size={13} className="mt-0.5 shrink-0" />
+                  <span>{catatan}</span>
+                </div>
+              </section>
+            )
+          )}
 
-            {catatan && (
-              <div className="mt-2.5 flex items-start gap-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                <Info size={13} className="mt-0.5 shrink-0" />
-                <span>{catatan}</span>
+          {/* 4) TARGET BULAN DEPAN (per bulan) */}
+          {!peringatan && adaTargetBulanDepan && (
+            <section>
+              <Eyebrow>Target bulan depan</Eyebrow>
+              <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-2.5 space-y-1.5 text-gray-700">
+                {arah === ARAH_TURUN ? (
+                  <>
+                    <Baris label="Capai berat ideal" kuat>
+                      {idealMax} {unit}
+                    </Baris>
+                    <Baris label="Perlu turun (perlahan)">
+                      {penurunanDibutuhkan ?? sisaTampil} {unit}
+                    </Baris>
+                  </>
+                ) : (
+                  <>
+                    <Baris label="Capai minimal" kuat>
+                      {capaiBulanDepan} {unit}
+                    </Baris>
+                    <Baris label="Sebelum tanggal">
+                      {formatTanggal(tglBulanDepan)}
+                    </Baris>
+                    <Baris
+                      label={`Minimal bertambah / bulan (${labelStandar}${modeKejar ? ", catch-up" : ""})`}
+                    >
+                      {targetNaikPerBulan} {unit}
+                    </Baris>
+                  </>
+                )}
               </div>
+              {arah !== ARAH_TURUN && (
+                <p className="text-[10px] text-gray-400 mt-1.5">
+                  Dihitung dari standar {labelStandar} 3 bulan (Permenkes)
+                  dibagi 3, sesuai jadwal posyandu bulanan.
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* 5) STATUS GIZI & ARAH */}
+          <section>
+            <Eyebrow>Status gizi &amp; arah pertumbuhan</Eyebrow>
+            <div className="space-y-1.5">
+              {m.zscore != null && (
+                <Baris label={`Z-score ${indeksZ}`}>
+                  {round1(Number(m.zscore))}
+                </Baris>
+              )}
+              {m.status_gizi && (
+                <Baris label="Status gizi">
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${GAYA_STATUS_GIZI(m.status_gizi)}`}
+                  >
+                    {m.status_gizi}
+                  </span>
+                </Baris>
+              )}
+              {arahInfo && (
+                <Baris
+                  label={
+                    jenis === "tinggi"
+                      ? "Arah terhadap standar"
+                      : "Arah menuju berat ideal"
+                  }
+                >
+                  <span
+                    className={`inline-flex items-center gap-1 ${arahInfo.cls}`}
+                  >
+                    {arahInfo.icon}
+                    {arahInfo.label}
+                  </span>
+                </Baris>
+              )}
+            </div>
+            {arahInfo && (
+              <p className="text-[11px] text-gray-400 leading-snug mt-1.5">
+                {jenis === "tinggi"
+                  ? "Arah ini menunjukkan bahwa posisi tinggi anak dibanding anak seusianya (standar WHO) membaik, stabil, atau menurun. Ini berbeda dari sekadar bertambah/tidaknya tinggi."
+                  : "Arah ini menunjukkan bahwa apakah berat anak bergerak mendekati atau menjauhi rentang berat ideal untuk tingginya."}
+                {arahInfo.ket ? ` ${arahInfo.ket}` : ""}
+              </p>
             )}
-          </div>
+          </section>
+
+          <p className="text-[10px] text-gray-400 leading-snug pt-1 border-t border-gray-100">
+            Hasil ini adalah alat bantu pemantauan. Untuk keputusan penanganan
+            gizi anak, konsultasikan ke kader Posyandu atau tenaga kesehatan.
+          </p>
         </div>
       )}
     </div>
@@ -562,6 +888,8 @@ function MetrikCard({ icon, label, unit, metrik }) {
 export default function CardPerkembanganAnak({ data }) {
   const berat = data?.berat_badan || {};
   const tinggi = data?.tinggi_badan || {};
+  const usiaBulan = data?.balita?.usia_bulan ?? null;
+  const tinggiRef = tinggi?.bulan_ini ?? null;
 
   return (
     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm w-full">
@@ -569,10 +897,10 @@ export default function CardPerkembanganAnak({ data }) {
         Perkembangan Berat &amp; Tinggi Badan
       </h3>
       <p className="text-sm text-gray-600 leading-relaxed mb-5">
-        Penilaian target disesuaikan dengan status gizi anak, berat berlebih
-        dinilai dari penurunan menuju berat ideal, berat kurang/normal dari
-        kenaikan minimal (KBM), dan anak pendek memakai target kejar (catch-up)
-        untuk tinggi badan.
+        Penilaian disesuaikan dengan status gizi anak: berat berlebih dinilai
+        dari penurunan menuju berat ideal, berat kurang/normal dari kenaikan
+        minimal (KBM), dan anak pendek memakai target kejar (catch-up) untuk
+        tinggi badan. Target dihitung per bulan sesuai jadwal posyandu.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MetrikCard
@@ -580,12 +908,15 @@ export default function CardPerkembanganAnak({ data }) {
           label="Tinggi Badan"
           unit="cm"
           metrik={tinggi}
+          usiaBulan={usiaBulan}
         />
         <MetrikCard
           icon={<Scale size={18} />}
           label="Berat Badan"
           unit="kg"
           metrik={berat}
+          usiaBulan={usiaBulan}
+          tinggiRef={tinggiRef}
         />
       </div>
     </div>

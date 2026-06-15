@@ -15,7 +15,7 @@ const RiwayatdanGrafik = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get("/deteksi"); // endpoint index
+        const res = await api.get("/deteksi");
         setData(res.data.data || res.data || []);
       } catch (error) {
         console.error(error.response?.data || error.message);
@@ -23,13 +23,11 @@ const RiwayatdanGrafik = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus data?")) return;
-
     try {
       await api.delete(`/deteksi/delete/${id}`);
       setData((prev) => prev.filter((item) => item.id !== id));
@@ -40,8 +38,6 @@ const RiwayatdanGrafik = () => {
     }
   };
 
-  // Satu baris per BALITA: ambil deteksi terbaru tiap anak,
-  // sehingga balita yang sudah ditimbang beberapa kali tidak tampil berulang.
   const balitaUnik = useMemo(() => {
     const map = new Map();
     for (const item of data) {
@@ -61,7 +57,6 @@ const RiwayatdanGrafik = () => {
     );
   }, [balitaUnik, search]);
 
-  // Kembali ke halaman 1 saat pencarian berubah agar tidak nyangkut di halaman kosong
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
@@ -84,14 +79,15 @@ const RiwayatdanGrafik = () => {
 
   return (
     <MainLayouts type="riwayatdangrafik">
-      {loading && (
-        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
-          <Atom color="#10b981" size="medium" text="Memuat..." />
-        </div>
-      )}
-      <div className="min-h-screen bg-gray-100 p-8 space-y-8">
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h1 className="text-2xl font-bold tracking-tight  text-gray-800">
+      <div className="relative min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8 space-y-8">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-800">
             Riwayat Deteksi
           </h1>
           <p className="text-sm text-gray-500 mt-1 mb-5">
@@ -104,13 +100,13 @@ const RiwayatdanGrafik = () => {
               placeholder="Cari nama balita..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
+              className="w-full sm:w-64 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
             />
           </div>
 
-          <div className="bg-white rounded-3xl shadow-lg p-8 mb-10 border border-gray-300 border-2">
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
-              <table className="w-full text-sm text-left border-collapse">
+          <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 lg:p-8 mb-10 border border-gray-300 border-2 ">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
+              <table className="w-full min-w-[640px] text-sm text-left border-collapse">
                 <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                   <tr>
                     <th className="px-4 py-3">No</th>
@@ -133,10 +129,10 @@ const RiwayatdanGrafik = () => {
                         <td className="px-4 py-3 text-gray-500">
                           {startIndex + index + 1}
                         </td>
-                        <td className="px-4 py-3 text-gray-500">
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                           {item.name || "-"}
                         </td>
-                        <td className="px-4 py-3 text-gray-500">
+                        <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                           {item.tgl_deteksi
                             ? new Date(item.tgl_deteksi).toLocaleDateString(
                                 "id-ID",
@@ -162,7 +158,6 @@ const RiwayatdanGrafik = () => {
                             >
                               <FaEye size={14} />
                             </Link>
-
                             <button
                               onClick={() => handleDelete(item.id)}
                               className="text-red-600 hover:bg-red-100 p-2 rounded-lg"

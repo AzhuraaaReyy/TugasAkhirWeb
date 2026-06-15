@@ -7,13 +7,10 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-import melatiImg from "../../../assets/images/3efe462b-579d-4a62-b536-77b6b867ae4a.png";
-import mawarImg from "../../../assets/images/6342b1cd-16a7-4330-b8b8-95e5f94db39e.png";
-import anggrekImg from "../../../assets/images/ae9726d1-a139-4f6b-99f8-8230a88c7e65.png";
-import dahliaImg from "../../../assets/images/Foto-by-UM-Surabaya.jpg";
 import FadeUp from "../../Animations/FadeUp";
-
 import FadeSlide from "../../Animations/FadeSlide";
+import api from "@/services/api";
+
 /* FIX ICON */
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -21,6 +18,14 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
+
+/* BASE URL BACKEND (untuk gambar di public/) */
+const BASE = (api.defaults.baseURL || "").replace(/\/api\/?$/, "");
+
+const urlGambar = (g) => {
+  if (!g) return `${BASE}/posyandu/default.jpg`;
+  return g.startsWith("http") ? g : `${BASE}/${g}`;
+};
 
 /* AUTO MOVE MAP */
 function ChangeMapView({ center }) {
@@ -38,45 +43,29 @@ function ChangeMapView({ center }) {
 const Map = () => {
   const dropdownRef = useRef(null);
 
-  /* DATA */
-  const locations = [
-    {
-      name: "Posyandu Melati",
-      kota: "Semarang",
-      position: [-6.9932, 110.4203],
-      alamat: "Jl. Pandanaran No. 10",
-      jadwal: "Senin, 08.00 - 11.00",
-      image: melatiImg,
-      telepon: "0899999999999",
-    },
-    {
-      name: "Posyandu Mawar",
-      kota: "Semarang",
-      position: [-6.9854, 110.4093],
-      alamat: "Jl. Gajahmada No. 22",
-      jadwal: "Rabu, 08.00 - 11.00",
-      image: mawarImg,
-      telepon: "0899999999999",
-    },
-    {
-      name: "Posyandu Anggrek",
-      kota: "Kendal",
-      position: [-6.9787, 110.4171],
-      alamat: "Jl. Raya Kendal No. 5",
-      jadwal: "Selasa, 09.00 - 12.00",
-      image: anggrekImg,
-      telepon: "0899999999999",
-    },
-    {
-      name: "Posyandu Dahlia",
-      kota: "Demak",
-      position: [-6.8913, 110.6396],
-      alamat: "Jl. Sultan Fatah No. 8",
-      jadwal: "Jumat, 08.00 - 10.00",
-      image: dahliaImg,
-      telepon: "0899999999999",
-    },
-  ];
+  /* DATA DARI BACKEND */
+  const [locations, setLocations] = useState([]);
+
+  useEffect(() => {
+    api
+      .get("/posyanduguest")
+      .then((res) => {
+        const data = res.data.data || [];
+        const mapped = data
+          .filter((p) => p.latitude && p.longitude)
+          .map((p) => ({
+            name: p.nama_posyandu,
+            kota: p.kota,
+            position: [Number(p.latitude), Number(p.longitude)],
+            alamat: p.alamat,
+            jadwal: p.jadwal,
+            image: urlGambar(p.gambar),
+            telepon: p.telepon,
+          }));
+        setLocations(mapped);
+      })
+      .catch((err) => console.error(err.response?.data || err.message));
+  }, []);
 
   /* STATE */
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,7 +77,7 @@ const Map = () => {
   const cities = useMemo(() => {
     const unique = [...new Set(locations.map((loc) => loc.kota))];
     return unique;
-  }, []);
+  }, [locations]);
 
   const filteredCities = cities.filter((city) =>
     city.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -120,7 +109,7 @@ const Map = () => {
 
   return (
     <section
-      className="py-30 px-6 bg-emerald-50 relative overflow-hidden"
+      className="py-16 md:py-28 px-4 sm:px-6 bg-emerald-50 relative overflow-hidden"
       id="map"
     >
       <div className="absolute -bottom-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-40"></div>
@@ -132,7 +121,7 @@ const Map = () => {
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
         {/* Layer 1 */}
         <svg
-          className="block w-full h-[160px] wave-float"
+          className="block w-full h-[90px] sm:h-[160px] wave-float"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
@@ -145,7 +134,7 @@ const Map = () => {
 
         {/* Layer 2 */}
         <svg
-          className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+          className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
@@ -157,25 +146,28 @@ const Map = () => {
         </svg>
       </div>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* TITLE */}
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-10 md:mb-12">
           <div className="mb-5"></div>
           <FadeUp delay={200}>
-            <h2 className="text-4xl font-bold text-gray-800">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-800">
               Cari Posyandu Terdekat
             </h2>
           </FadeUp>
           <FadeSlide direction="right" delay={200}>
-            <p className="mt-4 text-gray-600">
+            <p className="mt-4 text-sm sm:text-base text-gray-600">
               Temukan lokasi dan informasi posyandu berdasarkan kota.
             </p>
           </FadeSlide>
         </div>
 
         {/* SEARCH PROFESSIONAL */}
-        <div className="relative w-96 mx-auto mb-12 z-[9999]" ref={dropdownRef}>
+        <div
+          className="relative w-full max-w-sm mx-auto mb-10 md:mb-12 z-[9999]"
+          ref={dropdownRef}
+        >
           <FadeUp delay={300}>
             <input
               type="text"
@@ -230,14 +222,14 @@ const Map = () => {
         </div>
 
         {/* GRID */}
-        <div className="grid md:grid-cols-3 gap-10">
+        <div className="grid md:grid-cols-3 gap-6 md:gap-10">
           {/* MAP */}
           <div className="md:col-span-2 rounded-3xl shadow-xl overflow-hidden border-2 ">
             <FadeUp delay={200}>
               <MapContainer
                 center={mapCenter}
                 zoom={13}
-                style={{ height: "500px", width: "100%" }}
+                className="h-[380px] sm:h-[500px] w-full"
               >
                 <ChangeMapView center={mapCenter} />
 
@@ -268,14 +260,14 @@ const Map = () => {
           {/* SIDEBAR */}
           <div className="bg-white rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.5)] p-6 border-2">
             <FadeUp delay={200}>
-              <h3 className="text-xl font-bold mb-4 text-gray-800">
+              <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-800">
                 Informasi Posyandu
               </h3>
 
               {selectedLocation ? (
                 <div className="space-y-4 text-sm text-gray-700">
                   <FadeUp delay={200}>
-                    <div className="w-full h-48 rounded-2xl overflow-hidden">
+                    <div className="w-full h-44 sm:h-48 rounded-2xl overflow-hidden">
                       <img
                         src={selectedLocation.image}
                         alt={selectedLocation.name}
@@ -283,22 +275,31 @@ const Map = () => {
                       />
                     </div>
 
-                    <div className="space-y-2 justify-center text-justify mt-5">
-                      <p>
-                        <strong>Nama Posyandu:</strong> {selectedLocation.name}
-                      </p>
-                      <p>
-                        <strong>Kota:</strong> {selectedLocation.kota}
-                      </p>
-                      <p>
-                        <strong>Alamat:</strong> {selectedLocation.alamat}
-                      </p>
-                      <p>
-                        <strong>Jadwal:</strong> {selectedLocation.jadwal}
-                      </p>
-                      <p>
-                        <strong>Telepon:</strong> {selectedLocation.telepon}
-                      </p>
+                    <div className="mt-5 space-y-2">
+                      <div className="grid grid-cols-[140px_1fr]">
+                        <strong>Nama Posyandu</strong>
+                        <span>: {selectedLocation.name}</span>
+                      </div>
+
+                      <div className="grid grid-cols-[140px_1fr]">
+                        <strong>Kota</strong>
+                        <span>: {selectedLocation.kota}</span>
+                      </div>
+
+                      <div className="grid grid-cols-[140px_1fr]">
+                        <strong>Alamat</strong>
+                        <span>: {selectedLocation.alamat}</span>
+                      </div>
+
+                      <div className="grid grid-cols-[140px_1fr]">
+                        <strong>Jadwal</strong>
+                        <span>: {selectedLocation.jadwal}</span>
+                      </div>
+
+                      <div className="grid grid-cols-[140px_1fr]">
+                        <strong>Telepon</strong>
+                        <span>: {selectedLocation.telepon}</span>
+                      </div>
                     </div>
                   </FadeUp>
                 </div>

@@ -131,13 +131,13 @@ export default function LihatRiwayat() {
 
   return (
     <MainLayouts type="lihatriwayat">
-      <div className="min-h-screen bg-[#F4F7F4] font-sans antialiased py-10">
+      <div className="min-h-screen bg-[#F4F7F4] font-sans antialiased py-6 sm:py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
-          <div className="mb-8 pb-2 border-b border-gray-200/60">
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight sm:text-4xl">
+          <div className="mb-6 sm:mb-8 pb-2 border-b border-gray-200/60">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">
               Lihat Riwayat Balita
             </h1>
-            <p className=" w-full  text-sm text-gray-500 mt-2  leading-relaxed">
+            <p className="w-full text-sm text-gray-500 mt-2 leading-relaxed">
               Halaman ini menampilkan riwayat pemeriksaan dan hasil deteksi
               risiko stunting berdasarkan data pertumbuhan balita dari waktu ke
               waktu.
@@ -145,12 +145,12 @@ export default function LihatRiwayat() {
           </div>
 
           {/* Grid Konten Utama */}
-          <div className="flex flex-col md:flex-row gap-8 items-start">
+          <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
             <div className="w-full md:w-80 shrink-0 flex flex-col gap-6">
               <HeaderProfile form={form} />
               <EvaluasiKenaikanBulanan form={form} />
             </div>
-            <div className="flex-1 w-full h-full">
+            <div className="flex-1 w-full min-w-0">
               <TimelineCard form={form} metode={metode} />
             </div>
           </div>

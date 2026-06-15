@@ -53,7 +53,7 @@ const fmtJam = (t) =>
   });
 
 const sapaanPembuka = (nama) =>
-  `Halo${nama ? `, ${nama}` : ""}! 👋 Saya Tunas, teman pendamping tumbuh ` +
+  `Halo${nama ? `, ${nama}` : ""}! 👋 Saya GrowthAI, teman pendamping tumbuh ` +
   `kembang si kecil. Saya bisa membantu memberi rekomendasi makanan dan ` +
   `MPASI, ide menu harian, serta langkah yang sebaiknya dilakukan untuk ` +
   `anak. Bila ingin, saya juga bisa menjelaskan kondisi dan grafik ` +
@@ -85,8 +85,8 @@ export default function Chatbot() {
   const [namaUser, setNamaUser] = useState(null);
 
   const storageKey = isSnapshot
-    ? `tunas_chats_${id}_snap_${deteksiId}`
-    : `tunas_chats_${id}`;
+    ? `GrowthAI_chats_${id}_snap_${deteksiId}`
+    : `GrowthAI_chats_${id}`;
 
   const muatSesi = () => {
     try {
@@ -407,7 +407,7 @@ export default function Chatbot() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-gray-900">
-                  Tunas — Asisten Pertumbuhan Anak
+                  GrowthAI — Asisten Pertumbuhan Anak
                 </p>
                 <p className="truncate text-xs text-gray-400">
                   {isSnapshot && tanggalSnapshot
@@ -463,7 +463,7 @@ export default function Chatbot() {
                       {msg.loading ? (
                         <div className="rounded-2xl rounded-tl-md border border-emerald-50 bg-emerald-50/50 px-4 py-3">
                           <span className="inline-flex items-center gap-1 text-sm text-gray-400">
-                            Tunas sedang mengetik
+                            GrowthAI sedang mengetik
                             <span className="animate-pulse">...</span>
                           </span>
                         </div>
@@ -574,7 +574,7 @@ export default function Chatbot() {
                 </button>
               </div>
               <p className="mt-2 text-center text-[10px] text-gray-300">
-                Jawaban Tunas bersifat edukatif, bukan pengganti pemeriksaan
+                Jawaban GrowthAI bersifat edukatif, bukan pengganti pemeriksaan
                 tenaga kesehatan.
               </p>
             </div>

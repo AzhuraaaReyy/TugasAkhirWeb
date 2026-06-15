@@ -72,13 +72,13 @@ const Berita = () => {
   return (
     <section
       id="berita"
-      className="relative py-25  bg-emerald-50 overflow-hidden"
+      className="relative py-16 md:py-24 bg-emerald-50 overflow-hidden"
     >
       {/* 🌊 FLOATING WAVE */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
         {/* Layer 1 */}
         <svg
-          className="block w-full h-[160px] wave-float"
+          className="block w-full h-[90px] sm:h-[160px] wave-float"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
@@ -91,7 +91,7 @@ const Berita = () => {
 
         {/* Layer 2 */}
         <svg
-          className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+          className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
           viewBox="0 0 1440 320"
           preserveAspectRatio="none"
         >
@@ -110,20 +110,20 @@ const Berita = () => {
       <div className="absolute -top-5 -right-20 w-[300px] h-[300px] bg-blue-200 rounded-full blur-3xl opacity-60 z-0"></div>
       <div className="absolute top-20 right-110 w-[200px] h-[200px] bg-blue-200 rounded-full blur-3xl opacity-60 z-0"></div>
 
-      <div className="w-full px-6 relative">
+      <div className="w-full px-4 sm:px-6 relative">
         {/* HEADER */}
 
-        <div className="text-center mb-16 z-40 ">
+        <div className="text-center mb-12 md:mb-16 z-40 ">
           <FadeSlide direction="left" delay={400}>
             <div>
-              <h2 className="mt-5 text-4xl font-extrabold text-gray-800">
+              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold text-gray-800">
                 Berita Seputar Stunting
               </h2>
             </div>
           </FadeSlide>
           <FadeSlide direction="right" delay={400}>
             <div>
-              <p className="mt-5 max-w-2xl mx-auto text-gray-600">
+              <p className="mt-5 max-w-2xl mx-auto text-sm sm:text-base text-gray-600">
                 Berbagai informasi seputar stunting, mulai dari fakta,
                 perkembangan, hingga hal-hal penting yang perlu diketahui
               </p>
@@ -134,8 +134,11 @@ const Berita = () => {
         {/* SWIPER */}
         <FadeUp delay={400}>
           <div className="relative mb-20">
-            <PrevArrow arrowRef={prevRef} />
-            <NextArrow arrowRef={nextRef} />
+            {/* Panah hanya tampil mulai md (di mobile cukup swipe) */}
+            <div className="hidden md:block">
+              <PrevArrow arrowRef={prevRef} />
+              <NextArrow arrowRef={nextRef} />
+            </div>
             <Swiper
               modules={[Navigation, Autoplay, Pagination]}
               spaceBetween={30}
@@ -162,18 +165,19 @@ const Berita = () => {
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-[420px] object-cover transition duration-700 group-hover:scale-110 "
+                      className="w-full h-[360px] sm:h-[420px] object-cover transition duration-700 md:group-hover:scale-110 "
                     />
 
                     {/* DARK OVERLAY */}
                     <div className="absolute inset-0 bg-black/30"></div>
 
-                    {/* HOVER OVERLAY */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
+                    {/* HOVER OVERLAY (di mobile gradient langsung tampil) */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
 
                     {/* CONTENT */}
-                    <div className="absolute bottom-0 left-0 w-full p-8 text-white z-10">
-                      <div className="group-hover:opacity-0 transition duration-300">
+                    <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 text-white z-10">
+                      {/* Ringkas (judul+tanggal): hanya desktop, hilang saat hover */}
+                      <div className="hidden md:block md:group-hover:opacity-0 transition duration-300">
                         <p className="text-emerald-400 text-sm font-semibold mb-2">
                           {item.date}
                         </p>
@@ -183,11 +187,14 @@ const Berita = () => {
                         <hr className="w-20 border-emerald-500 border-2 mt-3" />
                       </div>
 
-                      <div className="absolute bottom-8 left-8 right-8 opacity-0 translate-y-10 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-700 ease-out">
+                      {/* Lengkap: tampil default di mobile, muncul saat hover di desktop */}
+                      <div className="md:absolute md:bottom-8 md:left-8 md:right-8 opacity-100 translate-y-0 md:opacity-0 md:translate-y-10 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-700 ease-out">
                         <p className="text-emerald-400 text-sm font-semibold mb-2">
                           {item.date}
                         </p>
-                        <h3 className="text-2xl font-bold">{item.title}</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold">
+                          {item.title}
+                        </h3>
                         <hr className="w-20 border-emerald-500 border-2 mt-3" />
                         <p className="mt-4 text-gray-200 text-sm leading-relaxed">
                           {item.desc}

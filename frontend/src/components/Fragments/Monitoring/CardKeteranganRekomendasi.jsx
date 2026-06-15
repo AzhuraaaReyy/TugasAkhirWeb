@@ -1,157 +1,126 @@
 import React, { useState, useEffect } from "react";
-
-const MIN_BERTURUT = 2;
-const EPS_BERAT = 0.05;
+const EPS = 0.05;
+const angka = (x) => {
+  if (x === null || x === undefined || x === "") return null;
+  const n = Number(x);
+  return isNaN(n) ? null : n;
+};
+const abs1 = (x) => (x == null ? null : Math.round(Math.abs(x) * 10) / 10);
+const arahDari = (v, eps = EPS) =>
+  v == null ? null : v >= eps ? "naik" : v <= -eps ? "turun" : "tetap";
 
 const urutkanRiwayat = (riwayat = []) =>
   [...riwayat].sort((a, b) => {
-    const ta = new Date(a?.tanggal).getTime();
-    const tb = new Date(b?.tanggal).getTime();
+    const ta = new Date(a?.tanggal ?? a?.tgl_deteksi).getTime();
+    const tb = new Date(b?.tanggal ?? b?.tgl_deteksi).getTime();
     if (!isNaN(ta) && !isNaN(tb)) return ta - tb;
     return (a?.umur ?? 0) - (b?.umur ?? 0);
   });
 
-const hitungTren = (riwayat = [], eps = EPS_BERAT) => {
-  if (riwayat.length < 2) return { arah: null, panjang: 0 };
-
+/* Streak arah perubahan untuk satu kolom (berat/tinggi) dari riwayat terurut. */
+const hitungStreak = (riw = [], field = "berat", eps = EPS) => {
+  const vals = riw
+    .map((r) => Number(r?.[field]))
+    .filter((v) => Number.isFinite(v));
+  if (vals.length < 2) return { arah: null, panjang: 0 };
   let arahTerakhir = null;
   let jumlah = 0;
-
-  for (let i = riwayat.length - 1; i > 0; i--) {
-    const sekarang = Number(riwayat[i].berat);
-    const sebelumnya = Number(riwayat[i - 1].berat);
-    const delta = sekarang - sebelumnya;
-    const arah = delta <= -eps ? "turun" : delta >= eps ? "naik" : "tetap";
-
+  for (let i = vals.length - 1; i > 0; i--) {
+    const d = vals[i] - vals[i - 1];
+    const a = d <= -eps ? "turun" : d >= eps ? "naik" : "tetap";
     if (!arahTerakhir) {
-      arahTerakhir = arah;
+      arahTerakhir = a;
       jumlah = 1;
       continue;
     }
-    if (arah === arahTerakhir) jumlah++;
+    if (a === arahTerakhir) jumlah++;
     else break;
   }
-
   return { arah: arahTerakhir, panjang: jumlah + 1 };
 };
 
-/* Kategori hanya dipakai internal untuk dedup (agar saran yang nyaris sama
-   tidak tampil berulang) — tidak ditampilkan ke layar. */
-const kategoriKey = (teks = "") => {
-  const t = teks.toLowerCase();
-  if (/(protein|telur|ikan|ayam|hati|daging|tempe|tahu|lauk)/.test(t))
-    return "protein";
-  if (/(sayur|buah|vitamin|serat|zat besi)/.test(t)) return "sayur";
-  if (/(stimulasi|motorik|aktivitas|merangkak|bermain|psikomotor)/.test(t))
-    return "stimulasi";
-  if (
-    /(posyandu|puskesmas|periksa|konsultasi|tenaga kesehatan|dokter|bidan|evaluasi|spesialis)/.test(
-      t,
-    )
-  )
-    return "periksa";
-  if (/(timbang|nimbang|pantau|mantau|pemantauan)/.test(t)) return "pantau";
-  if (/(tidur|istirahat)/.test(t)) return "tidur";
-  if (/(susu|asi|formula)/.test(t)) return "susu";
-  if (
-    /(sanitasi|cuci tangan|air bersih|kebersihan|jamban|sabun|imunisasi)/.test(
-      t,
-    )
-  )
-    return "sanitasi";
-  if (/(energi|kalori|kkal|kebutuhan gizi|padat)/.test(t)) return "energi";
-  return "umum";
+/* ---------- Klasifikasi status (sama acuan dgn CardPerkembangan) ---------- */
+const klasifTBU = (s = "") => {
+  const t = s.toLowerCase();
+  if (/sangat pendek/.test(t)) return { key: "stunting", level: "berat" };
+  if (/pendek/.test(t)) return { key: "stunting", level: "sedang" };
+  if (/tinggi/.test(t)) return { key: "tinggi", level: "aman" };
+  return { key: "normal", level: "normal" };
+};
+const klasifBBTB = (s = "") => {
+  const t = s.toLowerCase();
+  if (/(gizi buruk|buruk)/.test(t)) return { key: "wasting", level: "berat" };
+  if (/(gizi kurang|kurus|kurang)/.test(t))
+    return { key: "wasting", level: "sedang" };
+  if (/(obes)/.test(t)) return { key: "obesitas", level: "berat" };
+  if (/(risiko|resiko|berisiko)/.test(t))
+    return { key: "lebih", level: "risiko" };
+  if (/(gizi lebih|overweight|lebih)/.test(t))
+    return { key: "lebih", level: "sedang" };
+  return { key: "normal", level: "normal" };
 };
 
-/* Deteksi urgensi: rekomendasi dengan kata kunci di bawah dianggap "prioritas"
-   (perlu dilakukan dalam waktu dekat), sisanya masuk "rutin". */
-const URGEN_RX =
-  /(puskesmas|rumah sakit|segera|secepatnya|dokter|ahli gizi|spesialis|rujuk|penanganan)/i;
-const isPrioritas = (teks = "") => URGEN_RX.test(teks);
-
-/* Dedup: buang teks duplikat, lalu batasi satu item per kategori. */
-const dedupRekomendasi = (list = [], maks = Infinity) => {
-  const seenText = new Set();
-  const seenKat = new Set();
-  const out = [];
-  for (const r of list) {
-    const txt = (r || "").trim();
-    if (!txt || seenText.has(txt)) continue;
-    const kat = kategoriKey(txt);
-    if (seenKat.has(kat)) continue;
-    seenText.add(txt);
-    seenKat.add(kat);
-    out.push(r);
-    if (out.length >= maks) break;
-  }
-  return out;
-};
-
-/* Frasa bahasa awam untuk ringkasan "Apa yang terjadi?" */
 const FRASA = {
   stunting: {
     berat:
-      "tinggi badannya jauh tertinggal dari anak seusianya akibat kekurangan gizi yang berlangsung lama",
-    sedang: "tinggi badannya mulai tertinggal dari anak seusianya",
-  },
-  underweight: {
-    berat: "berat badannya sangat kurang untuk usianya",
-    sedang: "berat badannya masih kurang untuk usianya",
+      "tinggi badannya jauh tertinggal dari anak seusianya akibat kekurangan gizi yang berlangsung lama (stunting)",
+    sedang:
+      "tinggi badannya mulai tertinggal dari anak seusianya (berisiko stunting)",
   },
   wasting: {
     berat:
-      "tubuhnya terlalu kurus dibanding tinggi badannya dan perlu penanganan segera",
-    sedang: "tubuhnya mulai terlalu kurus dibanding tinggi badannya",
+      "tubuhnya terlalu kurus dibanding tinggi badannya dan perlu penanganan segera (gizi buruk)",
+    sedang:
+      "tubuhnya mulai terlalu kurus dibanding tinggi badannya (gizi kurang)",
   },
-  bbLebih: {
-    risiko: "berat badannya mulai berisiko berlebih untuk usianya",
-  },
-  giziLebih: {
-    risiko: "berat badannya mulai berisiko berlebih dibanding tinggi badannya",
-    sedang: "berat badannya berlebih dibanding tinggi badannya",
+  obesitas: {
     berat: "berat badannya jauh berlebih dibanding tinggi badannya (obesitas)",
   },
+  lebih: {
+    risiko: "berat badannya mulai berisiko berlebih dibanding tinggi badannya",
+    sedang: "berat badannya berlebih dibanding tinggi badannya (gizi lebih)",
+  },
+};
+const DAMPAK = {
+  stunting:
+    "Bila dibiarkan, stunting dapat menghambat perkembangan otak dan kemampuan belajar anak, menurunkan daya tahan tubuh, serta memengaruhi produktivitasnya saat dewasa.",
+  wasting:
+    "Tubuh yang terlalu kurus meningkatkan risiko infeksi dan, bila terlambat ditangani, dapat mengganggu pertumbuhan serta keselamatan anak.",
+  lebih:
+    "Kelebihan berat badan yang dibiarkan dapat berkembang menjadi obesitas serta meningkatkan risiko tekanan darah tinggi dan gangguan metabolik saat anak tumbuh besar.",
 };
 
-/* Padanan praktis (ukuran rumah tangga) untuk zat gizi makro, per kelompok
-   umur — CADANGAN bila backend belum mengirim kolom akg_balitas.padanan. */
+/* Padanan praktis makro per kelompok umur — cadangan bila backend belum kirim. */
 const PADANAN_GIZI = {
   "6 - 11 bulan": {
     Energi: "ASI tetap diberikan + MPASI 2-3 kali sehari dan 1-2 kali selingan",
     Protein:
       "kira-kira 1 butir telur + 1 potong kecil ikan/ayam yang dilumatkan, ditambah ASI",
     Lemak:
-      "sebagian besar dari ASI; tambahkan sekitar 1 sdt minyak/santan ke MPASI setiap masak",
-    Karbohidrat:
-      "bubur atau nasi tim sekitar 1/2 - 3/4 mangkuk kecil (250 ml) setiap kali makan",
-    Serat:
-      "sayur lembut 2-3 sdm tiap makan + buah lumat (pisang/pepaya) 1-2 kali sehari",
+      "sebagian besar dari ASI; tambahkan sekitar 1 sdt minyak/santan ke MPASI",
+    Karbohidrat: "bubur/nasi tim sekitar 1/2 - 3/4 mangkuk kecil tiap makan",
+    Serat: "sayur lembut 2-3 sdm tiap makan + buah lumat 1-2 kali sehari",
     Air: "sebagian besar dari ASI; air putih sekitar 1/2 gelas kecil sehari",
   },
   "1 - 3 tahun": {
     Energi: "3 kali makan utama + 2 kali selingan sehat",
     Protein:
       "kira-kira 1 butir telur + 1 potong kecil ikan/ayam + 1 potong tempe/tahu",
-    Lemak:
-      "sekitar 2-3 sdt minyak untuk memasak + lemak alami dari lauk dan santan secukupnya",
-    Karbohidrat:
-      "nasi sekitar 3 porsi kecil sehari (1 porsi = 3/4 gelas), boleh diganti ubi/kentang/roti",
+    Lemak: "sekitar 2-3 sdt minyak untuk memasak + lemak alami dari lauk",
+    Karbohidrat: "nasi 3 porsi kecil sehari, boleh diganti ubi/kentang/roti",
     Serat: "sayur sekitar 1,5 gelas + buah 2-3 potong kecil sehari",
     Air: "sekitar 5 gelas kecil (200 ml) sehari",
   },
   "4 - 6 tahun": {
     Energi: "3 kali makan utama + 2 kali selingan sehat",
     Protein:
-      "kira-kira 1 butir telur + 1 potong ikan/ayam + 2 potong tempe/tahu, atau ditambah 1 gelas susu",
+      "kira-kira 1 butir telur + 1 potong ikan/ayam + 2 potong tempe/tahu",
     Lemak: "sekitar 3 sdt minyak untuk memasak + lemak alami dari lauk",
-    Karbohidrat:
-      "nasi 3-4 porsi sehari (1 porsi = 3/4 gelas), boleh diganti ubi/kentang/mi/roti",
+    Karbohidrat: "nasi 3-4 porsi sehari, boleh diganti ubi/kentang/mi/roti",
     Serat: "sayur sekitar 2 gelas + buah 3 potong sehari",
     Air: "sekitar 6 gelas (240 ml) sehari",
   },
 };
-
-/* Padanan mikronutrien mana yang relevan ditampilkan per tab */
 const PADANAN_TAB_VITAMIN = [
   "Vitamin A",
   "Vitamin C",
@@ -167,48 +136,45 @@ const PADANAN_TAB_MINERAL = [
   "Vitamin & Mineral",
 ];
 
-/* Dampak cadangan, dipakai HANYA bila kolom DB dampak_* kosong */
-const DAMPAK_DEFAULT = {
-  stunting:
-    "Bila dibiarkan, stunting dapat menghambat perkembangan otak dan kemampuan belajar anak, menurunkan daya tahan tubuh, serta memengaruhi produktivitasnya saat dewasa.",
-  underweight:
-    "Berat badan yang terus tertinggal membuat anak lebih mudah sakit dan lemas, serta memperlambat tumbuh kembangnya bila tidak segera diperbaiki.",
-  wasting:
-    "Kondisi ini meningkatkan risiko infeksi dan, bila terlambat ditangani, dapat mengganggu pertumbuhan serta keselamatan anak.",
-  lebih:
-    "Kelebihan berat badan yang dibiarkan dapat berkembang menjadi obesitas serta meningkatkan risiko gangguan kesehatan seperti tekanan darah tinggi dan masalah metabolik saat anak tumbuh besar.",
-};
-
-/* ===== TAMBAHAN: gaya warna per tier (selaras output controller) ===== */
+/* Tingkat kewaspadaan (tier dari controller) — warna + kata sederhana. */
 const TIER_STYLE = {
   0: {
     wrap: "bg-emerald-50 ring-emerald-100",
     badge: "bg-emerald-100 text-emerald-700",
-    title: "text-emerald-800",
   },
   1: {
     wrap: "bg-amber-50 ring-amber-100",
     badge: "bg-amber-100 text-amber-800",
-    title: "text-amber-800",
   },
   2: {
     wrap: "bg-orange-50 ring-orange-100",
     badge: "bg-orange-100 text-orange-800",
-    title: "text-orange-800",
   },
-  3: {
-    wrap: "bg-red-50 ring-red-100",
-    badge: "bg-red-100 text-red-700",
-    title: "text-red-800",
-  },
+  3: { wrap: "bg-red-50 ring-red-100", badge: "bg-red-100 text-red-700" },
 };
+const TIER_LABEL = {
+  0: "Aman",
+  1: "Perlu diperhatikan",
+  2: "Perlu tindakan",
+  3: "Perlu segera ditangani",
+};
+
+const fmtNilai = (v) => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? `${+n.toFixed(3)}` : null;
+};
+const buatDaftarNilai = (defs) =>
+  defs
+    .map(([label, v, unit]) => {
+      const n = fmtNilai(v);
+      return n === null ? null : { label, nilai: `${n} ${unit}` };
+    })
+    .filter(Boolean);
 
 function Reveal({ show, delay = 0, className = "", children }) {
   return (
     <div
-      className={`transition-all duration-500 ease-out ${
-        show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-      } ${className}`}
+      className={`transition-all duration-500 ease-out ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
@@ -216,9 +182,13 @@ function Reveal({ show, delay = 0, className = "", children }) {
   );
 }
 
-/* Daftar rekomendasi sederhana: penanda titik kecil + teks, tanpa icon. */
 function DaftarRekomendasi({ items, tone = "emerald" }) {
-  const dot = tone === "amber" ? "bg-amber-500" : "bg-emerald-500";
+  const dot =
+    tone === "amber"
+      ? "bg-amber-500"
+      : tone === "red"
+        ? "bg-red-500"
+        : "bg-emerald-500";
   return (
     <ul className="space-y-2.5">
       {items.map((item, i) => (
@@ -236,274 +206,371 @@ function DaftarRekomendasi({ items, tone = "emerald" }) {
   );
 }
 
-/* Grid angka ringkas untuk vitamin/mineral (2 kolom).
-   ===== TAMBAHAN: prop `isFokus` untuk menyorot nutrien fokus dari controller. */
-function GridNilai({ items, isFokus }) {
+function GridNilai({ items }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {items.map((it) => {
-        const fokus = isFokus?.(it.label);
-        return (
-          <div
-            key={it.label}
-            className={`rounded-xl px-3 py-2 ${
-              fokus ? "bg-emerald-50 ring-1 ring-emerald-200" : "bg-gray-50"
-            }`}
-          >
-            <p className="text-[10.5px] uppercase tracking-wide text-gray-400">
-              {it.label}
-              {fokus && (
-                <span className="ml-1 rounded bg-emerald-100 px-1 text-[8.5px] font-bold text-emerald-700">
-                  fokus
-                </span>
-              )}
-            </p>
-            <p className="text-[13px] font-bold text-gray-800">{it.nilai}</p>
-          </div>
-        );
-      })}
+      {items.map((it) => (
+        <div key={it.label} className="rounded-xl bg-gray-50 px-3 py-2">
+          <p className="text-[10.5px] uppercase tracking-wide text-gray-400">
+            {it.label}
+          </p>
+          <p className="text-[13px] font-bold text-gray-800">{it.nilai}</p>
+        </div>
+      ))}
     </div>
   );
 }
 
-/* Angka dari DB bisa berupa string desimal ("0.30") -> rapikan */
-const fmtNilai = (v) => {
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? `${+n.toFixed(3)}` : null;
-};
-const buatDaftarNilai = (defs) =>
-  defs
-    .map(([label, v, unit]) => {
-      const n = fmtNilai(v);
-      return n === null ? null : { label, nilai: `${n} ${unit}` };
-    })
-    .filter(Boolean);
-
 export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
-  const nama = data?.name || "Anak";
+  const tinggi = data?.tinggi_badan || {};
+  const berat = data?.berat_badan || {};
+  const nama = data?.balita?.nama || data?.name || "Anak";
 
-  // Sumber AKG fleksibel: prop `gizi` (endpoint perkembangan) ATAU
-  // field kebutuhan_gizi dari endpoint detailmonitoring (lewat `data`).
   gizi = gizi || data?.kebutuhanGizi || data?.kebutuhan_gizi || null;
 
-  // ===== TAMBAHAN: tingkat rekomendasi terpadu dari backend (controller) =====
-  const tingkat = data?.tingkatRekomendasi || data?.tingkat_rekomendasi || null;
-  const fokusNutrisi = tingkat?.fokus_nutrisi || [];
-  const pemicuTren = tingkat?.pemicu_tren || [];
-  const tierStyle = tingkat
-    ? (TIER_STYLE[tingkat.tier] ?? TIER_STYLE[0])
-    : null;
-  const isFokus = (label = "") =>
-    fokusNutrisi.some(
-      (f) =>
-        f.toLowerCase().includes(label.toLowerCase()) ||
-        label.toLowerCase().includes(f.toLowerCase()),
-    );
-
   const [mounted, setMounted] = useState(false);
-  const [tabGizi, setTabGizi] = useState(0); // 0=Gizi utama, 1=Vitamin, 2=Mineral
+  const [tabKanan, setTabKanan] = useState(0); // 0 = Yang dilakukan, 1 = Kebutuhan gizi
+  const [tabGizi, setTabGizi] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 40);
     return () => clearTimeout(t);
   }, []);
 
-  const riwayatFinal =
-    (Array.isArray(riwayat) && riwayat.length ? riwayat : data?.riwayat) || [];
+  // ===== STATUS (membaca perkembangan; fallback ke field lama) =====
+  const sTBU = (tinggi.status_gizi || data?.statusTBU || "").trim();
+  const sBBTB = (berat.status_gizi || data?.statusBBTB || "").trim();
+  const cTBU = klasifTBU(sTBU);
+  const cBBTB = klasifBBTB(sBBTB);
 
-  // ===== KLASIFIKASI SETIAP INDIKATOR (mengikuti data status) =====
-  const tbu = (data?.statusTBU || "").toLowerCase();
-  const bbu = (data?.statusBBU || "").toLowerCase();
-  const bbtb = (data?.statusBBTB || "").toLowerCase();
-
-  const indikatorMasalah = [];
-
-  // Tinggi badan (TB/U)
-  if (tbu.includes("sangat pendek"))
-    indikatorMasalah.push({
+  const indikator = [];
+  if (cTBU.key === "stunting")
+    indikator.push({
       key: "stunting",
-      singkat: "Tinggi badan (Stunting)",
-      frasa: FRASA.stunting.berat,
-      dampak: data?.dampakStunting || DAMPAK_DEFAULT.stunting,
+      singkat: "Tinggi badan (stunting)",
+      level: cTBU.level,
+      frasa: FRASA.stunting[cTBU.level],
+      dampak: data?.dampakStunting || DAMPAK.stunting,
     });
-  else if (tbu.includes("pendek"))
-    indikatorMasalah.push({
-      key: "stunting",
-      singkat: "Tinggi badan (Stunting)",
-      frasa: FRASA.stunting.sedang,
-      dampak: data?.dampakStunting || DAMPAK_DEFAULT.stunting,
-    });
-
-  // Berat badan menurut umur (BB/U)
-  if (bbu.includes("sangat kurang"))
-    indikatorMasalah.push({
-      key: "underweight",
-      singkat: "Berat badan (UnderWeight)",
-      frasa: FRASA.underweight.berat,
-      dampak: data?.dampakUnderweight || DAMPAK_DEFAULT.underweight,
-    });
-  else if (bbu.includes("kurang"))
-    indikatorMasalah.push({
-      key: "underweight",
-      singkat: "Berat badan (UnderWeight)",
-      frasa: FRASA.underweight.sedang,
-      dampak: data?.dampakUnderweight || DAMPAK_DEFAULT.underweight,
-    });
-  else if (bbu.includes("lebih"))
-    indikatorMasalah.push({
-      key: "bbu_lebih",
-      singkat: "Berat badan (UnderWeight)",
-      frasa: FRASA.bbLebih.risiko,
-      dampak: DAMPAK_DEFAULT.lebih,
-    });
-
-  // Berat badan menurut tinggi (BB/TB)
-  if (bbtb.includes("gizi buruk"))
-    indikatorMasalah.push({
+  if (cBBTB.key === "wasting")
+    indikator.push({
       key: "wasting",
-      singkat: "Keseimbangan gizi (Wasting)",
-      frasa: FRASA.wasting.berat,
-      dampak: data?.dampakWasting || DAMPAK_DEFAULT.wasting,
+      singkat: "Keseimbangan gizi (wasting)",
+      level: cBBTB.level,
+      frasa: FRASA.wasting[cBBTB.level],
+      dampak: data?.dampakWasting || DAMPAK.wasting,
     });
-  else if (bbtb.includes("gizi kurang"))
-    indikatorMasalah.push({
-      key: "wasting",
-      singkat: "Keseimbangan gizi (Wasting)",
-      frasa: FRASA.wasting.sedang,
-      dampak: data?.dampakWasting || DAMPAK_DEFAULT.wasting,
-    });
-  else if (bbtb.includes("obesitas") || bbtb.includes("obese"))
-    indikatorMasalah.push({
+  if (cBBTB.key === "obesitas")
+    indikator.push({
       key: "obesitas",
-      singkat: "Keseimbangan gizi (Wasting)",
-      frasa: FRASA.giziLebih.berat,
-      dampak: DAMPAK_DEFAULT.lebih,
+      singkat: "Berat badan (obesitas)",
+      level: "berat",
+      frasa: FRASA.obesitas.berat,
+      dampak: DAMPAK.lebih,
     });
-  else if (bbtb.includes("berisiko"))
-    indikatorMasalah.push({
-      key: "risiko_lebih",
-      singkat: "Keseimbangan gizi (Wasting)",
-      frasa: FRASA.giziLebih.risiko,
-      dampak: DAMPAK_DEFAULT.lebih,
-    });
-  else if (bbtb.includes("gizi lebih") || bbtb.includes("overweight"))
-    indikatorMasalah.push({
-      key: "gizi_lebih",
-      singkat: "Keseimbangan gizi (Wasting)",
-      frasa: FRASA.giziLebih.sedang,
-      dampak: DAMPAK_DEFAULT.lebih,
+  else if (cBBTB.key === "lebih")
+    indikator.push({
+      key: "lebih",
+      singkat: "Berat badan (gizi lebih)",
+      level: cBBTB.level,
+      frasa: FRASA.lebih[cBBTB.level],
+      dampak: DAMPAK.lebih,
     });
 
-  const adaMasalah = indikatorMasalah.length > 0;
-  const banyakMasalah = indikatorMasalah.length > 1;
+  const adaMasalah = indikator.length > 0;
+  const banyakMasalah = indikator.length > 1;
+  const tinggiJangkung = cTBU.key === "tinggi";
 
-  // Ringkasan bahasa awam
-  const frasaMasalah = indikatorMasalah.map((it) => it.frasa);
+  // Ringkasan "apa yang terjadi"
+  const frasaList = indikator.map((it) => it.frasa);
   let ringkasan;
-  if (frasaMasalah.length === 0) {
-    ringkasan = `Pertumbuhan ${nama} berada dalam kisaran normal sesuai standar WHO. Tetap pertahankan pola makan bergizi dan pemantauan rutin agar tumbuh kembangnya terjaga.`;
-  } else if (frasaMasalah.length === 1) {
-    ringkasan = `Saat ini ${nama} menunjukkan satu hal yang perlu diperhatikan, yaitu ${frasaMasalah[0]}. Kondisi ini sebaiknya segera mendapat perhatian agar tumbuh kembang anak tetap optimal.`;
+  if (frasaList.length === 0) {
+    ringkasan = `Pertumbuhan ${nama} berada dalam kisaran normal sesuai standar WHO${tinggiJangkung ? ", bahkan tinggi badannya di atas rata-rata (tetap aman dan tidak perlu diturunkan)" : ""}. Pertahankan pola makan bergizi dan pemantauan rutin.`;
+  } else if (frasaList.length === 1) {
+    ringkasan = `Saat ini ${nama} menunjukkan satu hal yang perlu diperhatikan, yaitu ${frasaList[0]}. Sebaiknya segera mendapat perhatian agar tumbuh kembangnya tetap optimal.`;
   } else {
     const gabung =
-      frasaMasalah.length === 2
-        ? `${frasaMasalah[0]}; serta ${frasaMasalah[1]}`
-        : frasaMasalah.slice(0, -1).join("; ") +
-          "; serta " +
-          frasaMasalah[frasaMasalah.length - 1];
-    ringkasan = `Saat ini ${nama} menunjukkan ${frasaMasalah.length} hal yang perlu diperhatikan: ${gabung}. Kondisi-kondisi ini sebaiknya ditangani bersama agar tumbuh kembang anak kembali ke jalur yang sehat.`;
+      frasaList.slice(0, -1).join("; ") +
+      "; serta " +
+      frasaList[frasaList.length - 1];
+    ringkasan = `Saat ini ${nama} menunjukkan ${frasaList.length} hal yang perlu diperhatikan: ${gabung}. Kondisi ini sebaiknya ditangani bersama agar tumbuh kembang anak kembali ke jalur sehat.`;
   }
 
-  // ===== TREN PENIMBANGAN =====
-  const riwayatTerurut = urutkanRiwayat(riwayatFinal);
-  const trenBerat = hitungTren(riwayatTerurut);
+  // ===== ARAH PERTUMBUHAN GABUNGAN (tinggi + berat) =====
+  const pTinggi = angka(tinggi.perubahan);
+  const pBerat = angka(berat.perubahan);
+  const errTinggi = !!tinggi.peringatan;
+  const errBerat = !!berat.peringatan;
+  const arTinggi = errTinggi ? null : arahDari(pTinggi);
+  const arBerat = errBerat ? null : arahDari(pBerat);
 
-  const TREN_INFO = {
-    turun: {
-      wrap: "bg-red-50 border-red-100",
-      titleColor: "text-red-800",
-      title: "Berat badan menurun berturut-turut",
-      desc: `${nama} mengalami penurunan berat badan selama ${trenBerat.panjang} kali penimbangan berturut-turut. Perlu segera diperiksakan.`,
-    },
-    tetap: {
-      wrap: "bg-amber-50 border-amber-100",
-      titleColor: "text-amber-800",
-      title: "Pertumbuhan stagnan",
-      desc: `${nama} tidak menunjukkan kenaikan berat badan selama ${trenBerat.panjang} kali penimbangan berturut-turut. Evaluasi pola makan dianjurkan.`,
-    },
-    naik: {
-      wrap: "bg-emerald-50 border-emerald-100",
-      titleColor: "text-emerald-800",
-      title: "Pertumbuhan positif",
-      desc: `${nama} menunjukkan kenaikan berat badan selama ${trenBerat.panjang} kali penimbangan berturut-turut. Pertahankan pola makan dan pemantauan rutin.`,
-    },
+  const kalimatUkuran = (label, ar, p, unit, err) => {
+    if (err) return `${label} perlu diperiksa kembali (data tidak wajar)`;
+    if (ar == null) return `${label} belum dapat dinilai`;
+    if (ar === "tetap") return `${label} tidak berubah`;
+    return `${label} ${ar} ${abs1(p)} ${unit}`;
   };
-  const trenConfig = trenBerat.arah ? TREN_INFO[trenBerat.arah] : null;
-  const adaPeringatanTren = trenConfig && trenBerat.panjang >= MIN_BERTURUT;
 
-  const perluPerbaikan =
-    adaPeringatanTren &&
-    (trenBerat.arah === "turun" || trenBerat.arah === "tetap");
-
-  const rekomendasiTren = perluPerbaikan
-    ? [
-        "Periksakan anak ke Posyandu/Puskesmas untuk evaluasi penyebab berat badan tidak naik.",
-        "Tingkatkan pemberian makanan bergizi seimbang dan padat energi sesuai usia anak.",
-        "Lakukan penimbangan rutin setiap bulan untuk memantau tren pertumbuhan.",
-      ]
-    : [];
-
-  // ===== REKOMENDASI GIZI SESUAI UMUR (Permenkes 28/2019) =====
-  const adaKurangGizi = indikatorMasalah.some((it) =>
-    ["stunting", "underweight", "wasting"].includes(it.key),
+  const riwayatTerurut = urutkanRiwayat(
+    (Array.isArray(riwayat) && riwayat.length ? riwayat : data?.riwayat) || [],
   );
-  const adaLebihGizi = indikatorMasalah.some((it) =>
-    ["obesitas", "gizi_lebih", "risiko_lebih", "bbu_lebih"].includes(it.key),
+  const streakBerat = hitungStreak(riwayatTerurut, "berat");
+  const streakTinggi = hitungStreak(riwayatTerurut, "tinggi");
+  const gagal2T =
+    tinggi.gagal_berturut === true || berat.gagal_berturut === true;
+
+  // tone & judul blok arah
+  let arahTone = "emerald";
+  let arahJudul = "Arah pertumbuhan bulan ini";
+  const keduaNaik = arTinggi === "naik" && arBerat === "naik";
+  const adaTurun = arTinggi === "turun" || arBerat === "turun";
+  const adaStagnan = arTinggi === "tetap" || arBerat === "tetap";
+  if (gagal2T || adaTurun) {
+    arahTone = "red";
+    arahJudul = "Arah pertumbuhan perlu perhatian";
+  } else if (adaStagnan) {
+    arahTone = "amber";
+    arahJudul = "Sebagian pertumbuhan stagnan";
+  } else if (keduaNaik) {
+    arahJudul = "Pertumbuhan positif";
+  }
+
+  let arahKalimat = `Pada penimbangan bulan ini, ${kalimatUkuran("tinggi badan", arTinggi, pTinggi, "cm", errTinggi)} dan ${kalimatUkuran("berat badan", arBerat, pBerat, "kg", errBerat)}.`;
+  if (keduaNaik)
+    arahKalimat +=
+      " Keduanya bergerak naik — pertumbuhan menunjukkan arah yang baik.";
+  else if (arTinggi === "turun" && arBerat === "turun")
+    arahKalimat += " Keduanya menurun — perlu segera diperhatikan.";
+  else if (adaTurun)
+    arahKalimat += " Ada ukuran yang menurun sehingga perlu perhatian.";
+  else if (adaStagnan)
+    arahKalimat += " Ada ukuran yang tidak bertambah pada periode ini.";
+
+  // berturut (streak) — tampil bila ≥ 3 pengukuran searah
+  const berturut = [];
+  if (streakTinggi.arah && streakTinggi.panjang >= 3)
+    berturut.push(
+      `Tinggi badan ${streakTinggi.arah === "naik" ? "naik" : streakTinggi.arah === "turun" ? "menurun" : "tidak berubah"} ${streakTinggi.panjang} kali pengukuran berturut-turut.`,
+    );
+  if (streakBerat.arah && streakBerat.panjang >= 3)
+    berturut.push(
+      `Berat badan ${streakBerat.arah === "naik" ? "naik" : streakBerat.arah === "turun" ? "menurun" : "tidak berubah"} ${streakBerat.panjang} kali penimbangan berturut-turut.`,
+    );
+  if (gagal2T)
+    berturut.push(
+      "Pertumbuhan belum mencapai target 2 bulan berturut-turut (tanda 2T) — perlu pemeriksaan lanjutan.",
+    );
+
+  // ===== KONDISI per ukuran: STATUS GIZI + TREN (naik/stagnan/turun) =====
+  const beratPosisiAtas = cBBTB.key === "obesitas" || cBBTB.key === "lebih";
+  const beratHarusNaik = !beratPosisiAtas;
+
+  const beratTurun = !errBerat && arBerat === "turun" && beratHarusNaik;
+  const beratStagnan = !errBerat && arBerat === "tetap" && beratHarusNaik;
+  const beratKurangNaik =
+    !errBerat &&
+    arBerat === "naik" &&
+    berat.memenuhi_standar === false &&
+    beratHarusNaik;
+  const tinggiStagnan =
+    !errTinggi && arTinggi === "tetap" && cTBU.key !== "stunting";
+  const tinggiKurangNaik =
+    !errTinggi &&
+    arTinggi === "naik" &&
+    tinggi.memenuhi_standar === false &&
+    cTBU.key !== "stunting";
+
+  const optimal =
+    !adaMasalah &&
+    !gagal2T &&
+    !beratTurun &&
+    !beratStagnan &&
+    !beratKurangNaik &&
+    !tinggiStagnan &&
+    !tinggiKurangNaik;
+
+  // ===== ALASAN — status gizi diutamakan; bila normal, TREN yang dipakai =====
+  const alasan = [];
+  if (cTBU.key === "stunting")
+    alasan.push({
+      teks:
+        cTBU.level === "berat"
+          ? "tinggi badan anak masih sangat pendek untuk usianya (stunting berat)"
+          : "tinggi badan anak mulai pendek untuk usianya",
+      sev: cTBU.level === "berat" ? 3 : 2,
+    });
+  else if (tinggiStagnan)
+    alasan.push({
+      teks: "tinggi badan anak belum bertambah pada bulan ini",
+      sev: 1,
+    });
+  else if (tinggiKurangNaik)
+    alasan.push({
+      teks: "pertambahan tinggi badan belum mencapai target bulan ini",
+      sev: 1,
+    });
+
+  if (cBBTB.key === "wasting")
+    alasan.push({
+      teks:
+        cBBTB.level === "berat"
+          ? "tubuh anak sangat kurus dibanding tingginya (gizi buruk)"
+          : "tubuh anak mulai kurus dibanding tingginya (gizi kurang)",
+      sev: cBBTB.level === "berat" ? 3 : 2,
+    });
+  else if (cBBTB.key === "obesitas")
+    alasan.push({
+      teks: "berat anak jauh berlebih dibanding tingginya (obesitas)",
+      sev: 3,
+    });
+  else if (cBBTB.key === "lebih")
+    alasan.push({
+      teks:
+        cBBTB.level === "sedang"
+          ? "berat anak berlebih dibanding tingginya"
+          : "berat anak mulai berisiko berlebih dibanding tingginya",
+      sev: cBBTB.level === "sedang" ? 2 : 1,
+    });
+  else if (beratTurun)
+    alasan.push({
+      teks: "berat badan anak menurun dibanding bulan lalu",
+      sev: 2,
+    });
+  else if (beratStagnan)
+    alasan.push({
+      teks: "berat badan anak belum bertambah pada bulan ini",
+      sev: 1,
+    });
+  else if (beratKurangNaik)
+    alasan.push({
+      teks: "kenaikan berat badan belum mencapai target bulan ini",
+      sev: 1,
+    });
+
+  if (gagal2T)
+    alasan.push({
+      teks: "pertumbuhan belum mencapai target 2 bulan berturut-turut",
+      sev: 3,
+    });
+
+  const tingkatNum = alasan.reduce((m, a) => Math.max(m, a.sev), 0);
+  const adaErrorData = errTinggi || errBerat;
+  const FASE = {
+    1: "kondisinya perlu diperhatikan",
+    2: "anak perlu tindakan perbaikan",
+    3: "anak perlu perhatian dan penanganan khusus",
+  };
+  const tierStyle = TIER_STYLE[tingkatNum] ?? TIER_STYLE[0];
+  const tierLabel = TIER_LABEL[tingkatNum] ?? "Aman";
+  const bannerPembuka =
+    tingkatNum === 0
+      ? `Pertumbuhan ${nama} berjalan baik dan berada di jalur yang sehat.`
+      : alasan.length === 1
+        ? `Karena ${alasan[0].teks}, ${FASE[tingkatNum]}.`
+        : null;
+
+  // ===== REKOMENDASI TINDAKAN sebagai PARAGRAF yang mengalir =====
+  const gabung = (frags) => {
+    const f = frags.filter(Boolean);
+    if (f.length === 0) return "";
+    if (f.length === 1) return f[0];
+    if (f.length === 2) return `${f[0]} dan ${f[1]}`;
+    return f.slice(0, -1).join(", ") + ", serta " + f[f.length - 1];
+  };
+
+  const homeFrags = [];
+  if (cTBU.key === "stunting")
+    homeFrags.push(
+      "beri makanan tinggi protein hewani seperti telur, ikan, atau ayam setiap hari dan lakukan stimulasi tumbuh kembang",
+    );
+  else if (tinggiStagnan || tinggiKurangNaik)
+    homeFrags.push(
+      "perbanyak makanan berprotein agar tinggi anak kembali bertambah",
+    );
+  if (cBBTB.key === "wasting")
+    homeFrags.push(
+      "tambah porsi makan yang padat energi dan beri makan lebih sering dalam porsi kecil",
+    );
+  else if (beratPosisiAtas)
+    homeFrags.push(
+      "batasi gula, gorengan, dan camilan kemasan, perbanyak sayur dan buah, serta ajak anak aktif bergerak setiap hari",
+    );
+  else if (beratTurun)
+    homeFrags.push(
+      "tambah porsi makan dan lauk berprotein (telur, ikan, ayam) karena berat anak menurun",
+    );
+  else if (beratStagnan || beratKurangNaik)
+    homeFrags.push(
+      "tambah porsi makan dan lauk berprotein agar berat anak bertambah cukup",
+    );
+  if (optimal)
+    homeFrags.push(
+      "lanjutkan memberi makanan yang beragam dan seimbang setiap hari, lengkapi dengan protein hewani seperti telur, ikan, atau ayam",
+    );
+  const home = gabung(homeFrags);
+
+  const paragraf = [];
+  if (tingkatNum === 3) {
+    paragraf.push(
+      `Hal yang paling penting saat ini adalah segera memeriksakan ${nama} ke Posyandu atau Puskesmas, agar kondisinya bisa dipastikan dan ditangani lebih lanjut oleh tenaga kesehatan.`,
+    );
+    if (home)
+      paragraf.push(
+        `Sambil menunggu pemeriksaan, di rumah Bunda bisa ${home}, dan tetap menimbang anak setiap bulan agar perkembangannya terpantau.`,
+      );
+  } else if (tingkatNum === 2) {
+    if (home)
+      paragraf.push(`Untuk membantu memperbaikinya, Bunda bisa ${home}.`);
+    paragraf.push(
+      `Sebaiknya periksakan juga ${nama} ke Posyandu agar mendapat pemeriksaan lebih lanjut, dan lakukan penimbangan rutin setiap bulan.`,
+    );
+  } else if (tingkatNum === 1) {
+    if (home)
+      paragraf.push(
+        `Kondisi ini masih bisa diperbaiki dengan langkah sederhana di rumah: ${home}.`,
+      );
+    paragraf.push(
+      `Setelah itu, pantau kembali pada penimbangan bulan depan di Posyandu untuk melihat perkembangannya.`,
+    );
+  } else {
+    if (home)
+      paragraf.push(
+        `Untuk mempertahankan kondisi baik ini, Bunda cukup ${home}.`,
+      );
+    paragraf.push(
+      `Yang terpenting, teruskan kebiasaan baik ini dan tetap timbang serta ukur ${nama} setiap bulan di Posyandu agar pertumbuhannya selalu terpantau.`,
+    );
+  }
+  if (adaErrorData) {
+    paragraf.push(
+      `Namun, karena hasil pengukuran bulan ini tampak tidak wajar, sebaiknya angka tersebut diperiksa atau diukur ulang terlebih dahulu sebelum mengambil tindakan.`,
+    );
+  }
+
+  // ===== KEBUTUHAN GIZI HARIAN (AKG) =====
+  const padananKelompok =
+    gizi?.padanan || (gizi && PADANAN_GIZI[gizi.kelompok_umur]) || {};
+  const adaASI = Object.values(padananKelompok).some((v) =>
+    /asi/i.test(String(v)),
   );
+  const adaKurang = indikator.some((it) =>
+    ["stunting", "wasting"].includes(it.key),
+  );
+  const adaLebih = beratPosisiAtas;
 
   const rekomendasiAKG = [];
   if (gizi) {
     if (gizi.catatan && /asi eksklusif/i.test(gizi.catatan)) {
-      // 0-5 bulan: rekomendasinya BUKAN makanan, melainkan ASI eksklusif
-      rekomendasiAKG.push(gizi.catatan);
-    } else if (adaKurangGizi) {
+      // ditangani di catatan
+    } else if (adaKurang) {
       rekomendasiAKG.push(
-        `Penuhi kebutuhan gizi harian anak usia ${gizi.kelompok_umur}: energi ±${gizi.energi_kkal} kkal dan protein ${gizi.protein_g} g per hari, utamakan protein hewani (sesuai Permenkes 28/2019).`,
+        `Penuhi kebutuhan gizi harian usia ${gizi.kelompok_umur}: energi ±${gizi.energi_kkal} kkal dan protein ${gizi.protein_g} g per hari, utamakan protein hewani (Permenkes 28/2019).`,
       );
-    } else if (adaLebihGizi) {
+    } else if (adaLebih) {
       rekomendasiAKG.push(
-        `Jaga asupan harian anak agar tidak melampaui kebutuhan usianya (${gizi.kelompok_umur}, sekitar ${gizi.energi_kkal} kkal per hari); batasi gula dan makanan ringan kemasan (sesuai Permenkes 28/2019).`,
+        `Jaga asupan harian agar tidak melampaui kebutuhan usianya (${gizi.kelompok_umur}, sekitar ${gizi.energi_kkal} kkal/hari); batasi gula dan makanan ringan kemasan (Permenkes 28/2019).`,
       );
     }
   }
-
-  // AKG ditaruh paling depan karena paling spesifik (kuantitatif per umur),
-  // lalu rekomendasi status dari DB, terakhir saran berbasis tren.
-  const sumberRekomendasi = [
-    ...rekomendasiAKG,
-    ...(data?.rekomendasiStunting || []),
-    ...(data?.rekomendasiWasting || []),
-    ...(data?.rekomendasiUnderweight || []),
-    ...rekomendasiTren,
-  ];
-
-  // ===== PEMBAGIAN REKOMENDASI =====
-  const rekomendasiTunggal = dedupRekomendasi(sumberRekomendasi, 4);
-  const rekomendasiPrioritas = dedupRekomendasi(
-    sumberRekomendasi.filter(isPrioritas),
-    3,
-  );
-  const rekomendasiRutin = dedupRekomendasi(
-    sumberRekomendasi.filter((r) => !isPrioritas(r)),
-    4,
-  );
-  const adaRekomendasi =
-    rekomendasiPrioritas.length > 0 || rekomendasiRutin.length > 0;
-
-  // ===== RINGKASAN AKG: MAKRO + VITAMIN + MINERAL =====
-  // Padanan diutamakan dari backend (kolom akg_balitas.padanan);
-  // konstanta lokal hanya cadangan bila backend belum mengirimnya.
-  const padananKelompok =
-    gizi?.padanan || (gizi && PADANAN_GIZI[gizi.kelompok_umur]) || {};
 
   const ringkasAKG = gizi
     ? [
@@ -532,7 +599,6 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         ["Kolin", gizi.kolin_mg, "mg"],
       ])
     : [];
-
   const mineralItems = gizi
     ? buatDaftarNilai([
         ["Kalsium", gizi.kalsium_mg, "mg"],
@@ -547,51 +613,29 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         ["Tembaga", gizi.tembaga_mcg, "mcg"],
       ])
     : [];
-
-  // Bila backend belum punya kolom vitamin/mineral, kartu otomatis kembali
-  // ke tampilan lama (satu daftar makro, tanpa tab).
   const adaMikro = vitaminItems.length > 0 || mineralItems.length > 0;
-
   const padananUntuk = (keys) =>
     keys
       .filter((k) => padananKelompok[k])
       .map((k) => ({ label: k, teks: padananKelompok[k] }));
-
-  const padananVitamin = padananUntuk(PADANAN_TAB_VITAMIN);
-  const padananMineral = padananUntuk(PADANAN_TAB_MINERAL);
-
   const TAB_GIZI = ["Gizi utama", "Vitamin", "Mineral"];
 
-  /* ----- Isi tiap slide ----- */
   const SlideMakro = (
     <DaftarRekomendasi
-      items={ringkasAKG.map((z) => {
-        const fokus = isFokus(z.label);
-        return (
-          <span key={z.label}>
-            <span
-              className={`font-semibold ${
-                fokus ? "text-emerald-700" : "text-gray-800"
-              }`}
-            >
-              {z.label} {z.nilai}
-            </span>
-            {fokus && (
-              <span className="ml-1 rounded bg-emerald-100 px-1 text-[8.5px] font-bold text-emerald-700">
-                fokus
-              </span>
-            )}
-            {z.padanan && <span className="text-gray-600"> = {z.padanan}</span>}
+      items={ringkasAKG.map((z) => (
+        <span key={z.label}>
+          <span className="font-semibold text-gray-800">
+            {z.label} {z.nilai}
           </span>
-        );
-      })}
+          {z.padanan && <span className="text-gray-600"> = {z.padanan}</span>}
+        </span>
+      ))}
       tone="emerald"
     />
   );
-
   const SlideMikro = (items, padananList) => (
     <div className="space-y-3">
-      <GridNilai items={items} isFokus={isFokus} />
+      <GridNilai items={items} />
       {padananList.length > 0 && (
         <DaftarRekomendasi
           items={padananList.map((p) => (
@@ -606,6 +650,19 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
     </div>
   );
 
+  const arahWrap =
+    arahTone === "red"
+      ? "bg-red-50 border-red-100"
+      : arahTone === "amber"
+        ? "bg-amber-50 border-amber-100"
+        : "bg-emerald-50 border-emerald-100";
+  const arahTitle =
+    arahTone === "red"
+      ? "text-red-800"
+      : arahTone === "amber"
+        ? "text-amber-800"
+        : "text-emerald-800";
+
   return (
     <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
       {/* ====== KIRI: KETERANGAN KONDISI ====== */}
@@ -617,7 +674,26 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
               Keterangan kondisi
             </h3>
           </div>
-
+          {/* ARAH PERTUMBUHAN GABUNGAN */}
+          <div className={`rounded-2xl border mt-5 px-4 py-3 ${arahWrap}`}>
+            <h4 className={`text-sm font-bold ${arahTitle}`}>{arahJudul}</h4>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-gray-600">
+              {arahKalimat}
+            </p>
+            {berturut.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {berturut.map((b, i) => (
+                  <li
+                    key={i}
+                    className="flex gap-2 text-[12px] leading-relaxed text-gray-600"
+                  >
+                    <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-gray-400" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <div className="mt-5 space-y-4">
             {/* APA YANG TERJADI */}
             <div className="rounded-2xl bg-gray-50 p-4">
@@ -629,7 +705,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
               </p>
             </div>
 
-            {/* DAMPAK JANGKA PANJANG */}
+            {/* DAMPAK */}
             <div className="rounded-2xl bg-gray-50 p-4">
               <h4 className="text-sm font-bold text-emerald-700">
                 Dampak jangka panjang
@@ -642,7 +718,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
                       menumpuk:
                     </p>
                   )}
-                  {indikatorMasalah.map((it) => (
+                  {indikator.map((it) => (
                     <p
                       key={it.key}
                       className="text-[13px] leading-relaxed text-gray-600"
@@ -663,20 +739,6 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
                 </p>
               )}
             </div>
-
-            {/* BANNER TREN */}
-            {adaPeringatanTren && (
-              <div
-                className={`rounded-2xl border px-4 py-3 ${trenConfig.wrap}`}
-              >
-                <h4 className={`text-sm font-bold ${trenConfig.titleColor}`}>
-                  {trenConfig.title}
-                </h4>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-gray-600">
-                  {trenConfig.desc}
-                </p>
-              </div>
-            )}
           </div>
 
           <p className="mt-5 text-sm italic leading-relaxed text-gray-400">
@@ -686,137 +748,164 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         </div>
       </Reveal>
 
-      {/* ====== KANAN: REKOMENDASI TINDAKAN ====== */}
+      {/* ====== KANAN: REKOMENDASI ====== */}
       <Reveal show={mounted} delay={90}>
         <div className="flex h-full flex-col rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-7">
           <div className="flex items-center gap-3">
             <span className="h-6 w-1.5 rounded-full bg-emerald-500" />
             <h3 className="text-xl font-extrabold tracking-tight text-gray-900">
-              Rekomendasi tindakan
+              Rekomendasi Tindakan
             </h3>
           </div>
 
-          <div className="mt-5 flex-1">
-            <div className="space-y-5">
-              {/* ===== TAMBAHAN: TINGKAT KEWASPADAAN (tier dari controller) ===== */}
-              {tingkat && (
-                <div
-                  className={`rounded-2xl px-4 py-3.5 ring-1 ${tierStyle.wrap}`}
+          <div className="mt-5 flex-1 space-y-4">
+            {/* TINGKAT PERHATIAN (selalu tampil — verdict kondisi) */}
+            <div className={`rounded-2xl px-4 py-3.5 ring-1 ${tierStyle.wrap}`}>
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`rounded-lg px-2.5 py-1 text-[11.5px] font-bold ${tierStyle.badge}`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`rounded-lg px-2.5 py-1 text-[11.5px] font-bold ${tierStyle.badge}`}
-                    >
-                      {tingkat.label}
-                    </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                      Tingkat kewaspadaan
-                    </span>
-                  </div>
+                  {tierLabel}
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                  Tingkat perhatian
+                </span>
+              </div>
 
-                  {tingkat.tindakan_utama && (
-                    <p
-                      className={`mt-2.5 text-[13px] font-semibold leading-relaxed ${tierStyle.title}`}
-                    >
-                      {tingkat.tindakan_utama}
-                    </p>
-                  )}
-
-                  {pemicuTren.length > 0 && (
-                    <div className="mt-2.5 border-t border-white/70 pt-2.5">
-                      <p className="text-[11px] font-semibold text-gray-600">
-                        Alasan kewaspadaan:
-                      </p>
-                      <ul className="mt-1 space-y-1">
-                        {pemicuTren.map((p, i) => (
-                          <li
-                            key={i}
-                            className="flex gap-2 text-[12px] leading-relaxed text-gray-600"
-                          >
-                            <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-gray-400" />
-                            <span>{p}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {tingkat.catatan_gizi_lebih && (
-                    <p className="mt-2 text-[11.5px] leading-relaxed text-orange-700">
-                      Catatan: terdapat indikasi berat berlebih dibanding tinggi
-                      badan — perhatikan juga keseimbangan asupan.
-                    </p>
-                  )}
-
-                  {tingkat.dasar && (
-                    <p className="mt-2.5 text-[10px] leading-relaxed text-gray-400">
-                      Dasar penilaian: {tingkat.dasar}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Prioritas (hanya saat ada masalah) */}
-              {adaMasalah && rekomendasiPrioritas.length > 0 && (
-                <div className="rounded-2xl bg-amber-50/70 px-4 py-3.5 ring-1 ring-amber-100">
-                  <p className="mb-2 text-[12.5px] font-semibold text-amber-800">
-                    Sebaiknya segera dilakukan
+              {bannerPembuka ? (
+                <p className="mt-2.5 text-[13px] font-semibold leading-relaxed text-gray-700">
+                  {bannerPembuka}
+                </p>
+              ) : (
+                <div className="mt-2.5">
+                  <p className="text-[12.5px] font-semibold text-gray-700">
+                    Yang perlu diperhatikan:
                   </p>
-                  <DaftarRekomendasi
-                    items={rekomendasiPrioritas}
-                    tone="amber"
-                  />
+                  <ul className="mt-1 space-y-1">
+                    {alasan.map((a, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-2 text-[12.5px] leading-relaxed text-gray-600"
+                      >
+                        <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full bg-gray-400" />
+                        <span>{a.teks}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-1.5 text-[12.5px] font-semibold text-gray-700">
+                    Karena itu, {FASE[tingkatNum]}.
+                  </p>
                 </div>
               )}
 
-              {/* Anak tanpa masalah: rekomendasi umum tetap tampil */}
-              {!adaMasalah && rekomendasiTunggal.length > 0 && (
-                <div className="px-1">
-                  <DaftarRekomendasi
-                    items={rekomendasiTunggal}
-                    tone="emerald"
-                  />
-                </div>
+              {adaErrorData && (
+                <p className="mt-2 text-[11.5px] leading-relaxed text-amber-700">
+                  Catatan: data pengukuran bulan ini perlu diperiksa karena
+                  perubahannya tampak tidak wajar, jadi penilaian ini masih
+                  sementara.
+                </p>
               )}
+            </div>
 
-              {/* ===== KEBUTUHAN GIZI HARIAN (tab geser: makro / vitamin / mineral) ===== */}
-              {gizi ? (
+            {/* SLIDE: Yang dilakukan  vs  Kebutuhan gizi */}
+            <div className="flex rounded-xl bg-gray-100 p-1">
+              {["Yang dilakukan", "Kebutuhan gizi"].map((t, i) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTabKanan(i)}
+                  className={`flex-1 rounded-lg py-1.5 text-[12px] font-semibold transition ${tabKanan === i ? "bg-white text-emerald-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            {/* TAB 0 — YANG DILAKUKAN (langkah untuk kondisi anak) */}
+            {tabKanan === 0 && (
+              <div className="px-1">
+                <p className="text-[11.5px] leading-relaxed text-gray-500">
+                  Langkah yang sebaiknya dilakukan untuk kondisi {nama} saat
+                  ini, berdasarkan hasil penimbangan dan trennya.
+                </p>
+                {paragraf.length > 0 ? (
+                  <div className="mt-2 space-y-2.5">
+                    {paragraf.map((p, i) => (
+                      <p
+                        key={i}
+                        className="text-[13.5px] leading-relaxed text-gray-700"
+                      >
+                        {p}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Pertahankan kebiasaan baik dan timbang anak rutin tiap
+                    bulan.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* TAB 1 — KEBUTUHAN GIZI HARIAN (referensi sesuai usia) */}
+            {tabKanan === 1 &&
+              (gizi ? (
                 <div className="px-1">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-[12.5px] font-semibold text-emerald-700 ">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="text-[12.5px] font-semibold text-emerald-700">
                       Kebutuhan gizi harian
                     </p>
                     <span className="rounded-lg bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
                       {gizi.kelompok_umur}
                     </span>
                   </div>
-                  <p className="mb-3 text-[12px] leading-relaxed text-gray-500">
-                    Angka di bawah ini menunjukkan perkiraan kebutuhan gizi
-                    harian {nama} sesuai usianya. Tidak perlu menghafal atau
-                    menghitung satu per satu, yang terpenting adalah memberikan
-                    makanan yang beragam dan seimbang setiap hari.
+                  <p className="mb-3 text-[11.5px] leading-relaxed text-gray-500">
+                    Ini{" "}
+                    <span className="font-semibold">
+                      patokan kebutuhan harian
+                    </span>{" "}
+                    sesuai usia {nama} (referensi umum), bukan respons langsung
+                    ke kondisi di atas. Yang penting makanannya beragam dan
+                    seimbang setiap hari.
                   </p>
+
+                  {adaASI && (
+                    <div className="mb-3 rounded-xl bg-emerald-50/70 px-3 py-2 text-[11.5px] leading-relaxed text-gray-600 ring-1 ring-emerald-100">
+                      Untuk usia ini,{" "}
+                      <span className="font-semibold">
+                        ASI tetap menjadi sumber utama
+                      </span>{" "}
+                      dan protein hewani diberikan sebagai bagian dari MPASI.
+                      Jadi anjuran &ldquo;protein hewani&rdquo; pada tab
+                      tindakan dan &ldquo;ASI&rdquo; di sini saling melengkapi,
+                      bukan bertentangan.
+                    </div>
+                  )}
+
+                  {rekomendasiAKG.length > 0 && (
+                    <div className="mb-3">
+                      <DaftarRekomendasi
+                        items={rekomendasiAKG}
+                        tone="emerald"
+                      />
+                    </div>
+                  )}
+
                   {adaMikro ? (
                     <>
-                      {/* TAB */}
                       <div className="mb-3 flex rounded-xl bg-gray-100 p-1">
                         {TAB_GIZI.map((t, i) => (
                           <button
                             key={t}
                             type="button"
                             onClick={() => setTabGizi(i)}
-                            className={`flex-1 rounded-lg py-1.5 text-[11.5px] font-semibold transition ${
-                              tabGizi === i
-                                ? "bg-white text-emerald-700 shadow-sm"
-                                : "text-gray-500 hover:text-gray-700"
-                            }`}
+                            className={`flex-1 rounded-lg py-1.5 text-[11px] font-semibold transition ${tabGizi === i ? "bg-white text-emerald-700 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                           >
                             {t}
                           </button>
                         ))}
                       </div>
-
-                      {/* SLIDER */}
                       <div className="overflow-hidden">
                         <div
                           className="flex items-start transition-transform duration-300 ease-out"
@@ -828,17 +917,21 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
                             {SlideMakro}
                           </div>
                           <div className="w-full shrink-0 px-0.5">
-                            {SlideMikro(vitaminItems, padananVitamin)}
+                            {SlideMikro(
+                              vitaminItems,
+                              padananUntuk(PADANAN_TAB_VITAMIN),
+                            )}
                           </div>
                           <div className="w-full shrink-0 pl-0.5">
-                            {SlideMikro(mineralItems, padananMineral)}
+                            {SlideMikro(
+                              mineralItems,
+                              padananUntuk(PADANAN_TAB_MINERAL),
+                            )}
                           </div>
                         </div>
                       </div>
                     </>
                   ) : (
-                    /* Backend lama (belum ada kolom vitamin/mineral):
-                       tampilan satu daftar seperti sebelumnya */
                     SlideMakro
                   )}
 
@@ -847,41 +940,18 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
                       {gizi.catatan}
                     </p>
                   )}
-
                   <p className="mt-2 text-[10.5px] text-gray-400">
                     Angka di atas adalah kebutuhan rata-rata per hari menurut{" "}
-                    {gizi.sumber}. Gunakan sebagai acuan, bukan target kaku yang
-                    harus tepat setiap hari. Padanan porsi mengikuti Pedoman
-                    Gizi Seimbang (Isi Piringku) dan bersifat perkiraan. Untuk
-                    kebutuhan khusus anak, konsultasikan ke kader posyandu atau
-                    tenaga kesehatan
+                    {gizi.sumber || "AKG"}. Gunakan sebagai acuan, bukan target
+                    kaku. Untuk kebutuhan khusus anak, konsultasikan ke kader
+                    Posyandu atau tenaga kesehatan.
                   </p>
                 </div>
               ) : (
-                /* Cadangan bila data AKG belum terkirim dari backend */
-                adaMasalah &&
-                rekomendasiRutin.length > 0 && (
-                  <div className="px-1">
-                    <p className="mb-2 text-[12.5px] font-semibold text-emerald-700">
-                      Untuk dijaga sehari-hari
-                    </p>
-                    <DaftarRekomendasi
-                      items={rekomendasiRutin}
-                      tone="emerald"
-                    />
-                  </div>
-                )
-              )}
-
-              {/* Fallback total bila benar-benar tidak ada apa pun */}
-              {!gizi &&
-                ((adaMasalah && !adaRekomendasi) ||
-                  (!adaMasalah && rekomendasiTunggal.length === 0)) && (
-                  <p className="text-sm text-gray-500">
-                    Tidak ada rekomendasi tersedia.
-                  </p>
-                )}
-            </div>
+                <p className="px-1 text-sm text-gray-500">
+                  Data kebutuhan gizi harian belum tersedia.
+                </p>
+              ))}
           </div>
         </div>
       </Reveal>

@@ -13,19 +13,19 @@ const FAQ = () => {
   return (
     <section
       id="faq"
-      className="bg-gradient-to-b from-emerald-100 to-white py-16 px-6"
+      className="bg-gradient-to-b from-emerald-100 to-white py-16 px-4 sm:px-6"
     >
       <div className="max-w-4xl mx-auto">
         {/* Title */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-10 md:mb-12">
           <FadeUp delay={300}>
-            <h2 className="mt-4 text-4xl font-bold text-gray-800">
+            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-gray-800">
               Pertanyaan Umum Seputar Stunting
             </h2>
           </FadeUp>
 
           <FadeSlide direction="left" delay={500}>
-            <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
+            <p className="mt-4 text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
               Kami merangkum berbagai pertanyaan yang sering ditanyakan oleh
               orang tua mengenai stunting, gizi anak, serta cara pencegahannya.
             </p>
@@ -40,21 +40,24 @@ const FAQ = () => {
                 <div className="bg-white rounded-xl shadow-md overflow-hidden transition hover:bg-gray-100 zoom-in ">
                   <button
                     onClick={() => toggleFAQ(index)}
-                    className="w-full flex justify-between items-center p-5 text-left "
+                    aria-expanded={openIndex === index}
+                    className="w-full flex justify-between items-center gap-4 p-4 sm:p-5 text-left "
                   >
-                    <span className="font-semibold text-gray-800 ">
+                    <span className="font-semibold text-sm sm:text-base text-gray-800 ">
                       {faq.question}
                     </span>
 
                     <ChevronDown
-                      className={`transition-transform duration-300 ${
+                      className={`shrink-0 transition-transform duration-300 ${
                         openIndex === index ? "rotate-180 text-emerald-600" : ""
                       }`}
                     />
                   </button>
 
                   {openIndex === index && (
-                    <div className="px-5 pb-5 text-gray-600">{faq.answer}</div>
+                    <div className="px-4 sm:px-5 pb-5 text-sm sm:text-base text-gray-600">
+                      {faq.answer}
+                    </div>
                   )}
                 </div>
               </FadeUp>

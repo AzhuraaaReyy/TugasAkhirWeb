@@ -6,6 +6,7 @@ import stunting from "../../../assets/images/sistem.jpg";
 import monitoring from "../../../assets/images/Aplikasi-Monitoring-Jaringan.jpg";
 import edukasi from "../../../assets/images/pixverse_t2i_ori_c2060860-0997-4480-ae6b-d12b9d41511f.webp";
 import BorderGlow from "../../Animations/BorderGlow";
+
 const FiturSistem = () => {
   const [refHeader, headerVisible] = UseInView(0.3);
 
@@ -14,7 +15,7 @@ const FiturSistem = () => {
       {/* SECTION FITUR */}
       <section
         id="fitur"
-        className="relative py-28 px-6 bg-gradient-to-b from-gray-50 to-emerald-100 overflow-hidden"
+        className="relative py-16 md:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-emerald-100 overflow-hidden"
       >
         <div className="max-w-7xl mx-auto text-center relative z-10">
           {/* BACKGROUND BLUR DECORATION */}
@@ -24,13 +25,13 @@ const FiturSistem = () => {
           {/* Header */}
           <div
             ref={refHeader}
-            className={`max-w-6xl mx-auto px-6 relative z-10 transition-all duration-700 ${
+            className={`max-w-6xl mx-auto px-0 sm:px-6 relative z-10 transition-all duration-700 ${
               headerVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-10"
             }`}
           >
-            <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800">
+            <h2 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800">
               {headerVisible && (
                 <Typewriter speed={10}>
                   Sistem Deteksi Dini Stunting Berbasis Website
@@ -38,7 +39,7 @@ const FiturSistem = () => {
               )}
             </h2>
 
-            <p className="mt-4 max-w-2xl mx-auto text-gray-600">
+            <p className="mt-4 max-w-2xl mx-auto text-sm sm:text-base text-gray-600">
               {headerVisible && (
                 <Typewriter speed={15}>
                   Sistem membantu kader posyandu dan orang tua dalam melakukan
@@ -50,7 +51,7 @@ const FiturSistem = () => {
           </div>
           {/* Card Fitur */}
 
-          <div className="mt-20 mb-10 grid md:grid-cols-3 gap-8">
+          <div className="mt-12 md:mt-20 mb-10 grid sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
             {/* FITUR 1 */}
             <FadeUp delay={400}>
               <BorderGlow
@@ -63,23 +64,23 @@ const FiturSistem = () => {
                 colors={["#22c55e", "#4ade80", "#86efac"]}
               >
                 <div
-                  className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
+                  className="group p-6 md:p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
                     transition-all duration-300 ease-out
                     hover:-translate-y-3 hover:shadow-xl hover:scale-105"
                 >
                   {/* 🔥 GAMBAR */}
                   <img
                     src={edukasi}
-                    alt="Edukasi"
-                    className="w-full h-[200px] object-cover rounded-xl"
+                    alt="Edukasi Gizi dan Stunting"
+                    className="w-full h-[180px] sm:h-[200px] object-cover rounded-xl"
                   />
                   <FadeSlide direction="left" delay={400}>
-                    <h3 className="mt-6 text-xl font-bold text-gray-800">
+                    <h3 className="mt-6 text-lg sm:text-xl font-bold text-gray-800">
                       Edukasi Gizi dan Stunting
                     </h3>
                   </FadeSlide>
                   <FadeUp delay={400}>
-                    <p className="mt-3 text-gray-600">
+                    <p className="mt-3 text-sm sm:text-base text-gray-600">
                       Menyediakan informasi mengenai nutrisi balita, pencegahan
                       stunting, serta panduan tumbuh kembang anak berdasarkan
                       sumber kesehatan terpercaya.
@@ -105,22 +106,22 @@ const FiturSistem = () => {
                 colors={["#22c55e", "#4ade80", "#86efac"]}
               >
                 <div
-                  className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
+                  className="group p-6 md:p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
                     transition-all duration-300 ease-out
                     hover:-translate-y-3 hover:shadow-xl hover:scale-105"
                 >
                   <img
                     src={monitoring}
-                    alt="Edukasi"
-                    className="w-full h-[200px] object-cover rounded-xl"
+                    alt="Monitoring Pertumbuhan Balita"
+                    className="w-full h-[180px] sm:h-[200px] object-cover rounded-xl"
                   />
                   <FadeSlide direction="left" delay={600}>
-                    <h3 className="mt-6 text-xl font-bold text-gray-800">
+                    <h3 className="mt-6 text-lg sm:text-xl font-bold text-gray-800">
                       Monitoring Pertumbuhan Balita
                     </h3>
                   </FadeSlide>
                   <FadeUp delay={600}>
-                    <p className="mt-3 text-gray-600">
+                    <p className="mt-3 text-sm sm:text-base text-gray-600">
                       Mencatat dan memantau data tinggi badan, berat badan,
                       serta umur balita dengan visualisasi grafik pertumbuhan
                       sesuai standar WHO.
@@ -147,29 +148,29 @@ const FiturSistem = () => {
                 colors={["#22c55e", "#4ade80", "#86efac"]}
               >
                 <div
-                  className="group p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
+                  className="group p-6 md:p-8 bg-white rounded-2xl shadow hover:shadow-xl transition duration-300 shadow-md
                     transition-all duration-300 ease-out
                     hover:-translate-y-3 hover:shadow-xl hover:scale-105"
                 >
                   <img
                     src={stunting}
-                    alt="Edukasi"
-                    className="w-full h-[200px] object-cover rounded-xl"
+                    alt="Deteksi Risiko Stunting"
+                    className="w-full h-[180px] sm:h-[200px] object-cover rounded-xl"
                   />
                   <FadeSlide direction="left" delay={800}>
-                    <h3 className="mt-6 text-xl font-bold text-gray-800">
+                    <h3 className="mt-6 text-lg sm:text-xl font-bold text-gray-800">
                       Deteksi Risiko Stunting
                     </h3>
                   </FadeSlide>
                   <FadeUp delay={800}>
-                    <p className="mt-3 text-gray-600">
+                    <p className="mt-3 text-sm sm:text-base text-gray-600">
                       Melakukan klasifikasi risiko stunting menggunakan sistem
                       berbasis aturan yang mengacu pada standar antropometri
                       WHO.
                     </p>
                   </FadeUp>
                   <FadeSlide direction="right" delay={800}>
-                    <button className="mt-12 text-emerald-600 font-semibold hover:underline">
+                    <button className="mt-5 md:mt-12 text-emerald-600 font-semibold hover:underline">
                       Deteksi Sekarang →
                     </button>
                   </FadeSlide>
@@ -183,7 +184,7 @@ const FiturSistem = () => {
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
           <svg
-            className="block w-full h-[160px] wave-float"
+            className="block w-full h-[90px] sm:h-[160px] wave-float"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -196,7 +197,7 @@ const FiturSistem = () => {
 
           {/* Layer 2 */}
           <svg
-            className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+            className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
