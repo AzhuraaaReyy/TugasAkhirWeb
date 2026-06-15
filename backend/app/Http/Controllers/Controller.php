@@ -153,8 +153,6 @@ abstract class Controller
                 $catatanBb = "Anak telah berusia lebih dari 24 bulan. Pada usia ini berat badan dinilai berdasarkan status gizi, bukan target kenaikan minimal.";
             } elseif ($intervalTerlaluJauh) {
                 $catatanBb = "Jarak penimbangan terlalu jauh ({$interval} bulan) sehingga kenaikan berat tidak dapat dinilai dengan standar KBM. Penilaian menggunakan status gizi saat ini. Mulailah menimbang anak secara rutin setiap bulan.";
-            } elseif ($intervalBeda) {
-                $catatanBb = "Jarak penimbangan saat ini {$interval} bulan, sedangkan standar penilaian menggunakan jendela 3 bulan, sehingga target bersifat perkiraan. Dianjurkan menimbang anak sesuai jadwal standar.";
             }
         }
 
@@ -221,8 +219,6 @@ abstract class Controller
             $catatanTb = "Anak telah berusia lebih dari 24 bulan. Pada usia ini tinggi badan dinilai berdasarkan status gizi; anak dengan tinggi di bawah standar diberikan target kejar (catch-up).";
         } elseif ($intervalTerlaluJauh) {
             $catatanTb = "Jarak pengukuran terlalu jauh ({$interval} bulan) sehingga pertambahan tinggi tidak dapat dinilai dengan standar KPT. Penilaian menggunakan status gizi saat ini. Mulailah mengukur anak secara rutin setiap bulan.";
-        } elseif ($intervalBeda) {
-            $catatanTb = "Jarak pengukuran saat ini {$interval} bulan, sedangkan standar penilaian menggunakan jendela 3 bulan, sehingga target bersifat perkiraan. Dianjurkan mengukur tinggi anak sesuai jadwal standar.";
         }
 
         $peringatanTb = null;
@@ -232,6 +228,14 @@ abstract class Controller
 
         // ---------- Bulatkan SEMUA angka tampilan ke 1 desimal ----------
         $r1 = fn($x) => $x === null ? null : round((float) $x, 1);
+
+        $gagalIniBb      = $this->periodeGagalBB($balita, $deteksiTerbaru);
+        $gagalLaluBb     = $dataLalu ? $this->periodeGagalBB($balita, $dataLalu) : null;
+        $gagalBerturutBb = ($gagalIniBb === true && $gagalLaluBb === true);
+
+        $gagalIniTb      = $this->periodeGagalTB($balita, $deteksiTerbaru);
+        $gagalLaluTb     = $dataLalu ? $this->periodeGagalTB($balita, $dataLalu) : null;
+        $gagalBerturutTb = ($gagalIniTb === true && $gagalLaluTb === true);
 
         return [
             'balita' => [
@@ -268,7 +272,7 @@ abstract class Controller
                 'kbm_berlaku'          => $kbmBerlaku,
                 'catatan'              => $catatanBb,
                 'peringatan'           => $peringatanBb,
-
+                'gagal_berturut' => $gagalBerturutBb,
                 'zscore'               => $deteksiTerbaru->zscore_tb_bb,
                 'status_gizi'          => $statusGiziBb,
                 'status_gizi_level'    => $this->level($deteksiTerbaru->status_tb_bb),
@@ -303,7 +307,7 @@ abstract class Controller
                 'kpt_berlaku'          => $kptBerlaku,
                 'catatan'              => $catatanTb,
                 'peringatan'           => $peringatanTb,
-
+                'gagal_berturut' => $gagalBerturutTb,
                 'zscore'               => $zTbuIni,
                 'zscore_lalu'          => $zTbuLalu,
                 'tren_zscore'          => $trenZTbu,
@@ -347,6 +351,75 @@ abstract class Controller
 
 
 
+    private function deteksiSebelum(Balita $balita, Deteksi $det): ?Deteksi
+    {
+        return Deteksi::where('balita_id', $balita->id)
+            ->where(function ($q) use ($det) {
+                $q->where('tgl_deteksi', '<', $det->tgl_deteksi)
+                    ->orWhere(function ($q2) use ($det) {
+                        $q2->where('tgl_deteksi', $det->tgl_deteksi)
+                            ->where('id', '<', $det->id);
+                    });
+            })
+            ->orderByDesc('tgl_deteksi')->orderByDesc('id')->first();
+    }
+
+    private function periodeGagalBB(Balita $balita, Deteksi $det): ?bool
+    {
+        $prev = $this->deteksiSebelum($balita, $det);
+        if (!$prev) return null;
+
+        $umurLalu = $prev->umur !== null ? (int) $prev->umur : null;
+        if ($umurLalu === null || $umurLalu > 24) return null;   // >24 bln dinilai status gizi
+        $interval = max(1, (int) $det->umur - $umurLalu);
+        if ($interval > 6) return null;                          // jarak terlalu jauh, tak sahih
+
+        $bbIni   = (float) $det->berat;
+        $selisih = round($bbIni - (float) $prev->berat, 2);
+        $arah    = $this->arahDariBBTB((float) $det->zscore_tb_bb);
+
+        // Sudah di rentang ideal BB/TB? -> berhasil
+        $lms = $this->lmsBBTB((float) $det->tinggi, $balita->jk);
+        $dalamIdeal = false;
+        if ($lms) {
+            $min = $this->nilaiDariZScore(-2, $lms->l, $lms->m, $lms->s);
+            $max = $this->nilaiDariZScore(1,  $lms->l, $lms->m, $lms->s);
+            $dalamIdeal = $bbIni >= $min && $bbIni <= $max;
+        }
+        if ($dalamIdeal) return false;
+
+        if ($arah === 'turun') {
+            // Anak GIZI LEBIH: "gagal" HANYA bila berat justru BERTAMBAH (obesitas memburuk).
+            // Berat turun atau tetap = sedang menuju ideal = TIDAK gagal.
+            return $selisih > 0;
+        }
+
+        // Anak normal/kurang: gagal bila kenaikan < KBM minimal.
+        $kbm     = $this->standarKenaikan('standar_kbm', 'kbm_kg', $balita->jk, $umurLalu, $interval);
+        $harapan = $this->skalaInterval($kbm['nilai'], $kbm['interval'], $interval);
+        if ($harapan === null) return null;
+        return $selisih < $harapan;
+    }
+
+    /** Apakah SATU periode GAGAL untuk tinggi badan? (arah selalu naik) */
+    private function periodeGagalTB(Balita $balita, Deteksi $det): ?bool
+    {
+        $prev = $this->deteksiSebelum($balita, $det);
+        if (!$prev) return null;
+
+        $selisih = round((float) $det->tinggi - (float) $prev->tinggi, 2);
+        if ($selisih < 0) return null;                           // tinggi turun = data keliru, abaikan
+
+        $umurLalu = $prev->umur !== null ? (int) $prev->umur : null;
+        if ($umurLalu === null || $umurLalu > 24) return null;
+        $interval = max(1, (int) $det->umur - $umurLalu);
+        if ($interval > 6) return null;
+
+        $kpt     = $this->standarKenaikan('standar_kpt', 'kpt_cm', $balita->jk, $umurLalu, $interval);
+        $harapan = $this->skalaInterval($kpt['nilai'], $kpt['interval'], $interval);
+        if ($harapan === null) return null;
+        return $selisih < $harapan;                              // termasuk anak catch-up
+    }
 
     private function tentukanStatus($selisih)
     {

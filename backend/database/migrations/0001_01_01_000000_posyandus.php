@@ -14,7 +14,11 @@ return new class extends Migration
         schema::create('posyandus', function (Blueprint $table) {
             $table->id();
             $table->string('nama_posyandu');
+            $table->string('kota');
             $table->text('alamat');
+            $table->string('jadwal')->nullable();      // contoh: "Senin, 08.00 - 11.00"
+            $table->string('telepon')->nullable();     // string, bukan integer
+            $table->string('gambar')->nullable();       // path / URL foto posyandu
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->timestamps();

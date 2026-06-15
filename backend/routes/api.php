@@ -19,7 +19,7 @@ use App\Http\Controllers\RiwayatGrafikController;
 
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/register', [RegisterController::class, 'register']);
-
+Route::get('/posyanduguest', [PosyanduController::class, 'index']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
