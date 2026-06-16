@@ -43,19 +43,19 @@ export default function EdukasiStunting() {
   const items = [
     {
       title: "Apa itu Stunting?",
-      videoId: "jTsMZYU76uY",
-    },
-    {
-      title: "Cara Mencegah Stunting",
       videoId: "ic0tQZUZRA4",
     },
     {
+      title: "Cara Mencegah Stunting",
+      videoId: "jCaHthuF0VU",
+    },
+    {
       title: "Pentingnya Gizi Seimbang",
-      videoId: "T7y5v1B2Q0A",
+      videoId: "8WQHKD8-ooc",
     },
     {
       title: "Peran Posyandu dalam Pencegahan Stunting",
-      videoId: "q3sL8Zx1N9M",
+      videoId: "d_sWquGY0YA",
     },
   ];
 

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import MainLayouts from "@/layouts/MainLayouts";
 import { Bot, MessageCircle } from "lucide-react";
+import { Atom } from "react-loading-indicators";
 import ChartTinggi from "@/components/Fragments/Monitoring/ChartTinggi";
 import ChartBerat from "@/components/Fragments/Monitoring/ChartBerat";
 import CardPerkembangan from "@/components/Fragments/Monitoring/CardPerkembangan";
@@ -32,11 +33,13 @@ export default function TrenMonitoring() {
   const sufiks = isOrtu ? "-snapshot-ortu" : "-snapshot";
 
   useEffect(() => {
-    const fetchGrafik = async () => {
+    if (!deteksiId) return;
+    let aktif = true;
+
+    const ambilGrafik = async () => {
       try {
         const res = await api.get(`/grafik${sufiks}/${deteksiId}`);
-        console.log("API GRAFIK:", res.data);
-        const formattedData = res.data.map((item) => ({
+        const formattedData = (res.data || []).map((item) => ({
           id: item.id,
           name: item.bulan,
           tanggal: item.tgl_deteksi,
@@ -75,39 +78,24 @@ export default function TrenMonitoring() {
           minus2Tb: item.minus2_tb,
           minus3Tb: item.minus3_tb,
         }));
-
-        setChartData(formattedData);
-        console.log("DEBUG GRAFIK:", res.data);
+        if (aktif) setChartData(formattedData);
       } catch (err) {
         console.error("Error ambil grafik:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    if (deteksiId) fetchGrafik();
-  }, [deteksiId]);
-
-  useEffect(() => {
-    const fetchPerkembangan = async () => {
+    const ambilPerkembangan = async () => {
       try {
         const res = await api.get(`/perkembangan${sufiks}/${deteksiId}`);
-        setPerkembangan(res.data);
-        console.log("Debug Perkembangan:", res.data);
+        if (aktif) setPerkembangan(res.data);
       } catch (err) {
         console.error("Error Perkembangan: ", err);
-      } finally {
-        setLoading(false);
       }
     };
-    if (deteksiId) fetchPerkembangan();
-  }, [deteksiId]);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
+    const ambilDetail = async () => {
       try {
         const res = await api.get(`/detailmonitoring${sufiks}/${deteksiId}`);
-        console.log("API DETAIL:", res.data);
         const item = res.data.data;
 
         const formattedData = {
@@ -138,27 +126,43 @@ export default function TrenMonitoring() {
           riwayat: item.riwayat,
           kebutuhanGizi: item.kebutuhan_gizi,
         };
-        setDetail(formattedData);
-        console.log("DEBUG DETAIL:", formattedData);
+        if (aktif) setDetail(formattedData);
       } catch (err) {
-        console.error("Error:", err);
-      } finally {
-        setLoading(false);
+        console.error("Error detail:", err);
       }
     };
 
-    if (deteksiId) fetchDetail();
-  }, [deteksiId]);
+    const muat = async () => {
+      setLoading(true);
+      // Ketiganya jalan paralel; loading baru mati setelah semua selesai.
+      await Promise.allSettled([
+        ambilGrafik(),
+        ambilPerkembangan(),
+        ambilDetail(),
+      ]);
+      if (aktif) setLoading(false);
+    };
 
+    muat();
+    return () => {
+      aktif = false;
+    };
+  }, [deteksiId, sufiks]);
+
+  // 1) Tampilkan loading lebih dulu (sebelum memutuskan data kosong/ada)
   if (loading) {
     return (
       <MainLayouts type="lihatmonitoring">
-        <div className="flex min-h-[70vh] items-center justify-center">
-          <p>Memuat data monitoring...</p>
+        <div className="relative min-h-screen w-full overflow-x-hidden bg-emerald-50">
+          <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
         </div>
       </MainLayouts>
     );
   }
+
+  // 2) Setelah loading selesai, baru cek apakah data kosong
   if (!chartData.length) {
     return (
       <MainLayouts type="lihatmonitoring">
@@ -187,6 +191,7 @@ export default function TrenMonitoring() {
       </MainLayouts>
     );
   }
+
   return (
     <MainLayouts type="lihatmonitoring">
       <div className="min-h-screen w-full overflow-x-hidden bg-emerald-50 p-4 sm:p-6 mt-5">
@@ -297,7 +302,7 @@ export default function TrenMonitoring() {
           <div className="min-w-0">
             <CardPerkembangan data={perkembangan} />
           </div>
-        
+
           <div className="min-w-0">
             <CardKeteranganRekomendasi data={detail} />
           </div>
@@ -323,11 +328,6 @@ export default function TrenMonitoring() {
         </div>
       </div>
       {/* ================= CHATBOT FLOATING BUTTON ================= */}
-
-      {/* Tombol Kanan */}
-      {/* Tombol Kanan */}
-      {/* CHATBOT FLOATING */}
-      {/* CHATBOT FLOATING */}
       <div
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 sm:gap-3"
         onMouseEnter={() => setShowChatHint(true)}
@@ -343,7 +343,8 @@ export default function TrenMonitoring() {
           <div className="flex items-center gap-3 rounded-3xl bg-emerald-600 px-5 py-3 shadow-2xl">
             <Bot size={18} className="text-white shrink-0" />
             <span className="text-sm font-medium text-white">
-              Ada istilah atau hasil yang belum dipahami? Tanya GrowthAI sekarang.
+              Ada istilah atau hasil yang belum dipahami? Tanya GrowthAI
+              sekarang.
             </span>
           </div>
         </div>

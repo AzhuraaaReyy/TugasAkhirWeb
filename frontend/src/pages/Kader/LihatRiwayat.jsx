@@ -5,10 +5,12 @@ import { useParams, useLocation } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "@/services/api";
 import EvaluasiKenaikanBulanan from "@/components/Fragments/Riwayat/EvaluasiBulananCard";
+import { Atom } from "react-loading-indicators";
 
 export default function LihatRiwayat() {
   const { id } = useParams();
   const location = useLocation();
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
     umur: "",
@@ -41,27 +43,34 @@ export default function LihatRiwayat() {
   const hasil = location.state?.hasil || "";
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // 1) Timeline dulu (berbasis balita_id) -> sumber deteksi_id yang benar
-        const resRiwayat = await api.get(`/ambilstatustimeline/${id}`);
-        const dataRiwayat = resRiwayat.data?.data || [];
+    let aktif = true;
 
+    const fetchSemua = async () => {
+      setLoading(true);
+      try {
+        // Ambil timeline + data balita secara paralel
+        const [resRiwayat, resBalita] = await Promise.all([
+          api.get(`/ambilstatustimeline/${id}`),
+          api.get(`/balitas/${id}`),
+        ]);
+
+        const dataRiwayat = resRiwayat.data?.data || [];
         const terbaru = dataRiwayat[dataRiwayat.length - 1] || {};
         const sebelumnya = dataRiwayat[dataRiwayat.length - 2] || {};
+        const balita = resBalita.data?.data || {};
 
-        // 2) Detail dipanggil dgn DETEKSI_ID terbaru (bukan balita_id)
-        let data = {};
+        // Detail dipanggil dgn DETEKSI_ID terbaru (bukan balita_id)
+        let detail = {};
         if (terbaru.id) {
-          const res = await api.get(`/detaildeteksi/${terbaru.id}`);
-          data = res.data?.data || {};
+          const resDetail = await api.get(`/detaildeteksi/${terbaru.id}`);
+          detail = resDetail.data?.data || {};
         }
 
         // status: prioritaskan hasil deteksi baru, lalu data terbaru di timeline
         const statusMapping = {
-          stunting: hasil?.status_tbu?.status || data.status?.tbu,
-          wasting: hasil?.status_bb_tb?.status || data.status?.bbtb,
-          underweight: hasil?.status_bbu?.status || data.status?.bbu,
+          stunting: hasil?.status_tbu?.status || detail.status?.tbu,
+          wasting: hasil?.status_bb_tb?.status || detail.status?.bbtb,
+          underweight: hasil?.status_bbu?.status || detail.status?.bbu,
         };
         const statusByMetode = {
           stunting: terbaru.status_tbu,
@@ -69,69 +78,71 @@ export default function LihatRiwayat() {
           underweight: terbaru.status_bbu,
         };
 
+        if (!aktif) return;
+
         setForm((prev) => ({
           ...prev,
-          // angka inti diambil dari timeline (sudah dihitung & konsisten)
-          umur: terbaru.umur ?? data.umur ?? "",
-          tgl_deteksi: terbaru.tgl_deteksi ?? data.tgl_deteksi ?? "",
+
+          // ----- dari /balitas/:id -----
+          balita_id: balita.id ?? prev.balita_id ?? "",
+          name: balita.name || "",
+          jk:
+            balita.jk === "L" || balita.jk?.toLowerCase() === "laki-laki"
+              ? "L"
+              : balita.jk === "P" || balita.jk?.toLowerCase() === "perempuan"
+                ? "P"
+                : "",
+          orang_tua: balita.orangtua || "",
+          tgl_lahir: balita.tgl_lahir || "",
+
+          // ----- angka inti dari timeline (sudah dihitung & konsisten) -----
+          umur: terbaru.umur ?? detail.umur ?? "",
+          tgl_deteksi: terbaru.tgl_deteksi ?? detail.tgl_deteksi ?? "",
           status: statusMapping[metode] || statusByMetode[metode] || "-",
 
-          berat_sekarang: terbaru.berat ?? data.berat ?? "",
-          berat_sebelumnya: sebelumnya.berat ?? data.berat_sebelumnya ?? "",
-          tinggi_sekarang: terbaru.tinggi ?? data.tinggi ?? "",
-          tinggi_sebelumnya: sebelumnya.tinggi ?? data.tinggi_sebelumnya ?? "",
+          berat_sekarang: terbaru.berat ?? detail.berat ?? "",
+          berat_sebelumnya: sebelumnya.berat ?? detail.berat_sebelumnya ?? "",
+          tinggi_sekarang: terbaru.tinggi ?? detail.tinggi ?? "",
+          tinggi_sebelumnya:
+            sebelumnya.tinggi ?? detail.tinggi_sebelumnya ?? "",
 
-          // info tambahan dari detail (yang tidak ada di timeline)
-          keterangan: data.keterangan ?? "",
-          rekomendasi: data.rekomendasi ?? "",
+          // ----- info tambahan dari detail -----
+          keterangan: detail.keterangan ?? "",
+          rekomendasi: detail.rekomendasi ?? "",
           lokasi_posyandu:
-            data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
-          kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
+            detail.lokasi_posyandu ||
+            detail.posyandu ||
+            balita.lokasi_posyandu ||
+            balita.posyandu ||
+            "Posyandu Wilayah",
+          kader_pemeriksa:
+            detail.kader_pemeriksa ||
+            balita.kader_pemeriksa ||
+            "Kader Posyandu",
 
           riwayat: dataRiwayat,
         }));
       } catch (err) {
         console.error(err.response?.data || err.message);
+      } finally {
+        if (aktif) setLoading(false);
       }
     };
 
-    fetchData();
+    fetchSemua();
+    return () => {
+      aktif = false;
+    };
   }, [id, metode, hasil]);
-
-  useEffect(() => {
-    const fetchBalitas = async () => {
-      try {
-        const res = await api.get(`/balitas/${id}`);
-        const data = res.data.data;
-
-        setForm((prev) => ({
-          ...prev,
-          balita_id: data.id,
-          name: data.name || "",
-          jk:
-            data.jk === "L" || data.jk?.toLowerCase() === "laki-laki"
-              ? "L"
-              : data.jk === "P" || data.jk?.toLowerCase() === "perempuan"
-                ? "P"
-                : "",
-          orang_tua: data.orangtua || "",
-          tgl_lahir: data.tgl_lahir || "",
-          lokasi_posyandu:
-            data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
-          kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
-        }));
-      } catch (err) {
-        console.error(err.response?.data || err.message);
-      }
-    };
-
-    fetchBalitas();
-  }, [id]);
-  console.log("ITEM RIWAYAT:", form.riwayat[0]);
 
   return (
     <MainLayouts type="lihatriwayat">
-      <div className="min-h-screen bg-[#F4F7F4] font-sans antialiased py-6 sm:py-10">
+      <div className="relative min-h-screen bg-[#F4F7F4] font-sans antialiased py-6 sm:py-10">
+        {loading && (
+          <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="mb-6 sm:mb-8 pb-2 border-b border-gray-200/60">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">

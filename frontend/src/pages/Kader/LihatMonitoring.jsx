@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import MainLayouts from "@/layouts/MainLayouts";
 import { Bot, MessageCircle } from "lucide-react";
+import { Atom } from "react-loading-indicators";
 import ChartTinggi from "@/components/Fragments/Monitoring/ChartTinggi";
 import ChartBerat from "@/components/Fragments/Monitoring/ChartBerat";
 import CardPerkembangan from "@/components/Fragments/Monitoring/CardPerkembangan";
@@ -28,11 +29,13 @@ export default function LihatMonitoring() {
   const [perkembangan, setPerkembangan] = useState(null);
 
   useEffect(() => {
-    const fetchGrafik = async () => {
+    if (!id) return;
+    let aktif = true;
+
+    const ambilGrafik = async () => {
       try {
         const res = await api.get(`/grafik/${id}`);
-
-        const formattedData = res.data.map((item) => ({
+        const formattedData = (res.data || []).map((item) => ({
           id: item.id,
           name: item.bulan,
           tanggal: item.tgl_deteksi,
@@ -71,39 +74,24 @@ export default function LihatMonitoring() {
           minus2Tb: item.minus2_tb,
           minus3Tb: item.minus3_tb,
         }));
-
-        setChartData(formattedData);
-        console.log("DEBUG GRAFIK:", res.data);
+        if (aktif) setChartData(formattedData);
       } catch (err) {
         console.error("Error ambil grafik:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    if (id) fetchGrafik();
-  }, [id]);
-
-  useEffect(() => {
-    const fetchPerkembangan = async () => {
+    const ambilPerkembangan = async () => {
       try {
         const res = await api.get(`/perkembangan/${id}`);
-        setPerkembangan(res.data);
-        console.log("Debug Perkembangan:", res.data);
+        if (aktif) setPerkembangan(res.data);
       } catch (err) {
         console.error("Error Perkembangan: ", err);
-      } finally {
-        setLoading(false);
       }
     };
-    if (id) fetchPerkembangan();
-  }, [id]);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
+    const ambilDetail = async () => {
       try {
         const res = await api.get(`/detailmonitoring/${id}`);
-
         const item = res.data.data;
 
         const formattedData = {
@@ -135,27 +123,43 @@ export default function LihatMonitoring() {
           kebutuhanGizi: item.kebutuhan_gizi,
           tingkatRekomendasi: item.tingkat_rekomendasi,
         };
-        setDetail(formattedData);
-        console.log("DEBUG DETAIL:", formattedData);
+        if (aktif) setDetail(formattedData);
       } catch (err) {
         console.error("Error:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    if (id) fetchDetail();
+    const muat = async () => {
+      setLoading(true);
+      // Ketiganya jalan paralel; loading baru mati setelah semua selesai.
+      await Promise.allSettled([
+        ambilGrafik(),
+        ambilPerkembangan(),
+        ambilDetail(),
+      ]);
+      if (aktif) setLoading(false);
+    };
+
+    muat();
+    return () => {
+      aktif = false;
+    };
   }, [id]);
 
+  // 1) Tampilkan loading lebih dulu (sebelum memutuskan data kosong/ada)
   if (loading) {
     return (
       <MainLayouts type="lihatmonitoring">
-        <div className="flex min-h-[70vh] items-center justify-center">
-          <p>Memuat data monitoring...</p>
+        <div className="relative min-h-screen w-full overflow-x-hidden bg-emerald-50">
+          <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+            <Atom color="#10b981" size="medium" text="Memuat..." />
+          </div>
         </div>
       </MainLayouts>
     );
   }
+
+  // 2) Setelah loading selesai, baru cek apakah data kosong
   if (!chartData.length) {
     return (
       <MainLayouts type="lihatmonitoring">
@@ -184,6 +188,7 @@ export default function LihatMonitoring() {
       </MainLayouts>
     );
   }
+
   return (
     <MainLayouts type="lihatmonitoring">
       <div className="min-h-screen w-full overflow-x-hidden bg-emerald-50 p-4 sm:p-6 mt-5">
@@ -330,8 +335,6 @@ export default function LihatMonitoring() {
         </div>
       </div>
 
-      {/* Tombol Kanan */}
-      {/* CHATBOT FLOATING */}
       {/* CHATBOT FLOATING */}
       <div
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center gap-2 sm:gap-3"
