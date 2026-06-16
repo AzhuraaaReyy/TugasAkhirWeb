@@ -513,7 +513,17 @@ export default function DashboardOrtu() {
           </div>
 
           <div className="min-w-0">
-            <CardKeteranganRekomendasi data={detail} />
+            <CardKeteranganRekomendasi
+              data={{
+                ...perkembangan,
+                rekomendasiStunting: detail.rekomendasiStunting,
+                rekomendasiWasting: detail.rekomendasiWasting,
+                rekomendasiUnderweight: detail.rekomendasiUnderweight,
+                tingkatRekomendasi: detail.tingkatRekomendasi,
+              }}
+              gizi={detail.kebutuhanGizi}
+              riwayat={detail.riwayat}
+            />
           </div>
 
           <div className="flex items-center justify-center gap-2 pt-2 text-center text-xs text-gray-400">
@@ -554,7 +564,8 @@ export default function DashboardOrtu() {
           <div className="flex items-center gap-3 rounded-3xl bg-emerald-600 px-5 py-3 shadow-2xl">
             <Bot size={18} className="text-white shrink-0" />
             <span className="text-sm font-medium text-white">
-              Ada istilah atau hasil yang belum dipahami? Tanya GrowthAI sekarang.
+              Ada istilah atau hasil yang belum dipahami? Tanya GrowthAI
+              sekarang.
             </span>
           </div>
         </div>

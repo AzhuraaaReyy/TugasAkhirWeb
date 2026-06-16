@@ -304,7 +304,17 @@ export default function TrenMonitoring() {
           </div>
 
           <div className="min-w-0">
-            <CardKeteranganRekomendasi data={detail} />
+            <CardKeteranganRekomendasi
+              data={{
+                ...perkembangan,
+                rekomendasiStunting: detail.rekomendasiStunting,
+                rekomendasiWasting: detail.rekomendasiWasting,
+                rekomendasiUnderweight: detail.rekomendasiUnderweight,
+                tingkatRekomendasi: detail.tingkatRekomendasi,
+              }}
+              gizi={detail.kebutuhanGizi}
+              riwayat={detail.riwayat}
+            />
           </div>
 
           <div className="flex items-center justify-center gap-2 pt-2 text-center text-xs text-gray-400">
