@@ -127,6 +127,16 @@ export default function EdukasiStunting() {
   const [refHeader, headerVisible] = UseInView(0.3);
   const [refSec1, sec1Visible] = UseInView(0.3);
   const [refSec4, sec4Visible] = UseInView(0.3);
+
+  // Daftar tab dipisah agar mudah dirender & rapi di mobile (scroll horizontal)
+  const TABS = [
+    { key: "pengertian", label: "Pengertian" },
+    { key: "penyebab", label: "Penyebab" },
+    { key: "dampak", label: "Dampak" },
+    { key: "pencegahan", label: "Mencegah" },
+    { key: "ciri", label: "Ciri-ciri" },
+  ];
+
   return (
     <MainLayouts type="edukasiortu">
       <section
@@ -157,7 +167,7 @@ export default function EdukasiStunting() {
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
           <svg
-            className="block w-full h-[160px] wave-float"
+            className="block w-full h-[90px] sm:h-[160px] wave-float"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -170,7 +180,7 @@ export default function EdukasiStunting() {
 
           {/* Layer 2 */}
           <svg
-            className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+            className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -183,15 +193,15 @@ export default function EdukasiStunting() {
         </div>
         <div
           ref={refHeader}
-          className={`max-w-6xl mx-auto px-6 relative z-10  transition-all duration-700  `}
+          className={`max-w-6xl mx-auto px-4 sm:px-6 relative z-10  transition-all duration-700  `}
         >
-          <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
+          <h2 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
             {headerVisible && (
               <Typewriter speed={20}>Edukasi Stunting Pada Anak</Typewriter>
             )}
           </h2>
           <FadeUp delay={400}>
-            <p className="mt-4 max-w-2xl mx-auto text-gray-600 text-center">
+            <p className="mt-4 max-w-2xl mx-auto text-sm sm:text-base text-gray-600 text-center">
               Sistem membantu kader posyandu dan orang tua dalam melakukan
               pencatatan, pemantauan pertumbuhan balita, serta deteksi dini
               risiko stunting secara digital dan sistematis."
@@ -199,119 +209,77 @@ export default function EdukasiStunting() {
           </FadeUp>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-14 items-center">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-20 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
           {/* IMAGE */}
           <FadeSlide direction="right" delay={700}>
             <div
               onMouseMove={handleMouseMove}
-              className="  relative flex items-center justify-center"
+              className="relative flex items-center justify-center pb-8 md:pb-0"
             >
-              {/* IMAGE */}
+              {/* IMAGE UTAMA */}
               <img
                 src={images[0]}
                 style={{
                   transform: `translate(${pos.x}px, ${pos.y}px)`,
                 }}
-                className={` border-white border-3 left-5 relative z-20 rounded-xl hover:shadow-xl object-cover w-[600px] h-[400px] transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out
-  hover:scale-105 `}
+                className="border-white border-[3px] relative z-20 rounded-xl hover:shadow-xl object-cover w-full max-w-[600px] h-[230px] sm:h-[320px] md:h-[400px] transition-all duration-700 ease-out hover:scale-105"
               />
+              {/* IMAGE KECIL (overlay) */}
               <img
                 src={images[2]}
-                className={`  border-white border-2 absolute bottom-[-30px] left-[-30px]  z-30 rounded-xl hover:shadow-xl object-cover w-[300px] h-[180px] transition-opacity duration-500  transition-all duration-700 transition-transform duration-700 ease-out
-  hover:scale-105 `}
+                className="border-white border-2 absolute -bottom-3 -left-1 sm:bottom-[-30px] sm:left-[-30px] z-30 rounded-xl hover:shadow-xl object-cover w-[42%] max-w-[300px] h-[110px] sm:h-[180px] transition-all duration-700 ease-out hover:scale-105"
               />
             </div>
           </FadeSlide>
 
           {/* TEXT */}
 
-          <div className="mb-10 min-h-[360px]">
+          <div className="mb-6 md:mb-10 md:min-h-[360px]">
             {/* TITLE */}
             <FadeSlide direction="left" delay={700}>
-              <h2 className="mt-3 text-3xl md:text-4xl font-extrabold text-gray-800 leading-snug">
+              <h2 className="mt-3 text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800 leading-snug">
                 {activeData.title}
               </h2>
             </FadeSlide>
 
             {/* TAB MENU */}
             <FadeSlide direction="left" delay={700}>
-              <div className="relative flex gap-6 mt-6 text-sm font-semibold text-gray-500">
-                <button
-                  onClick={() => changeTab("pengertian")}
-                  className={`pb-1 ${
-                    activeKey === "pengertian"
-                      ? "text-emerald-500 border-b-2 border-emerald-500"
-                      : "text-gray-500"
-                  }`}
-                >
-                  Pengertian
-                </button>
+              <div className="relative flex gap-4 sm:gap-6 mt-6 text-sm font-semibold text-gray-500 overflow-x-auto md:overflow-visible whitespace-nowrap pb-1 hide-scrollbar">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => changeTab(tab.key)}
+                    className={`shrink-0 pb-1 ${
+                      activeKey === tab.key
+                        ? "text-emerald-500 border-b-2 border-emerald-500"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
 
-                <button
-                  onClick={() => changeTab("penyebab")}
-                  className={`pb-1 ${
-                    activeKey === "penyebab"
-                      ? "text-emerald-500 border-b-2 border-emerald-500"
-                      : "text-gray-500"
-                  }`}
-                >
-                  Penyebab
-                </button>
-
-                <button
-                  onClick={() => changeTab("dampak")}
-                  className={`pb-1 ${
-                    activeKey === "dampak"
-                      ? "text-emerald-500 border-b-2 border-emerald-500"
-                      : "text-gray-500"
-                  }`}
-                >
-                  Dampak
-                </button>
-
-                <button
-                  onClick={() => changeTab("pencegahan")}
-                  className={`pb-1 ${
-                    activeKey === "pencegahan"
-                      ? "text-emerald-500 border-b-2 border-emerald-500"
-                      : "text-gray-500"
-                  }`}
-                >
-                  Mencegah
-                </button>
-
-                <button
-                  onClick={() => changeTab("ciri")}
-                  className={`pb-1 ${
-                    activeKey === "ciri"
-                      ? "text-emerald-500 border-b-2 border-emerald-500"
-                      : "text-gray-500"
-                  }`}
-                >
-                  Ciri-ciri
-                </button>
-
-                {/* DOT PATTERN */}
+                {/* DOT PATTERN (hanya tampil di layar besar agar tidak overflow di mobile) */}
                 <div
-                  className="absolute  top-27 right-55 w-[350px] h-[150px] 
+                  className="hidden md:block absolute top-27 right-55 w-[350px] h-[150px] 
   bg-[radial-gradient(#6b7280_1px,transparent_1px)] 
   [background-size:20px_20px] opacity-30  pointer-events-none"
                 ></div>
 
                 <div
-                  className="absolute -top-30 -right-2 w-[120px] h-[120px] 
+                  className="hidden md:block absolute -top-30 -right-2 w-[120px] h-[120px] 
   bg-[radial-gradient(#6b7280_7px,transparent_5px)] 
   [background-size:30px_30px] opacity-15  pointer-events-none"
                 ></div>
                 <div
-                  className="absolute top-53 -right-2 w-[120px] h-[120px] 
+                  className="hidden md:block absolute top-53 -right-2 w-[120px] h-[120px] 
   bg-[radial-gradient(#6b7280_7px,transparent_5px)] 
   [background-size:30px_30px] opacity-15  pointer-events-none"
                 ></div>
               </div>
               {/* DESCRIPTION */}
               <FadeSlide direction="left" delay={700}>
-                <p className="mt-6 text-gray-600 leading-relaxed text-justify">
+                <p className="mt-6 text-sm sm:text-base text-gray-600 leading-relaxed text-justify">
                   {activeData.text}
                 </p>
               </FadeSlide>
@@ -355,7 +323,7 @@ export default function EdukasiStunting() {
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
           <svg
-            className="block w-full h-[160px] wave-float"
+            className="block w-full h-[90px] sm:h-[160px] wave-float"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -368,7 +336,7 @@ export default function EdukasiStunting() {
 
           {/* Layer 2 */}
           <svg
-            className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+            className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -392,16 +360,16 @@ export default function EdukasiStunting() {
             pixelRatio={1}
           />
         </div>
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           {/* Title Section */}
-          <div ref={refSec1} className="text-center mb-16">
-            <h2 className="mt-4 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
+          <div ref={refSec1} className="text-center mb-10 md:mb-16">
+            <h2 className="mt-4 text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
               {sec1Visible && (
                 <Typewriter speed={20}>Panduan Gizi Pada Anak</Typewriter>
               )}
             </h2>
             <FadeSlide direction="right" delay={300}>
-              <p className="text-gray-400 mt-4 max-w-2xl mx-auto">
+              <p className="text-sm sm:text-base text-gray-400 mt-4 max-w-2xl mx-auto">
                 Temukan berbagai informasi penting seputar makanan bergizi, menu
                 MPASI, cara meningkatkan nafsu makan anak, pola asuh yang baik,
                 serta pentingnya imunisasi untuk mendukung tumbuh kembang anak
@@ -412,13 +380,45 @@ export default function EdukasiStunting() {
 
           {/* Panel Layout */}
           <FadeUp delay={400}>
-            <ArtikelPanel
-              artikel={artikel}
-              onSelect={(item, index) => {
-                setSelectedArtikel({ ...item, index });
-              }}
-              artikelRefs={artikelRefs}
-            />
+            {/* Mobile: kartu artikel menumpuk (panel akordeon kurang nyaman di layar kecil) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+              {artikel.map((item, index) => (
+                <button
+                  key={item.title || index}
+                  type="button"
+                  onClick={() => setSelectedArtikel({ ...item, index })}
+                  className="group relative h-44 overflow-hidden rounded-2xl bg-emerald-600 text-left shadow-sm transition active:scale-[0.98]"
+                >
+                  {(item.image || item.img || item.gambar) && (
+                    <img
+                      src={item.image || item.img || item.gambar}
+                      alt={item.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-4">
+                    <h3 className="text-base font-bold text-white drop-shadow">
+                      {item.title}
+                    </h3>
+                    <span className="mt-1 inline-block text-xs font-semibold text-emerald-300">
+                      Baca selengkapnya →
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Desktop: panel akordeon seperti semula */}
+            <div className="hidden md:block">
+              <ArtikelPanel
+                artikel={artikel}
+                onSelect={(item, index) => {
+                  setSelectedArtikel({ ...item, index });
+                }}
+                artikelRefs={artikelRefs}
+              />
+            </div>
           </FadeUp>
         </div>
       </section>
@@ -445,7 +445,7 @@ export default function EdukasiStunting() {
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
           {/* Layer 1 */}
           <svg
-            className="block w-full h-[160px] wave-float"
+            className="block w-full h-[90px] sm:h-[160px] wave-float"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -458,7 +458,7 @@ export default function EdukasiStunting() {
 
           {/* Layer 2 */}
           <svg
-            className="absolute bottom-0 block w-full h-[150px] wave-float-slow"
+            className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
             viewBox="0 0 1440 320"
             preserveAspectRatio="none"
           >
@@ -483,17 +483,20 @@ export default function EdukasiStunting() {
           />
         </div>
 
-        <div ref={refSec4} className="max-w-6xl mx-auto px-6 relative z-10">
+        <div
+          ref={refSec4}
+          className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10"
+        >
           {/* Title */}
 
-          <div className="text-center text-black mb-12">
-            <h2 className="text-4xl font-extrabold">
+          <div className="text-center text-black mb-8 md:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold">
               {sec4Visible && (
                 <Typewriter speed={20}>Video Edukasi Stunting</Typewriter>
               )}
             </h2>
             <FadeSlide direction="left">
-              <p className="text-gray-500 mt-2">
+              <p className="text-sm sm:text-base text-gray-500 mt-2">
                 Pelajari cara mencegah stunting melalui video edukasi kesehatan
                 anak.
               </p>
@@ -501,7 +504,7 @@ export default function EdukasiStunting() {
           </div>
 
           {/* Grid */}
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {/* VIDEO UTAMA */}
             <motion.div
               key={activeVideo.videoId}
@@ -512,7 +515,7 @@ export default function EdukasiStunting() {
             >
               <div className="md:col-span-2">
                 <iframe
-                  className="w-full h-[400px] rounded-lg"
+                  className="w-full h-[210px] sm:h-[320px] md:h-[400px] rounded-lg"
                   src={`https://www.youtube.com/embed/${activeVideo.videoId}`}
                   title={activeVideo.title}
                   allowFullScreen
@@ -521,19 +524,50 @@ export default function EdukasiStunting() {
             </motion.div>
             {/* LIST VIDEO */}
             <div className="space-y-4">
-              <AnimatedList
-                items={items}
-                onItemSelect={(item) => setActiveVideo(item)}
-                showGradients
-                enableArrowNavigation
-                displayScrollbar
-              />
+              {/* Mobile: daftar sederhana, semua video langsung terlihat (tanpa scroll internal) */}
+              <div className="space-y-3 md:hidden">
+                {items.map((item) => {
+                  const aktif = item.videoId === activeVideo.videoId;
+                  return (
+                    <button
+                      key={item.videoId}
+                      type="button"
+                      onClick={() => setActiveVideo(item)}
+                      className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${
+                        aktif
+                          ? "bg-emerald-600 text-white shadow"
+                          : "bg-emerald-500/90 text-white hover:bg-emerald-600"
+                      }`}
+                    >
+                      <img
+                        src={`https://img.youtube.com/vi/${item.videoId}/mqdefault.jpg`}
+                        alt={item.title}
+                        className="h-14 w-20 shrink-0 rounded-lg object-cover"
+                      />
+                      <span className="text-sm font-semibold leading-snug">
+                        {item.title}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Desktop: tetap pakai AnimatedList (di samping video, scroll-nya wajar) */}
+              <div className="hidden md:block">
+                <AnimatedList
+                  items={items}
+                  onItemSelect={(item) => setActiveVideo(item)}
+                  showGradients
+                  enableArrowNavigation
+                  displayScrollbar
+                />
+              </div>
             </div>
           </div>
 
           {/* Button */}
           <FadeSlide direction="right">
-            <div className="text-center mt-10">
+            <div className="text-center mt-8 md:mt-10">
               <button className="bg-emerald-500 text-white px-6 py-3 rounded-full hover:bg-emerald-600 transition">
                 Lihat Semua Video
               </button>
