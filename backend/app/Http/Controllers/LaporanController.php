@@ -62,101 +62,135 @@ class LaporanController extends Controller
             ];
         });
 
-        // ====== DETEKSI TERBARU PER BALITA (untuk rujukan & bermasalah) ======
-        // Diambil satu deteksi terbaru tiap anak agar tidak muncul berulang.
-        $deteksiTerbaru = Deteksi::with('balita')
+        // ====== KRITERIA RUJUKAN ======
+        $statusRujukanTBU  = ['Sangat pendek (severely stunted)', 'Pendek (stunted)'];
+        $statusRujukanBBTB = ['Gizi buruk (severely wasted)', 'Obesitas (obese)'];
+        $statusRujukanBBU  = ['Berat badan sangat kurang (severely underweight)'];
+
+        $cekRujukan = function ($d) use ($statusRujukanTBU, $statusRujukanBBTB, $statusRujukanBBU) {
+            return in_array($d->status_tb_u, $statusRujukanTBU, true)
+                || in_array($d->status_tb_bb, $statusRujukanBBTB, true)
+                || in_array($d->status_bb_u, $statusRujukanBBU, true);
+        };
+
+        // ====== DATA RUJUKAN (bulan ini + bulan sebelumnya, dengan pembeda) ======
+        // Ambil SEMUA deteksi (hanya difilter search) agar riwayat rujukan lintas
+        // bulan tetap terlihat. Tanggal TIDAK difilter di sini supaya bulan-bulan
+        // sebelumnya ikut terbaca.
+        $perBalita = Deteksi::with('balita')
             ->when($request->search, function ($q) use ($request) {
                 $q->whereHas('balita', function ($b) use ($request) {
                     $b->where('name', 'like', '%' . $request->search . '%');
                 });
             })
-            ->when($request->tanggal, function ($q) use ($request) {
-                $q->whereDate('tgl_deteksi', $request->tanggal);
-            })
             ->orderByDesc('tgl_deteksi')
             ->orderByDesc('id')
             ->get()
-            ->groupBy('balita_id')
-            ->map(fn($grup) => $grup->first()); // first() = paling baru (sudah diurutkan desc)
+            ->groupBy('balita_id');
 
-        $mapDeteksi = fn($d) => [
-            'id'           => $d->id,
-            'balitaname'   => $d->balita?->name,
-            'tanggal'      => $d->tgl_deteksi,
-            'umur'         => $d->umur,
-            'status_tb_u'  => $d->status_tb_u,
-            'status_bb_u'  => $d->status_bb_u,
-            'status_tb_bb' => $d->status_tb_bb,
-        ];
+        $bulanSekarang = now()->format('Y-m');
 
-        // ====== DATA RUJUKAN (status gizi berat) ======
-        $statusRujukanTBU = ['Sangat pendek (severely stunted)', 'Pendek (stunted)'];
-        $statusRujukanBBTB = ['Gizi buruk (severely wasted)', 'Obesitas (obese)'];
-        $statusRujukanBBU  = ['Berat badan sangat kurang (severely underweight)'];
+        $rujukan = $perBalita
+            ->map(function ($grup) use ($cekRujukan, $bulanSekarang, $statusRujukanTBU, $statusRujukanBBU) {
+                $latest = $grup->first(); // deteksi terbaru anak ini
+                if (!$cekRujukan($latest)) {
+                    return null; // status terkini sudah tidak perlu rujukan
+                }
 
-        $rujukan = $deteksiTerbaru
-            ->filter(function ($d) use ($statusRujukanTBU, $statusRujukanBBTB, $statusRujukanBBU) {
-                return in_array($d->status_tb_u, $statusRujukanTBU, true)
-                    || in_array($d->status_tb_bb, $statusRujukanBBTB, true)
-                    || in_array($d->status_bb_u, $statusRujukanBBU, true);
-            })
-            ->map(function ($d) use ($mapDeteksi, $statusRujukanTBU, $statusRujukanBBU) {
+                $bulanLatest = $latest->tgl_deteksi
+                    ? date('Y-m', strtotime($latest->tgl_deteksi))
+                    : null;
+                $bulanIni = $bulanLatest !== null && $bulanLatest === $bulanSekarang;
+
+                // Pernah berstatus rujukan pada bulan yang LEBIH AWAL dari deteksi terbaru?
+                $dirujukSebelumnya = $grup->slice(1)->contains(function ($d) use ($cekRujukan, $bulanLatest) {
+                    if (!$cekRujukan($d)) {
+                        return false;
+                    }
+                    if (!$bulanLatest || !$d->tgl_deteksi) {
+                        return true;
+                    }
+                    return date('Y-m', strtotime($d->tgl_deteksi)) < $bulanLatest;
+                });
+
+                // Alasan rujukan dari deteksi terbaru
                 $alasan = [];
-                if (in_array($d->status_tb_u, $statusRujukanTBU, true)) $alasan[] = 'stunting berat';
-                if ($d->status_tb_bb === 'Gizi buruk (severely wasted)')  $alasan[] = 'gizi buruk';
-                if ($d->status_tb_bb === 'Obesitas (obese)')              $alasan[] = 'obesitas';
-                if (in_array($d->status_bb_u, $statusRujukanBBU, true))   $alasan[] = 'berat badan sangat kurang';
+                if (in_array($latest->status_tb_u, $statusRujukanTBU, true))  $alasan[] = 'stunting';
+                if ($latest->status_tb_bb === 'Gizi buruk (severely wasted)') $alasan[] = 'gizi buruk';
+                if ($latest->status_tb_bb === 'Obesitas (obese)')             $alasan[] = 'obesitas';
+                if (in_array($latest->status_bb_u, $statusRujukanBBU, true))  $alasan[] = 'berat badan sangat kurang';
 
-                return array_merge($mapDeteksi($d), [
-                    'alasan' => implode(', ', $alasan),
-                ]);
+                // Pembeda untuk kader
+                if ($dirujukSebelumnya) {
+                    $periode    = 'Sudah dirujuk sebelumnya';
+                    $keterangan = 'Sudah dirujuk pada bulan sebelumnya - cukup pantau tindak lanjut, tidak perlu rujukan baru.';
+                } elseif ($bulanIni) {
+                    $periode    = 'Rujukan baru (bulan ini)';
+                    $keterangan = 'Rujukan baru terdeteksi bulan ini - perlu segera dirujuk ke Puskesmas.';
+                } else {
+                    $periode    = 'Bulan sebelumnya';
+                    $keterangan = 'Terdeteksi pada bulan sebelumnya dan belum ada penimbangan ulang pada bulan ini.';
+                }
+
+                return [
+                    'id'                       => $latest->id,
+                    'balitaname'               => $latest->balita?->name,
+                    'tanggal'                  => $latest->tgl_deteksi,
+                    'umur'                     => $latest->umur,
+                    'status_tb_u'              => $latest->status_tb_u,
+                    'status_bb_u'              => $latest->status_bb_u,
+                    'status_tb_bb'             => $latest->status_tb_bb,
+                    'alasan'                   => implode(', ', $alasan),
+                    'bulan_ini'                => $bulanIni,
+                    'sudah_dirujuk_sebelumnya' => $dirujukSebelumnya,
+                    'periode'                  => $periode,
+                    'keterangan'               => $keterangan,
+                ];
             })
+            ->filter()
             ->values();
 
-        // ====== DATA BERMASALAH (tidak normal pada salah satu indikator) ======
-        $bermasalah = $deteksiTerbaru
-            ->filter(function ($d) {
-                $tbuNormal  = in_array($d->status_tb_u, ['Normal', 'Tinggi'], true);
-                $bbtbNormal = $d->status_tb_bb === 'Gizi baik (normal)';
-                $bbuNormal  = $d->status_bb_u === 'Berat badan normal';
-                return !($tbuNormal && $bbtbNormal && $bbuNormal);
-            })
-            ->map($mapDeteksi)
-            ->values();
-
-        // ====== DATA BELUM DITIMBANG (tidak ada deteksi pada periode terpilih) ======
+        // ====== DATA STATUS PENIMBANGAN BULAN INI (sudah + belum, jadi satu) ======
         // Periode = bulan dari tanggal filter bila ada, selain itu bulan berjalan.
         $tahun = $request->tanggal ? date('Y', strtotime($request->tanggal)) : now()->year;
         $bulan = $request->tanggal ? date('m', strtotime($request->tanggal)) : now()->month;
 
-        $sudahTimbang = Deteksi::whereYear('tgl_deteksi', $tahun)
+        $sudahIds = Deteksi::whereYear('tgl_deteksi', $tahun)
             ->whereMonth('tgl_deteksi', $bulan)
             ->pluck('balita_id')
             ->unique();
 
-        $belumTimbang = Balita::with(['posyandu', 'user'])
-            ->whereNotIn('id', $sudahTimbang)
+        $statusTimbang = Balita::with(['posyandu', 'user'])
             ->when($request->search, function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%');
             })
             ->get()
-            ->map(function ($b) {
+            ->map(function ($b) use ($sudahIds, $tahun, $bulan) {
+                $sudah = $sudahIds->contains($b->id);
+
                 return [
-                    'id'               => $b->id,
-                    'name'             => $b->name,
-                    'orangtua'         => $b->user?->name,
-                    'posyandu'         => $b->posyandu?->nama_posyandu,
+                    'id'              => $b->id,
+                    'name'            => $b->name,
+                    'orangtua'        => $b->user?->name,
+                    'posyandu'        => $b->posyandu?->nama_posyandu,
+                    'sudah_ditimbang' => $sudah,
+                    'status'          => $sudah ? 'Sudah ditimbang' : 'Belum ditimbang',
+                    'tanggal_timbang' => $sudah
+                        ? Deteksi::where('balita_id', $b->id)
+                        ->whereYear('tgl_deteksi', $tahun)
+                        ->whereMonth('tgl_deteksi', $bulan)
+                        ->max('tgl_deteksi')
+                        : null,
                     'terakhir_timbang' => Deteksi::where('balita_id', $b->id)->max('tgl_deteksi'),
                 ];
             })
             ->values();
 
         return response()->json([
-            'balita'        => $balita,
-            'deteksi'       => $deteksi,
-            'rujukan'       => $rujukan,
-            'belum_timbang' => $belumTimbang,
-            'bermasalah'    => $bermasalah,
+            'balita'         => $balita,
+            'deteksi'        => $deteksi,
+            'rujukan'        => $rujukan,
+            'status_timbang' => $statusTimbang,
         ]);
     }
 }
