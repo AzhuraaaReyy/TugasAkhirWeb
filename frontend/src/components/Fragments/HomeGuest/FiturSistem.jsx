@@ -6,12 +6,29 @@ import stunting from "../../../assets/images/sistem.jpg";
 import monitoring from "../../../assets/images/Aplikasi-Monitoring-Jaringan.jpg";
 import edukasi from "../../../assets/images/pixverse_t2i_ori_c2060860-0997-4480-ae6b-d12b9d41511f.webp";
 import BorderGlow from "../../Animations/BorderGlow";
+import { useState } from "react";
+import AuthModal from "../../Elements/Modal/AuthModal";
 
 const FiturSistem = () => {
   const [refHeader, headerVisible] = UseInView(0.3);
+  const [showAuth, setShowAuth] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+
+  // Buka modal autentikasi bila pengguna belum login.
+  const openAuth = () => {
+    if (!isLogin) setShowAuth(true);
+  };
 
   return (
     <>
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        onLoginSuccess={() => {
+          setIsLogin(true);
+          setShowAuth(false);
+        }}
+      />
       {/* SECTION FITUR */}
       <section
         id="fitur"
@@ -87,7 +104,11 @@ const FiturSistem = () => {
                     </p>
                   </FadeUp>
                   <FadeSlide direction="right" delay={400}>
-                    <button className="mt-5 text-emerald-600 font-semibold hover:underline">
+                    <button
+                      type="button"
+                      onClick={openAuth}
+                      className="mt-5 text-emerald-600 font-semibold hover:underline"
+                    >
                       Pelajari Sekarang →
                     </button>
                   </FadeSlide>
@@ -128,7 +149,11 @@ const FiturSistem = () => {
                     </p>
                   </FadeUp>
                   <FadeSlide direction="right" delay={600}>
-                    <button className="mt-5 text-emerald-600 font-semibold hover:underline">
+                    <button
+                      type="button"
+                      onClick={openAuth}
+                      className="mt-5 text-emerald-600 font-semibold hover:underline"
+                    >
                       Monitoring Sekarang →
                     </button>
                   </FadeSlide>
@@ -170,7 +195,11 @@ const FiturSistem = () => {
                     </p>
                   </FadeUp>
                   <FadeSlide direction="right" delay={800}>
-                    <button className="mt-5 md:mt-12 text-emerald-600 font-semibold hover:underline">
+                    <button
+                      type="button"
+                      onClick={openAuth}
+                      className="mt-5 md:mt-12 text-emerald-600 font-semibold hover:underline"
+                    >
                       Deteksi Sekarang →
                     </button>
                   </FadeSlide>

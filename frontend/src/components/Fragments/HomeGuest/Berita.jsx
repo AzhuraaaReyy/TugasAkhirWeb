@@ -9,14 +9,23 @@ import PrevArrow from "../../../assets/icons/Arrows/PrevArrow";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 import FadeUp from "../../Animations/FadeUp";
 import FadeSlide from "../../Animations/FadeSlide";
+import AuthModal from "../../Elements/Modal/AuthModal";
 const Berita = () => {
   const prevRef = useRef(null);
   const nextRef = useRef(null);
   const swiperRef = useRef(null);
+
+  const [showAuth, setShowAuth] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+
+  // Buka modal autentikasi bila pengguna belum login.
+  const openAuth = () => {
+    if (!isLogin) setShowAuth(true);
+  };
 
   useEffect(() => {
     if (swiperRef.current && swiperRef.current.swiper) {
@@ -70,149 +79,163 @@ const Berita = () => {
   ];
 
   return (
-    <section
-      id="berita"
-      className="relative py-16 md:py-24 bg-emerald-50 overflow-hidden"
-    >
-      {/* 🌊 FLOATING WAVE */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
-        {/* Layer 1 */}
-        <svg
-          className="block w-full h-[90px] sm:h-[160px] wave-float"
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-        >
-          <path
-            fill="#9bf4ca"
-            fillOpacity="0.5"
-            d="M0,224L80,176C160,128,320,128,480,170.7C640,213,800,299,960,293.3C1120,288,1280,192,1360,144L1440,96L1440,320L0,320Z"
-          />
-        </svg>
+    <>
+      <AuthModal
+        isOpen={showAuth}
+        onClose={() => setShowAuth(false)}
+        onLoginSuccess={() => {
+          setIsLogin(true);
+          setShowAuth(false);
+        }}
+      />
+      <section
+        id="berita"
+        className="relative py-16 md:py-24 bg-emerald-50 overflow-hidden"
+      >
+        {/* 🌊 FLOATING WAVE */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
+          {/* Layer 1 */}
+          <svg
+            className="block w-full h-[90px] sm:h-[160px] wave-float"
+            viewBox="0 0 1440 320"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#9bf4ca"
+              fillOpacity="0.5"
+              d="M0,224L80,176C160,128,320,128,480,170.7C640,213,800,299,960,293.3C1120,288,1280,192,1360,144L1440,96L1440,320L0,320Z"
+            />
+          </svg>
 
-        {/* Layer 2 */}
-        <svg
-          className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
-          viewBox="0 0 1440 320"
-          preserveAspectRatio="none"
-        >
-          <path
-            fill="#00ff80"
-            fillOpacity="0.3"
-            d="M0,192L120,208C240,224,480,256,720,229.3C960,203,1200,117,1320,74.7L1440,32L1440,320L0,320Z"
-          />
-        </svg>
-      </div>
-      {/* Background */}
-      <div className="absolute -top-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-60"></div>
-      <div className="absolute top-20 left-100 w-[200px] h-[200px] bg-emerald-200 rounded-full blur-3xl opacity-60 z-0"></div>
-      <div className="absolute top-120 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-60"></div>
-      <div className="absolute bottom-0 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-60"></div>
-      <div className="absolute -top-5 -right-20 w-[300px] h-[300px] bg-blue-200 rounded-full blur-3xl opacity-60 z-0"></div>
-      <div className="absolute top-20 right-110 w-[200px] h-[200px] bg-blue-200 rounded-full blur-3xl opacity-60 z-0"></div>
-
-      <div className="w-full px-4 sm:px-6 relative">
-        {/* HEADER */}
-
-        <div className="text-center mb-12 md:mb-16 z-40 ">
-          <FadeSlide direction="left" delay={400}>
-            <div>
-              <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold text-gray-800">
-                Berita Seputar Stunting
-              </h2>
-            </div>
-          </FadeSlide>
-          <FadeSlide direction="right" delay={400}>
-            <div>
-              <p className="mt-5 max-w-2xl mx-auto text-sm sm:text-base text-gray-600">
-                Berbagai informasi seputar stunting, mulai dari fakta,
-                perkembangan, hingga hal-hal penting yang perlu diketahui
-              </p>
-            </div>
-          </FadeSlide>
+          {/* Layer 2 */}
+          <svg
+            className="absolute bottom-0 block w-full h-[80px] sm:h-[150px] wave-float-slow"
+            viewBox="0 0 1440 320"
+            preserveAspectRatio="none"
+          >
+            <path
+              fill="#00ff80"
+              fillOpacity="0.3"
+              d="M0,192L120,208C240,224,480,256,720,229.3C960,203,1200,117,1320,74.7L1440,32L1440,320L0,320Z"
+            />
+          </svg>
         </div>
+        {/* Background */}
+        <div className="absolute -top-40 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-60"></div>
+        <div className="absolute top-20 left-100 w-[200px] h-[200px] bg-emerald-200 rounded-full blur-3xl opacity-60 z-0"></div>
+        <div className="absolute top-120 -left-40 w-[420px] h-[420px] bg-emerald-200 rounded-full blur-3xl opacity-60"></div>
+        <div className="absolute bottom-0 -right-40 w-[420px] h-[420px] bg-blue-200 rounded-full blur-3xl opacity-60"></div>
+        <div className="absolute -top-5 -right-20 w-[300px] h-[300px] bg-blue-200 rounded-full blur-3xl opacity-60 z-0"></div>
+        <div className="absolute top-20 right-110 w-[200px] h-[200px] bg-blue-200 rounded-full blur-3xl opacity-60 z-0"></div>
 
-        {/* SWIPER */}
-        <FadeUp delay={400}>
-          <div className="relative mb-20">
-            {/* Panah hanya tampil mulai md (di mobile cukup swipe) */}
-            <div className="hidden md:block">
-              <PrevArrow arrowRef={prevRef} />
-              <NextArrow arrowRef={nextRef} />
-            </div>
-            <Swiper
-              modules={[Navigation, Autoplay, Pagination]}
-              spaceBetween={30}
-              slidesPerView={3}
-              loop={true}
-              autoplay={{ delay: 4000 }}
-              ref={swiperRef}
-              pagination={{
-                clickable: true,
-                renderBullet: (index, className) => {
-                  return `<span class="${className} pill-bullet"></span>`;
-                },
-              }}
-              breakpoints={{
-                320: { slidesPerView: 1 },
-                640: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 },
-              }}
-            >
-              {beritaList.map((item, i) => (
-                <SwiperSlide key={i}>
-                  <div className="relative group overflow-hidden rounded-2xl cursor-pointer ">
-                    {/* IMAGE */}
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-[360px] sm:h-[420px] object-cover transition duration-700 md:group-hover:scale-110 "
-                    />
+        <div className="w-full px-4 sm:px-6 relative">
+          {/* HEADER */}
 
-                    {/* DARK OVERLAY */}
-                    <div className="absolute inset-0 bg-black/30"></div>
+          <div className="text-center mb-12 md:mb-16 z-40 ">
+            <FadeSlide direction="left" delay={400}>
+              <div>
+                <h2 className="mt-5 text-3xl sm:text-4xl font-extrabold text-gray-800">
+                  Berita Seputar Stunting
+                </h2>
+              </div>
+            </FadeSlide>
+            <FadeSlide direction="right" delay={400}>
+              <div>
+                <p className="mt-5 max-w-2xl mx-auto text-sm sm:text-base text-gray-600">
+                  Berbagai informasi seputar stunting, mulai dari fakta,
+                  perkembangan, hingga hal-hal penting yang perlu diketahui
+                </p>
+              </div>
+            </FadeSlide>
+          </div>
 
-                    {/* HOVER OVERLAY (di mobile gradient langsung tampil) */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
+          {/* SWIPER */}
+          <FadeUp delay={400}>
+            <div className="relative mb-20">
+              {/* Panah hanya tampil mulai md (di mobile cukup swipe) */}
+              <div className="hidden md:block">
+                <PrevArrow arrowRef={prevRef} />
+                <NextArrow arrowRef={nextRef} />
+              </div>
+              <Swiper
+                modules={[Navigation, Autoplay, Pagination]}
+                spaceBetween={30}
+                slidesPerView={3}
+                loop={true}
+                autoplay={{ delay: 4000 }}
+                ref={swiperRef}
+                pagination={{
+                  clickable: true,
+                  renderBullet: (index, className) => {
+                    return `<span class="${className} pill-bullet"></span>`;
+                  },
+                }}
+                breakpoints={{
+                  320: { slidesPerView: 1 },
+                  640: { slidesPerView: 2 },
+                  1024: { slidesPerView: 3 },
+                }}
+              >
+                {beritaList.map((item, i) => (
+                  <SwiperSlide key={i}>
+                    <div className="relative group overflow-hidden rounded-2xl cursor-pointer ">
+                      {/* IMAGE */}
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-[360px] sm:h-[420px] object-cover transition duration-700 md:group-hover:scale-110 "
+                      />
 
-                    {/* CONTENT */}
-                    <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 text-white z-10">
-                      {/* Ringkas (judul+tanggal): hanya desktop, hilang saat hover */}
-                      <div className="hidden md:block md:group-hover:opacity-0 transition duration-300">
-                        <p className="text-emerald-400 text-sm font-semibold mb-2">
-                          {item.date}
-                        </p>
-                        <h3 className="text-2xl font-extrabold">
-                          {item.title}
-                        </h3>
-                        <hr className="w-20 border-emerald-500 border-2 mt-3" />
-                      </div>
+                      {/* DARK OVERLAY */}
+                      <div className="absolute inset-0 bg-black/30"></div>
 
-                      {/* Lengkap: tampil default di mobile, muncul saat hover di desktop */}
-                      <div className="md:absolute md:bottom-8 md:left-8 md:right-8 opacity-100 translate-y-0 md:opacity-0 md:translate-y-10 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-700 ease-out">
-                        <p className="text-emerald-400 text-sm font-semibold mb-2">
-                          {item.date}
-                        </p>
-                        <h3 className="text-xl sm:text-2xl font-bold">
-                          {item.title}
-                        </h3>
-                        <hr className="w-20 border-emerald-500 border-2 mt-3" />
-                        <p className="mt-4 text-gray-200 text-sm leading-relaxed">
-                          {item.desc}
-                        </p>
+                      {/* HOVER OVERLAY (di mobile gradient langsung tampil) */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-700 ease-in-out"></div>
 
-                        <button className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400">
-                          Baca Selengkapnya →
-                        </button>
+                      {/* CONTENT */}
+                      <div className="absolute bottom-0 left-0 w-full p-6 sm:p-8 text-white z-10">
+                        {/* Ringkas (judul+tanggal): hanya desktop, hilang saat hover */}
+                        <div className="hidden md:block md:group-hover:opacity-0 transition duration-300">
+                          <p className="text-emerald-400 text-sm font-semibold mb-2">
+                            {item.date}
+                          </p>
+                          <h3 className="text-2xl font-extrabold">
+                            {item.title}
+                          </h3>
+                          <hr className="w-20 border-emerald-500 border-2 mt-3" />
+                        </div>
+
+                        {/* Lengkap: tampil default di mobile, muncul saat hover di desktop */}
+                        <div className="md:absolute md:bottom-8 md:left-8 md:right-8 opacity-100 translate-y-0 md:opacity-0 md:translate-y-10 md:group-hover:opacity-100 md:group-hover:translate-y-0 transition-all duration-700 ease-out">
+                          <p className="text-emerald-400 text-sm font-semibold mb-2">
+                            {item.date}
+                          </p>
+                          <h3 className="text-xl sm:text-2xl font-bold">
+                            {item.title}
+                          </h3>
+                          <hr className="w-20 border-emerald-500 border-2 mt-3" />
+                          <p className="mt-4 text-gray-200 text-sm leading-relaxed">
+                            {item.desc}
+                          </p>
+
+                          <button
+                            type="button"
+                            onClick={openAuth}
+                            className="mt-6 bg-white hover:bg-emerald-500 hover:text-white px-5 py-2 rounded-full text-sm font-semibold transition text-emerald-400"
+                          >
+                            Baca Selengkapnya →
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        </FadeUp>
-      </div>
-    </section>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+    </>
   );
 };
 

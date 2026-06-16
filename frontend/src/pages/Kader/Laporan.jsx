@@ -10,26 +10,36 @@ export default function Laporan() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(""); // search yang sudah di-debounce
   const [tanggal, setTanggal] = useState("");
   const [loading, setLoading] = useState(false);
   const [balita, setBalita] = useState([]);
   const [deteksi, setDeteksi] = useState([]);
 
-  // ===== Tambahan: data rujukan, belum ditimbang, dan bermasalah gizi =====
+  // ===== Data rujukan & status penimbangan (sudah + belum) =====
   const [rujukan, setRujukan] = useState([]);
-  const [belumTimbang, setBelumTimbang] = useState([]);
-  
+  const [statusTimbang, setStatusTimbang] = useState([]);
+
   // Paginasi lokal masing-masing tabel tambahan (independen dari paginasi utama).
   const [pageRujukan, setPageRujukan] = useState(1);
-  const [pageBelum, setPageBelum] = useState(1);
+  const [pageTimbang, setPageTimbang] = useState(1);
 
+  // Debounce: tunggu 450ms setelah berhenti mengetik baru perbarui debouncedSearch.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 450);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const res = await api.get("/laporan", {
-          params: { page: currentPage, search: search, tanggal: tanggal },
+          params: {
+            page: currentPage,
+            search: debouncedSearch,
+            tanggal: tanggal,
+          },
         });
         const balitaPg = res.data.balita;
         setBalita(balitaPg?.data || []);
@@ -37,10 +47,10 @@ export default function Laporan() {
         setCurrentPage(balitaPg?.current_page || 1);
         setTotalPages(balitaPg?.last_page || 1);
 
-        // Tambahan: dukung respons berbentuk array biasa maupun objek paginasi.
+        // Dukung respons berbentuk array biasa maupun objek paginasi.
         setRujukan(res.data.rujukan?.data || res.data.rujukan || []);
-        setBelumTimbang(
-          res.data.belum_timbang?.data || res.data.belum_timbang || [],
+        setStatusTimbang(
+          res.data.status_timbang?.data || res.data.status_timbang || [],
         );
       } catch (error) {
         console.error(error);
@@ -49,18 +59,18 @@ export default function Laporan() {
       }
     };
     fetchData();
-  }, [currentPage, search, tanggal]);
+  }, [currentPage, debouncedSearch, tanggal]);
 
+  // Reset halaman utama saat filter (debounced) berubah.
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, tanggal]);
+  }, [debouncedSearch, tanggal]);
 
-  // Tambahan: reset paginasi lokal tabel tambahan saat filter berubah.
+  // Reset paginasi lokal tabel tambahan saat filter berubah.
   useEffect(() => {
     setPageRujukan(1);
-    setPageBelum(1);
-   
-  }, [search, tanggal, deteksi]);
+    setPageTimbang(1);
+  }, [debouncedSearch, tanggal, deteksi]);
 
   const statusWarnaTBU = {
     "Sangat pendek (severely stunted)": "bg-red-600 text-white",
@@ -90,43 +100,38 @@ export default function Laporan() {
   const baseStyle =
     "inline-block max-w-[180px] whitespace-normal break-words text-center leading-snug px-4 py-1.5 rounded-2xl text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
 
-  // ===== Tambahan: helper paginasi lokal & penurunan data (fallback) =====
+  // Warna badge pembeda periode rujukan.
+  const periodeBadge = (item) => {
+    if (item?.sudah_dirujuk_sebelumnya) return "bg-green-100 text-green-700";
+    if (item?.bulan_ini) return "bg-red-100 text-red-700";
+    return "bg-amber-100 text-amber-700";
+  };
+
+  // ===== Helper paginasi lokal & penurunan data (fallback) =====
   const perPage = 10;
   const paginate = (arr = [], page = 1) =>
     arr.slice((page - 1) * perPage, page * perPage);
   const totalPagesOf = (arr = []) =>
     Math.max(1, Math.ceil((arr?.length || 0) / perPage));
 
-  // Fallback bila backend belum mengirim daftar khusus: turunkan dari deteksi.
-  const STATUS_NORMAL_TBU = ["Normal", "Tinggi"];
+  // Fallback bila backend belum mengirim daftar rujukan: turunkan dari deteksi.
   const isRujukan = (d) =>
-    d?.status_tb_u === "Sangat pendek (severely stunted)" ||
+    ["Sangat pendek (severely stunted)", "Pendek (stunted)"].includes(
+      d?.status_tb_u,
+    ) ||
     ["Gizi buruk (severely wasted)", "Obesitas (obese)"].includes(
       d?.status_tb_bb,
     ) ||
     d?.status_bb_u === "Berat badan sangat kurang (severely underweight)";
- 
-  const alasanRujukan = (d) => {
-    const a = [];
-    if (d?.status_tb_u === "Sangat pendek (severely stunted)")
-      a.push("stunting berat");
-    if (d?.status_tb_bb === "Gizi buruk (severely wasted)")
-      a.push("gizi buruk");
-    if (d?.status_tb_bb === "Obesitas (obese)") a.push("obesitas");
-    if (d?.status_bb_u === "Berat badan sangat kurang (severely underweight)")
-      a.push("berat badan sangat kurang");
-    return a.join(", ") || "perlu evaluasi lanjutan";
-  };
 
   const rujukanData =
     (rujukan.length ? rujukan : deteksi.filter(isRujukan)) || [];
 
-  const belumData = belumTimbang || [];
+  const timbangData = statusTimbang || [];
 
   return (
     <MainLayouts type="laporan">
-
-      <div className=" p-4 sm:p-6 min-h-screen">
+      <div className="relative p-4 sm:p-6 min-h-screen">
         {loading && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
             <Atom color="#10b981" size="medium" text="Memuat..." />
@@ -162,13 +167,17 @@ export default function Laporan() {
                 </button>
               )}
               <button
-                onClick={() => exportExcel(balita, [], deteksi)}
+                onClick={() =>
+                  exportExcel(balita, deteksi, rujukanData, timbangData)
+                }
                 className="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-lg"
               >
                 Export Excel
               </button>
               <button
-                onClick={() => exportPDF(balita, [], deteksi)}
+                onClick={() =>
+                  exportPDF(balita, deteksi, rujukanData, timbangData)
+                }
                 className="w-full sm:w-auto bg-red-600 text-white px-4 py-2 rounded-lg"
               >
                 Export PDF
@@ -382,21 +391,21 @@ export default function Laporan() {
                           </td>
                           <td className="px-4 py-3 align-top">
                             <span
-                              className={`${baseStyle} ${statusWarnaTBU[item.status_tb_u] || "..."}`}
+                              className={`${baseStyle} ${statusWarnaTBU[item.status_tb_u] || statusWarnaTBU.default}`}
                             >
                               {item.status_tb_u || "-"}
                             </span>
                           </td>
                           <td className="px-4 py-3 align-top">
                             <span
-                              className={`${baseStyle} ${statusWarnaBBTB[item.status_tb_bb] || "..."}`}
+                              className={`${baseStyle} ${statusWarnaBBTB[item.status_tb_bb] || statusWarnaBBTB.default}`}
                             >
                               {item.status_tb_bb || "-"}
                             </span>
                           </td>
                           <td className="px-4 py-3 align-top">
                             <span
-                              className={`${baseStyle} ${statusWarnaBBU[item.status_bb_u] || "..."}`}
+                              className={`${baseStyle} ${statusWarnaBBU[item.status_bb_u] || statusWarnaBBU.default}`}
                             >
                               {item.status_bb_u || "-"}
                             </span>
@@ -428,15 +437,16 @@ export default function Laporan() {
               </div>
             </div>
 
-            {/* ====== TAMBAHAN: DATA RUJUKAN ====== */}
+            {/* ====== DATA RUJUKAN (bulan ini + sebelumnya, dengan pembeda) ====== */}
             <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
               <h2 className="font-extrabold text-lg">Laporan Data Rujukan</h2>
               <p className="text-gray-500 text-sm mb-5">
-                Balita dengan status gizi berat yang perlu dirujuk ke Puskesmas
-                untuk penanganan lebih lanjut.
+                Balita yang perlu dirujuk, mencakup bulan ini dan sebelumnya.
+                Kolom keterangan membedakan rujukan baru dengan yang sudah
+                pernah dirujuk agar tidak dirujuk dua kali.
               </p>
               <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
-                <table className="w-full min-w-[1000px] text-sm text-left border-collapse">
+                <table className="w-full min-w-[1100px] text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                     <tr>
                       <th className="px-4 py-3">No</th>
@@ -452,7 +462,8 @@ export default function Laporan() {
                       <th className="px-4 py-3 text-center">
                         Status Underweight (BB / U)
                       </th>
-                      <th className="px-4 py-3">Alasan Rujukan</th>
+                      <th className="px-4 py-3">Alasan</th>
+                      <th className="px-4 py-3 text-center">Keterangan</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 text-center">
@@ -499,15 +510,27 @@ export default function Laporan() {
                               {item.status_bb_u || "-"}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-gray-600 max-w-[200px] whitespace-normal break-words">
-                            {item.alasan || alasanRujukan(item)}
+                          <td className="px-4 py-3 text-gray-600 max-w-[160px] whitespace-normal break-words">
+                            {item.alasan || "-"}
+                          </td>
+                          <td className="px-4 py-3 align-top max-w-[220px]">
+                            <span
+                              className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${periodeBadge(item)}`}
+                            >
+                              {item.periode || "-"}
+                            </span>
+                            {item.keterangan && (
+                              <p className="mt-1 text-[11px] text-center leading-snug text-gray-500 whitespace-normal break-words">
+                                {item.keterangan}
+                              </p>
+                            )}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
                         <td
-                          colSpan="8"
+                          colSpan="9"
                           className="text-center py-6 text-gray-400"
                         >
                           Tidak ada balita yang perlu dirujuk
@@ -529,36 +552,36 @@ export default function Laporan() {
               </div>
             </div>
 
-            {/* ====== TAMBAHAN: DATA BELUM DITIMBANG ====== */}
+            {/* ====== STATUS PENIMBANGAN BULAN INI (sudah + belum jadi satu) ====== */}
             <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
               <h2 className="font-extrabold text-lg">
-                Laporan Data Belum Ditimbang
+                Laporan Status Penimbangan Bulan Ini
               </h2>
               <p className="text-gray-500 text-sm mb-5">
-                Balita terdaftar yang belum melakukan penimbangan pada periode
-                ini (perlu dikirim dari backend pada key{" "}
-                <code>belum_timbang</code>).
+                Daftar seluruh balita beserta status penimbangannya pada bulan
+                ini, baik yang sudah maupun belum ditimbang.
               </p>
               <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
-                <table className="w-full min-w-[800px] text-sm text-left border-collapse">
+                <table className="w-full min-w-[900px] text-sm text-left border-collapse">
                   <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
                     <tr>
                       <th className="px-4 py-3">No</th>
                       <th className="px-4 py-3">Nama Balita</th>
                       <th className="px-4 py-3">Orang Tua</th>
                       <th className="px-4 py-3">Posyandu</th>
-                      <th className="px-4 py-3">Terakhir Ditimbang</th>
+                      <th className="px-4 py-3 text-center">Status</th>
+                      <th className="px-4 py-3">Tanggal Timbang</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 text-center">
-                    {belumData.length > 0 ? (
-                      paginate(belumData, pageBelum).map((item, index) => (
+                    {timbangData.length > 0 ? (
+                      paginate(timbangData, pageTimbang).map((item, index) => (
                         <tr
                           key={item.id ?? index}
                           className="hover:bg-gray-50 transition"
                         >
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {(pageBelum - 1) * perPage + index + 1}
+                            {(pageTimbang - 1) * perPage + index + 1}
                           </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.name || item.balitaname}
@@ -569,22 +592,32 @@ export default function Laporan() {
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                             {item.posyandu || "-"}
                           </td>
+                          <td className="px-4 py-3 align-top">
+                            <span
+                              className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${item.sudah_ditimbang ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                            >
+                              {item.status ||
+                                (item.sudah_ditimbang
+                                  ? "Sudah ditimbang"
+                                  : "Belum ditimbang")}
+                            </span>
+                          </td>
                           <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                            {item.terakhir_timbang
+                            {item.tanggal_timbang
                               ? new Date(
-                                  item.terakhir_timbang,
+                                  item.tanggal_timbang,
                                 ).toLocaleDateString("id-ID")
-                              : "Belum pernah ditimbang"}
+                              : "-"}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
                         <td
-                          colSpan="5"
+                          colSpan="6"
                           className="text-center py-6 text-gray-400"
                         >
-                          Semua balita sudah ditimbang / data belum tersedia
+                          Data balita tidak tersedia
                         </td>
                       </tr>
                     )}
@@ -593,17 +626,15 @@ export default function Laporan() {
               </div>
               <div className="flex flex-wrap justify-between items-center gap-3 mt-6">
                 <p className="text-sm text-gray-500 ml-3">
-                  Halaman {pageBelum} dari {totalPagesOf(belumData)}
+                  Halaman {pageTimbang} dari {totalPagesOf(timbangData)}
                 </p>
                 <Pagination
-                  currentPage={pageBelum}
-                  totalPages={totalPagesOf(belumData)}
-                  onPageChange={(page) => setPageBelum(page)}
+                  currentPage={pageTimbang}
+                  totalPages={totalPagesOf(timbangData)}
+                  onPageChange={(page) => setPageTimbang(page)}
                 />
               </div>
             </div>
-
-            {/* ====== TAMBAHAN: DATA ANAK BERMASALAH (BERAT / TINGGI BADAN) ====== */}
           </div>
         </div>
       </div>

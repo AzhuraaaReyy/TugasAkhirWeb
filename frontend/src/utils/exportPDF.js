@@ -20,7 +20,7 @@ const statusColor = (status) => {
       return [251, 191, 36];
     case "Berat badan normal":
       return [34, 197, 94];
-    case "Risiko Berat badan lebih":
+    case "Risiko berat badan lebih":
       return [59, 130, 246];
 
     // BBTB
@@ -42,23 +42,60 @@ const statusColor = (status) => {
   }
 };
 
-export const exportPDF = (balita, penimbangan, deteksi) => {
+const fmtTgl = (x) => (x ? new Date(x).toLocaleDateString("id-ID") : "-");
+
+const selStatus = (status) => ({
+  content: status || "-",
+  styles: {
+    fillColor: statusColor(status),
+    textColor: [255, 255, 255],
+  },
+});
+
+/**
+ * Urutan argumen disesuaikan dengan Laporan.jsx:
+ *   exportPDF(balita, deteksi, rujukan, statusTimbang)
+ */
+export const exportPDF = (
+  balita = [],
+  deteksi = [],
+  rujukan = [],
+  statusTimbang = [],
+) => {
   const doc = new jsPDF("p", "pt", "a4");
   const margin = 20;
   let yOffset = margin;
 
-  // HEADER
+  const gariskan = {
+    theme: "grid",
+    headStyles: { fillColor: [220, 220, 220] },
+    margin: { left: margin, right: margin },
+    styles: {
+      lineWidth: 0.8,
+      lineColor: [0, 0, 0],
+      fontSize: 8,
+    },
+  };
+
+  const judul = (teks) => {
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(teks, margin, yOffset);
+    yOffset += 10;
+  };
+
+  const lanjut = () => {
+    yOffset = doc.lastAutoTable.finalY + 20;
+  };
+
+  // ====== HEADER ======
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
   doc.text("Laporan Data Posyandu", 310, yOffset, { align: "center" });
   yOffset += 30;
 
-  // LAPORAN BALITA
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("Laporan Data Balita", margin, yOffset);
-  yOffset += 10;
-
+  // ====== LAPORAN BALITA ======
+  judul("Laporan Data Balita");
   autoTable(doc, {
     startY: yOffset,
     head: [
@@ -75,68 +112,37 @@ export const exportPDF = (balita, penimbangan, deteksi) => {
     body: balita.map((b, i) => [
       i + 1,
       b.name,
-      b.orangtua,
+      b.orangtua || "-",
       b.jk,
-      `${b.tmp_lahir}, ${new Date(b.tgl_lahir).toLocaleDateString("id-ID")}`,
-      b.alamat,
-      b.posyandu,
+      `${b.tmp_lahir || "-"}, ${fmtTgl(b.tgl_lahir)}`,
+      b.alamat || "-",
+      b.posyandu || "-",
     ]),
-    theme: "grid",
-    headStyles: { fillColor: [220, 220, 220] },
-    margin: { left: margin, right: margin },
-    styles: {
-      lineWidth: 0.8, // default 0.4, lebih besar = garis lebih tebal
-      lineColor: [0, 0, 0], // warna garis hitam
-    },
+    ...gariskan,
   });
+  lanjut();
 
-  yOffset = doc.lastAutoTable.finalY + 20;
-
-  // LAPORAN PENIMBANGAN
-  doc.setFont("helvetica", "bold");
-  doc.text("Laporan Data Penimbangan", margin, yOffset);
-  yOffset += 10;
-
+  // ====== LAPORAN PENIMBANGAN (dari data deteksi) ======
+  judul("Laporan Data Penimbangan");
   autoTable(doc, {
     startY: yOffset,
     head: [
-      [
-        "No",
-        "Nama Balita",
-        "Umur",
-        "Tanggal",
-        "Berat (kg)",
-        "Tinggi (cm)",
-        "Lingkar Lengan",
-        "Lingkar Kepala",
-      ],
+      ["No", "Nama Balita", "Umur", "Tanggal", "Berat (kg)", "Tinggi (cm)"],
     ],
-    body: penimbangan.map((p, i) => [
+    body: deteksi.map((d, i) => [
       i + 1,
-      p.balita,
-      `${p.umur} Bulan`,
-      new Date(p.tanggal).toLocaleDateString("id-ID"),
-      p.berat,
-      p.tinggi,
-      p.lingkar_lengan,
-      p.lingkar_kepala,
+      d.balitaname,
+      `${d.umur} Bulan`,
+      fmtTgl(d.tanggal),
+      d.berat,
+      d.tinggi,
     ]),
-    theme: "grid",
-    headStyles: { fillColor: [220, 220, 220] },
-    margin: { left: margin, right: margin },
-    styles: {
-      lineWidth: 0.8, // default 0.4, lebih besar = garis lebih tebal
-      lineColor: [0, 0, 0], // warna garis hitam
-    },
+    ...gariskan,
   });
+  lanjut();
 
-  yOffset = doc.lastAutoTable.finalY + 20;
-
-  // LAPORAN DETEKSI
-  doc.setFont("helvetica", "bold");
-  doc.text("Laporan Data Deteksi", margin, yOffset);
-  yOffset += 10;
-
+  // ====== LAPORAN DETEKSI ======
+  judul("Laporan Data Deteksi");
   autoTable(doc, {
     startY: yOffset,
     head: [
@@ -155,39 +161,96 @@ export const exportPDF = (balita, penimbangan, deteksi) => {
     body: deteksi.map((d, i) => [
       i + 1,
       d.balitaname,
-      new Date(d.tanggal).toLocaleDateString("id-ID"),
+      fmtTgl(d.tanggal),
       d.zscore_tb_u,
       d.zscore_bb_u,
       d.zscore_tb_bb,
-      {
-        content: d.status_tb_u || "-",
-        styles: {
-          fillColor: statusColor(d.status_tb_u),
-          textColor: [255, 255, 255],
-        },
-      },
-      {
-        content: d.status_tb_bb || "-",
-        styles: {
-          fillColor: statusColor(d.status_tb_bb),
-          textColor: [255, 255, 255],
-        },
-      },
-      {
-        content: d.status_bb_u || "-",
-        styles: {
-          fillColor: statusColor(d.status_bb_u),
-          textColor: [255, 255, 255],
-        },
-      },
+      selStatus(d.status_tb_u),
+      selStatus(d.status_tb_bb),
+      selStatus(d.status_bb_u),
     ]),
-    theme: "grid",
-    headStyles: { fillColor: [220, 220, 220] },
-    margin: { left: margin, right: margin },
-    styles: {
-      lineWidth: 0.8, // default 0.4, lebih besar = garis lebih tebal
-      lineColor: [0, 0, 0], // warna garis hitam
-    },
+    ...gariskan,
+  });
+  lanjut();
+
+  // ====== LAPORAN RUJUKAN (dengan kolom keterangan pembeda) ======
+  judul("Laporan Data Rujukan");
+  autoTable(doc, {
+    startY: yOffset,
+    head: [
+      [
+        "No",
+        "Nama Balita",
+        "Umur",
+        "Tanggal",
+        "Status Stunting",
+        "Status Wasting",
+        "Status Underweight",
+        "Alasan",
+        "Keterangan",
+      ],
+    ],
+    body: rujukan.length
+      ? rujukan.map((d, i) => [
+          i + 1,
+          d.balitaname,
+          `${d.umur} Bulan`,
+          fmtTgl(d.tanggal),
+          selStatus(d.status_tb_u),
+          selStatus(d.status_tb_bb),
+          selStatus(d.status_bb_u),
+          d.alasan || "-",
+          d.periode
+            ? `${d.periode}${d.keterangan ? ". " + d.keterangan : ""}`
+            : "-",
+        ])
+      : [
+          [
+            {
+              content: "Tidak ada balita yang perlu dirujuk",
+              colSpan: 9,
+              styles: { halign: "center" },
+            },
+          ],
+        ],
+    ...gariskan,
+  });
+  lanjut();
+
+  // ====== STATUS PENIMBANGAN BULAN INI (sudah + belum) ======
+  judul("Laporan Status Penimbangan Bulan Ini");
+  autoTable(doc, {
+    startY: yOffset,
+    head: [
+      ["No", "Nama Balita", "Orang Tua", "Posyandu", "Status", "Tgl Timbang"],
+    ],
+    body: statusTimbang.length
+      ? statusTimbang.map((b, i) => [
+          i + 1,
+          b.name || b.balitaname,
+          b.orangtua || "-",
+          b.posyandu || "-",
+          {
+            content:
+              b.status ||
+              (b.sudah_ditimbang ? "Sudah ditimbang" : "Belum ditimbang"),
+            styles: {
+              fillColor: b.sudah_ditimbang ? [34, 197, 94] : [220, 38, 38],
+              textColor: [255, 255, 255],
+            },
+          },
+          b.tanggal_timbang ? fmtTgl(b.tanggal_timbang) : "-",
+        ])
+      : [
+          [
+            {
+              content: "Data balita tidak tersedia",
+              colSpan: 6,
+              styles: { halign: "center" },
+            },
+          ],
+        ],
+    ...gariskan,
   });
 
   doc.save("Laporan_Posyandu.pdf");
