@@ -14,7 +14,7 @@ class WhoTbUSeeder extends Seeder
     public function run(): void
     {
 
-        $file = fopen(storage_path('storage/who_tb_u.csv'), 'r');
+        $file = fopen(public_path('storage/who_tb_u.csv'), 'r');
         // skip header
         fgetcsv($file);
 
