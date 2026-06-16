@@ -15,6 +15,15 @@ export default function Laporan() {
   const [balita, setBalita] = useState([]);
   const [deteksi, setDeteksi] = useState([]);
 
+  // ===== Tambahan: data rujukan, belum ditimbang, dan bermasalah gizi =====
+  const [rujukan, setRujukan] = useState([]);
+  const [belumTimbang, setBelumTimbang] = useState([]);
+  
+  // Paginasi lokal masing-masing tabel tambahan (independen dari paginasi utama).
+  const [pageRujukan, setPageRujukan] = useState(1);
+  const [pageBelum, setPageBelum] = useState(1);
+
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -27,6 +36,12 @@ export default function Laporan() {
         setDeteksi(res.data.deteksi?.data || []);
         setCurrentPage(balitaPg?.current_page || 1);
         setTotalPages(balitaPg?.last_page || 1);
+
+        // Tambahan: dukung respons berbentuk array biasa maupun objek paginasi.
+        setRujukan(res.data.rujukan?.data || res.data.rujukan || []);
+        setBelumTimbang(
+          res.data.belum_timbang?.data || res.data.belum_timbang || [],
+        );
       } catch (error) {
         console.error(error);
       } finally {
@@ -39,6 +54,13 @@ export default function Laporan() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, tanggal]);
+
+  // Tambahan: reset paginasi lokal tabel tambahan saat filter berubah.
+  useEffect(() => {
+    setPageRujukan(1);
+    setPageBelum(1);
+   
+  }, [search, tanggal, deteksi]);
 
   const statusWarnaTBU = {
     "Sangat pendek (severely stunted)": "bg-red-600 text-white",
@@ -68,9 +90,43 @@ export default function Laporan() {
   const baseStyle =
     "inline-block max-w-[180px] whitespace-normal break-words text-center leading-snug px-4 py-1.5 rounded-2xl text-sm font-semibold transition-all duration-300 ease-in-out shadow-sm";
 
+  // ===== Tambahan: helper paginasi lokal & penurunan data (fallback) =====
+  const perPage = 10;
+  const paginate = (arr = [], page = 1) =>
+    arr.slice((page - 1) * perPage, page * perPage);
+  const totalPagesOf = (arr = []) =>
+    Math.max(1, Math.ceil((arr?.length || 0) / perPage));
+
+  // Fallback bila backend belum mengirim daftar khusus: turunkan dari deteksi.
+  const STATUS_NORMAL_TBU = ["Normal", "Tinggi"];
+  const isRujukan = (d) =>
+    d?.status_tb_u === "Sangat pendek (severely stunted)" ||
+    ["Gizi buruk (severely wasted)", "Obesitas (obese)"].includes(
+      d?.status_tb_bb,
+    ) ||
+    d?.status_bb_u === "Berat badan sangat kurang (severely underweight)";
+ 
+  const alasanRujukan = (d) => {
+    const a = [];
+    if (d?.status_tb_u === "Sangat pendek (severely stunted)")
+      a.push("stunting berat");
+    if (d?.status_tb_bb === "Gizi buruk (severely wasted)")
+      a.push("gizi buruk");
+    if (d?.status_tb_bb === "Obesitas (obese)") a.push("obesitas");
+    if (d?.status_bb_u === "Berat badan sangat kurang (severely underweight)")
+      a.push("berat badan sangat kurang");
+    return a.join(", ") || "perlu evaluasi lanjutan";
+  };
+
+  const rujukanData =
+    (rujukan.length ? rujukan : deteksi.filter(isRujukan)) || [];
+
+  const belumData = belumTimbang || [];
+
   return (
     <MainLayouts type="laporan">
-      <div className="relative p-4 sm:p-6 min-h-screen">
+
+      <div className=" p-4 sm:p-6 min-h-screen">
         {loading && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
             <Atom color="#10b981" size="medium" text="Memuat..." />
@@ -371,6 +427,183 @@ export default function Laporan() {
                 />
               </div>
             </div>
+
+            {/* ====== TAMBAHAN: DATA RUJUKAN ====== */}
+            <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
+              <h2 className="font-extrabold text-lg">Laporan Data Rujukan</h2>
+              <p className="text-gray-500 text-sm mb-5">
+                Balita dengan status gizi berat yang perlu dirujuk ke Puskesmas
+                untuk penanganan lebih lanjut.
+              </p>
+              <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
+                <table className="w-full min-w-[1000px] text-sm text-left border-collapse">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
+                    <tr>
+                      <th className="px-4 py-3">No</th>
+                      <th className="px-4 py-3">Nama Balita</th>
+                      <th className="px-4 py-3">Umur</th>
+                      <th className="px-4 py-3">Tanggal Deteksi</th>
+                      <th className="px-4 py-3 text-center">
+                        Status Stunting (TB / U)
+                      </th>
+                      <th className="px-4 py-3 text-center">
+                        Status Wasting (BB / TB)
+                      </th>
+                      <th className="px-4 py-3 text-center">
+                        Status Underweight (BB / U)
+                      </th>
+                      <th className="px-4 py-3">Alasan Rujukan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-center">
+                    {rujukanData.length > 0 ? (
+                      paginate(rujukanData, pageRujukan).map((item, index) => (
+                        <tr
+                          key={item.id ?? index}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {(pageRujukan - 1) * perPage + index + 1}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.balitaname}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.umur} Bulan
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.tanggal
+                              ? new Date(item.tanggal).toLocaleDateString(
+                                  "id-ID",
+                                )
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <span
+                              className={`${baseStyle} ${statusWarnaTBU[item.status_tb_u] || statusWarnaTBU.default}`}
+                            >
+                              {item.status_tb_u || "-"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <span
+                              className={`${baseStyle} ${statusWarnaBBTB[item.status_tb_bb] || statusWarnaBBTB.default}`}
+                            >
+                              {item.status_tb_bb || "-"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <span
+                              className={`${baseStyle} ${statusWarnaBBU[item.status_bb_u] || statusWarnaBBU.default}`}
+                            >
+                              {item.status_bb_u || "-"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 max-w-[200px] whitespace-normal break-words">
+                            {item.alasan || alasanRujukan(item)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="8"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Tidak ada balita yang perlu dirujuk
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-wrap justify-between items-center gap-3 mt-6">
+                <p className="text-sm text-gray-500 ml-3">
+                  Halaman {pageRujukan} dari {totalPagesOf(rujukanData)}
+                </p>
+                <Pagination
+                  currentPage={pageRujukan}
+                  totalPages={totalPagesOf(rujukanData)}
+                  onPageChange={(page) => setPageRujukan(page)}
+                />
+              </div>
+            </div>
+
+            {/* ====== TAMBAHAN: DATA BELUM DITIMBANG ====== */}
+            <div className="bg-white rounded-3xl shadow-lg p-4 sm:p-6 mb-10 border border-gray-200 border-2">
+              <h2 className="font-extrabold text-lg">
+                Laporan Data Belum Ditimbang
+              </h2>
+              <p className="text-gray-500 text-sm mb-5">
+                Balita terdaftar yang belum melakukan penimbangan pada periode
+                ini (perlu dikirim dari backend pada key{" "}
+                <code>belum_timbang</code>).
+              </p>
+              <div className="overflow-x-auto rounded-xl border border-gray-200 hide-scrollbar">
+                <table className="w-full min-w-[800px] text-sm text-left border-collapse">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider text-center">
+                    <tr>
+                      <th className="px-4 py-3">No</th>
+                      <th className="px-4 py-3">Nama Balita</th>
+                      <th className="px-4 py-3">Orang Tua</th>
+                      <th className="px-4 py-3">Posyandu</th>
+                      <th className="px-4 py-3">Terakhir Ditimbang</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-center">
+                    {belumData.length > 0 ? (
+                      paginate(belumData, pageBelum).map((item, index) => (
+                        <tr
+                          key={item.id ?? index}
+                          className="hover:bg-gray-50 transition"
+                        >
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {(pageBelum - 1) * perPage + index + 1}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.name || item.balitaname}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.orangtua || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.posyandu || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                            {item.terakhir_timbang
+                              ? new Date(
+                                  item.terakhir_timbang,
+                                ).toLocaleDateString("id-ID")
+                              : "Belum pernah ditimbang"}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="text-center py-6 text-gray-400"
+                        >
+                          Semua balita sudah ditimbang / data belum tersedia
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-wrap justify-between items-center gap-3 mt-6">
+                <p className="text-sm text-gray-500 ml-3">
+                  Halaman {pageBelum} dari {totalPagesOf(belumData)}
+                </p>
+                <Pagination
+                  currentPage={pageBelum}
+                  totalPages={totalPagesOf(belumData)}
+                  onPageChange={(page) => setPageBelum(page)}
+                />
+              </div>
+            </div>
+
+            {/* ====== TAMBAHAN: DATA ANAK BERMASALAH (BERAT / TINGGI BADAN) ====== */}
           </div>
         </div>
       </div>
