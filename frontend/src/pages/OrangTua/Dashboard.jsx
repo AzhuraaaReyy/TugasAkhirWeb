@@ -3,10 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/services/api";
 import { Check, Bot, Baby } from "lucide-react";
-import ChartTinggi from "@/components/Fragments/Monitoring/ChartTinggi";
-import ChartBerat from "@/components/Fragments/Monitoring/ChartBerat";
 import CardKeteranganRekomendasi from "@/components/Fragments/Monitoring/CardKeteranganRekomendasi";
-import CardStatusAnak from "@/components/Fragments/Monitoring/CardStatusAnak";
 import CardEdukasiStatusGizi from "@/components/Fragments/Monitoring/CardEdukasiStatus";
 import { CardGiziIndikator } from "@/components/Fragments/Monitoring/CardGiziIndikator";
 import Profile from "@/components/Fragments/Monitoring/Profile";
@@ -14,13 +11,12 @@ import CardBerat from "@/components/Fragments/Monitoring/CardBerat";
 import CardTinggi from "@/components/Fragments/Monitoring/CardTinggi";
 import CardTotalPenimbangan from "@/components/Fragments/Monitoring/CardPenimbangan";
 import CardStatus from "@/components/Fragments/Monitoring/CardStatus";
-import ChartZScoreTBU from "@/components/Fragments/Monitoring/ChartZscoreTb";
-import ChartZscoreBb from "@/components/Fragments/Monitoring/ChartZscoreBb";
 import EventCalendar from "@/components/Fragments/Dashboard/EventCalander";
 import CardPerkembanganAnak from "./CardPerkembanganAnak";
 import { useAuth } from "../../context/useAuth";
 import ChartGrowth from "./ChartGrowth ";
 import ChartGrowthZScore from "./ChartGrowthZscore";
+import { Atom } from "react-loading-indicators";
 const BASE_PATH = "/orangtua/dashboard";
 
 // Hitung umur ringkas dari tgl_lahir (untuk kartu pemilih anak)
@@ -37,6 +33,17 @@ const hitungUmur = (tglLahir) => {
     ? `${bulan} bulan`
     : `${Math.floor(bulan / 12)} tahun ${bulan % 12} bulan`;
 };
+
+// Overlay loading dengan Atom (dipakai di beberapa tahap)
+const LayarMemuat = ({ type = "dashboardOrtu", text = "Memuat..." }) => (
+  <MainLayouts type={type}>
+    <div className="relative min-h-[70vh] w-full overflow-x-hidden bg-emerald-50">
+      <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+        <Atom color="#10b981" size="medium" text={text} />
+      </div>
+    </div>
+  </MainLayouts>
+);
 
 export default function DashboardOrtu() {
   const [chartData, setChartData] = useState([]);
@@ -71,12 +78,13 @@ export default function DashboardOrtu() {
 
   /* ============ FETCH DATA MONITORING (per anak terpilih) ============ */
   useEffect(() => {
-    const fetchGrafik = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`/grafik-ortu/${id}`);
+    if (!id) return;
+    let aktif = true;
 
-        const formattedData = res.data.map((item) => ({
+    const ambilGrafik = async () => {
+      try {
+        const res = await api.get(`/grafik-ortu/${id}`);
+        const formattedData = (res.data || []).map((item) => ({
           id: item.id,
           name: item.bulan,
           tanggal: item.tgl_deteksi,
@@ -115,41 +123,26 @@ export default function DashboardOrtu() {
           minus2Tb: item.minus2_tb,
           minus3Tb: item.minus3_tb,
         }));
-
-        setChartData(formattedData);
-        console.log("DEBUG GRAFIK:", res.data);
+        if (aktif) setChartData(formattedData);
       } catch (err) {
         console.error("Error ambil grafik:", err);
-        setChartData([]);
-      } finally {
-        setLoading(false);
+        if (aktif) setChartData([]);
       }
     };
 
-    if (id) fetchGrafik();
-  }, [id]);
-
-  useEffect(() => {
-    const fetchPerkembangan = async () => {
+    const ambilPerkembangan = async () => {
       try {
         const res = await api.get(`/perkembangan-ortu/${id}`);
-        setPerkembangan(res.data);
-        console.log("Debug Perkembangan:", res.data);
+        if (aktif) setPerkembangan(res.data);
       } catch (err) {
         console.error("Error Perkembangan: ", err);
-        setPerkembangan(null);
-      } finally {
-        setLoading(false);
+        if (aktif) setPerkembangan(null);
       }
     };
-    if (id) fetchPerkembangan();
-  }, [id]);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
+    const ambilDetail = async () => {
       try {
         const res = await api.get(`/detailmonitoring-ortu/${id}`);
-
         const item = res.data.data;
 
         const formattedData = {
@@ -178,32 +171,37 @@ export default function DashboardOrtu() {
           rekomendasiWasting: item.rekomendasigizi.wasting,
           rekomendasiUnderweight: item.rekomendasigizi.underweight,
           riwayat: item.riwayat,
-          kebutuhanGizi: item.kebutuhan_gizi, // ← tambahkan ini
+          kebutuhanGizi: item.kebutuhan_gizi,
           tingkatRekomendasi: item.tingkat_rekomendasi,
         };
-        setDetail(formattedData);
-        console.log("DEBUG DETAIL:", formattedData);
+        if (aktif) setDetail(formattedData);
       } catch (err) {
         console.error("Error:", err);
-      } finally {
-        setLoading(false);
       }
     };
 
-    if (id) fetchDetail();
+    const muat = async () => {
+      setLoading(true);
+      // Ketiganya jalan paralel; loading baru mati setelah semua selesai.
+      await Promise.allSettled([
+        ambilGrafik(),
+        ambilPerkembangan(),
+        ambilDetail(),
+      ]);
+      if (aktif) setLoading(false);
+    };
+
+    muat();
+    return () => {
+      aktif = false;
+    };
   }, [id]);
 
   //TAHAP 1 — BELUM ADA ANAK DIPILIH (tanpa :id di URL)
   if (!id) {
     // masih memuat daftar anak
     if (anakSaya === null) {
-      return (
-        <MainLayouts type="dashboardOrtu">
-          <div className="flex min-h-[70vh] items-center justify-center">
-            <p>Memuat data anak Anda...</p>
-          </div>
-        </MainLayouts>
-      );
+      return <LayarMemuat text="MEMUAT..." />;
     }
 
     // tidak punya anak terdaftar
@@ -228,13 +226,7 @@ export default function DashboardOrtu() {
 
     // 1 anak -> sedang dialihkan otomatis oleh useEffect di atas
     if (anakSaya.length === 1) {
-      return (
-        <MainLayouts type="dashboardOrtu">
-          <div className="flex min-h-[70vh] items-center justify-center">
-            <p>Membuka data {anakSaya[0].name}...</p>
-          </div>
-        </MainLayouts>
-      );
+      return <LayarMemuat text={`Membuka data ${anakSaya[0].name}...`} />;
     }
 
     // 2 anak atau lebih -> KARTU PILIH ANAK (bukan dropdown)
@@ -318,15 +310,11 @@ export default function DashboardOrtu() {
     );
   }
 
+  // Loading data monitoring (Atom)
   if (loading) {
-    return (
-      <MainLayouts type="lihatmonitoring">
-        <div className="flex min-h-[70vh] items-center justify-center">
-          <p>Memuat data monitoring...</p>
-        </div>
-      </MainLayouts>
-    );
+    return <LayarMemuat type="lihatmonitoring" text="MEMUAT..." />;
   }
+
   if (!chartData.length) {
     return (
       <MainLayouts type="lihatmonitoring">

@@ -5,6 +5,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import api from "@/services/api";
 import { Baby } from "lucide-react";
+import { Atom } from "react-loading-indicators";
 import EvaluasiKenaikanBulanan from "@/components/Fragments/Riwayat/EvaluasiBulananCard";
 
 // Daftarkan DUA route ke komponen ini (sama seperti dashboard ortu):
@@ -27,8 +28,18 @@ const hitungUmur = (tglLahir) => {
     : `${Math.floor(bulan / 12)} tahun ${bulan % 12} bulan`;
 };
 
+// Overlay loading dengan Atom (dipakai di beberapa tahap)
+const LayarMemuat = ({ text = "Memuat..." }) => (
+  <MainLayouts type="riwayatortu">
+    <div className="relative min-h-[70vh] w-full">
+      <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+        <Atom color="#10b981" size="medium" text={text} />
+      </div>
+    </div>
+  </MainLayouts>
+);
+
 export default function RiwayatOrtu() {
-  
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -91,31 +102,37 @@ export default function RiwayatOrtu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ============ TIMELINE + DETAIL DETEKSI (API SEMULA) ============ */
+  /* ============ TIMELINE + DETAIL + DATA BALITA (digabung) ============ */
   useEffect(() => {
-    const fetchData = async () => {
+    if (!id) return;
+    let aktif = true;
+
+    const fetchSemua = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
+        // Timeline + data balita diambil paralel
+        const [resRiwayat, resBalita] = await Promise.all([
+          api.get(`/ambilstatustimeline-ortu/${id}`),
+          api.get(`/balitas-ortu/${id}`),
+        ]);
 
-        // 1) Timeline dulu (berbasis balita_id) -> sumber deteksi_id yang benar
-        const resRiwayat = await api.get(`/ambilstatustimeline-ortu/${id}`);
         const dataRiwayat = resRiwayat.data?.data || [];
-
         const terbaru = dataRiwayat[dataRiwayat.length - 1] || {};
         const sebelumnya = dataRiwayat[dataRiwayat.length - 2] || {};
+        const balita = resBalita.data?.data || {};
 
-        // 2) Detail dipanggil dgn DETEKSI_ID terbaru (bukan balita_id)
-        let data = {};
+        // Detail dipanggil dgn DETEKSI_ID terbaru (bukan balita_id)
+        let detail = {};
         if (terbaru.id) {
-          const res = await api.get(`/detaildeteksi-ortu/${terbaru.id}`);
-          data = res.data?.data || {};
+          const resDetail = await api.get(`/detaildeteksi-ortu/${terbaru.id}`);
+          detail = resDetail.data?.data || {};
         }
 
         // status: prioritaskan hasil deteksi baru, lalu data terbaru di timeline
         const statusMapping = {
-          stunting: hasil?.status_tbu?.status || data.status?.tbu,
-          wasting: hasil?.status_bb_tb?.status || data.status?.bbtb,
-          underweight: hasil?.status_bbu?.status || data.status?.bbu,
+          stunting: hasil?.status_tbu?.status || detail.status?.tbu,
+          wasting: hasil?.status_bb_tb?.status || detail.status?.bbtb,
+          underweight: hasil?.status_bbu?.status || detail.status?.bbu,
         };
         const statusByMetode = {
           stunting: terbaru.status_tbu,
@@ -123,81 +140,69 @@ export default function RiwayatOrtu() {
           underweight: terbaru.status_bbu,
         };
 
+        if (!aktif) return;
+
         setForm((prev) => ({
           ...prev,
-          balita_id: id,
-          // angka inti diambil dari timeline (sudah dihitung & konsisten)
-          umur: terbaru.umur ?? data.umur ?? "",
-          tgl_deteksi: terbaru.tgl_deteksi ?? data.tgl_deteksi ?? "",
+
+          // ----- dari /balitas-ortu/:id -----
+          balita_id: balita.id ?? id,
+          name: balita.name || "",
+          jk:
+            balita.jk === "L" || balita.jk?.toLowerCase() === "laki-laki"
+              ? "L"
+              : balita.jk === "P" || balita.jk?.toLowerCase() === "perempuan"
+                ? "P"
+                : "",
+          orang_tua: balita.orangtua || "",
+          tgl_lahir: balita.tgl_lahir || "",
+
+          // ----- angka inti dari timeline (sudah dihitung & konsisten) -----
+          umur: terbaru.umur ?? detail.umur ?? "",
+          tgl_deteksi: terbaru.tgl_deteksi ?? detail.tgl_deteksi ?? "",
           status: statusMapping[metode] || statusByMetode[metode] || "-",
 
-          berat_sekarang: terbaru.berat ?? data.berat ?? "",
-          berat_sebelumnya: sebelumnya.berat ?? data.berat_sebelumnya ?? "",
-          tinggi_sekarang: terbaru.tinggi ?? data.tinggi ?? "",
-          tinggi_sebelumnya: sebelumnya.tinggi ?? data.tinggi_sebelumnya ?? "",
+          berat_sekarang: terbaru.berat ?? detail.berat ?? "",
+          berat_sebelumnya: sebelumnya.berat ?? detail.berat_sebelumnya ?? "",
+          tinggi_sekarang: terbaru.tinggi ?? detail.tinggi ?? "",
+          tinggi_sebelumnya:
+            sebelumnya.tinggi ?? detail.tinggi_sebelumnya ?? "",
 
-          // info tambahan dari detail (yang tidak ada di timeline)
-          keterangan: data.keterangan ?? "",
-          rekomendasi: data.rekomendasi ?? "",
+          // ----- info tambahan dari detail -----
+          keterangan: detail.keterangan ?? "",
+          rekomendasi: detail.rekomendasi ?? "",
           lokasi_posyandu:
-            data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
-          kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
+            detail.lokasi_posyandu ||
+            detail.posyandu ||
+            balita.lokasi_posyandu ||
+            balita.posyandu ||
+            "Posyandu Wilayah",
+          kader_pemeriksa:
+            detail.kader_pemeriksa ||
+            balita.kader_pemeriksa ||
+            "Kader Posyandu",
 
           riwayat: dataRiwayat,
         }));
       } catch (err) {
         console.error(err.response?.data || err.message);
       } finally {
-        setLoading(false);
+        if (aktif) setLoading(false);
       }
     };
 
-    if (id) fetchData();
+    fetchSemua();
+    return () => {
+      aktif = false;
+    };
   }, [id, metode, hasil]);
-
-  /* ============ DATA BALITA (nama, jk, dst.) — API SEMULA ============ */
-  useEffect(() => {
-    const fetchBalitas = async () => {
-      try {
-        const res = await api.get(`/balitas-ortu/${id}`);
-        const data = res.data.data;
-
-        setForm((prev) => ({
-          ...prev,
-          balita_id: data.id,
-          name: data.name || "",
-          jk:
-            data.jk === "L" || data.jk?.toLowerCase() === "laki-laki"
-              ? "L"
-              : data.jk === "P" || data.jk?.toLowerCase() === "perempuan"
-                ? "P"
-                : "",
-          orang_tua: data.orangtua || "",
-          tgl_lahir: data.tgl_lahir || "",
-          lokasi_posyandu:
-            data.lokasi_posyandu || data.posyandu || "Posyandu Wilayah",
-          kader_pemeriksa: data.kader_pemeriksa || "Kader Posyandu",
-        }));
-      } catch (err) {
-        console.error(err.response?.data || err.message);
-      }
-    };
-
-    if (id) fetchBalitas();
-  }, [id]);
 
   /* ============================================================
      TAHAP 1 — BELUM ADA ANAK DIPILIH (tanpa :id di URL)
      ============================================================ */
   if (!id) {
     if (anakSaya === null) {
-      return (
-        <MainLayouts type="riwayatortu">
-          <div className="flex min-h-[70vh] items-center justify-center">
-            <p>Memuat data anak Anda...</p>
-          </div>
-        </MainLayouts>
-      );
+      return <LayarMemuat text="MEMUAT..." />;
     }
 
     if (anakSaya.length === 0) {
@@ -220,13 +225,7 @@ export default function RiwayatOrtu() {
     }
 
     if (anakSaya.length === 1) {
-      return (
-        <MainLayouts type="riwayatortu">
-          <div className="flex min-h-[70vh] items-center justify-center">
-            <p>Membuka riwayat {anakSaya[0].name}...</p>
-          </div>
-        </MainLayouts>
-      );
+      return <LayarMemuat text={`Membuka riwayat ${anakSaya[0].name}...`} />;
     }
 
     // 2 anak atau lebih -> KARTU PILIH ANAK
@@ -313,13 +312,7 @@ export default function RiwayatOrtu() {
   }
 
   if (loading) {
-    return (
-      <MainLayouts type="riwayatortu">
-        <div className="flex min-h-[70vh] items-center justify-center">
-          <p>Memuat data riwayat...</p>
-        </div>
-      </MainLayouts>
-    );
+    return <LayarMemuat text="MEMUAT..." />;
   }
 
   /* ============================================================
