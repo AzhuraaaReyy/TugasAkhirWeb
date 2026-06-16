@@ -490,7 +490,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   else
     poin.push(
       optimal
-        ? `Pertumbuhan ${nama} sehat dan optimal — lanjutkan pemberian makanan beragam dan seimbang setiap hari dengan protein hewani sebagai sumber utama.`
+        ? `Pertumbuhan ${nama} sehat dan optimal lanjutkan pemberian makanan beragam dan seimbang setiap hari dengan protein hewani sebagai sumber utama.`
         : `Pertahankan pola makan bergizi ${nama} dan pantau kembali perkembangannya pada penimbangan berikutnya di Posyandu.`,
     );
 
