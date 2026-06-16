@@ -13,8 +13,7 @@ class StandarKBMSeeder extends Seeder
      */
     public function run(): void
     {
-        $file = fopen(storage_path('app/public/dataKBM.csv'), 'r');
-
+        $file = fopen(public_path('storage/dataKBM.csv'), 'r');
         // Skip header CSV
         fgetcsv($file);
 

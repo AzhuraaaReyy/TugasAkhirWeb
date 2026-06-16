@@ -13,8 +13,7 @@ class StandarKPTSeeder extends Seeder
      */
     public function run(): void
     {
-        $file = fopen(storage_path('app/public/dataKPT.csv'), 'r');
-
+        $file = fopen(public_path('storage/dataKPT.csv'), 'r');
         // Skip header CSV
         fgetcsv($file);
 
