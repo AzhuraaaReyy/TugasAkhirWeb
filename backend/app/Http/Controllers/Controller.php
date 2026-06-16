@@ -157,7 +157,7 @@ abstract class Controller
         }
 
         $peringatanBb = null;
-        if ($bbLalu !== null && $bbLalu > 0 && $selisihBb !== null && $interval !== null) {
+        /*if ($bbLalu !== null && $bbLalu > 0 && $selisihBb !== null && $interval !== null) {
             $persenPerBulan = abs($selisihBb) / $bbLalu * 100 / max(1, $interval);
             if ($persenPerBulan > 10) {
                 $arahKata   = $selisihBb > 0 ? 'bertambah' : 'berkurang';
@@ -166,7 +166,7 @@ abstract class Controller
                     . "Perubahan sebesar ini jarang terjadi secara wajar pada balita, sehingga kemungkinan terdapat kekeliruan saat menimbang atau mencatat data. "
                     . "Mohon periksa kembali ketepatan data penimbangan. Apabila data sudah benar, segera konsultasikan kondisi anak kepada tenaga kesehatan.";
             }
-        }
+        }*/
 
         // ============================================================
         //  TINGGI BADAN
@@ -222,10 +222,10 @@ abstract class Controller
         }
 
         $peringatanTb = null;
-        if ($selisihTb !== null && $selisihTb < 0) {
+        /*if ($selisihTb !== null && $selisihTb < 0) {
             $peringatanTb = "Tinggi badan anak tercatat berkurang dibandingkan pengukuran sebelumnya. Tinggi badan tidak mungkin berkurang, sehingga kemungkinan terjadi kesalahan pencatatan atau pengukuran. Mohon periksa kembali data tersebut.";
         }
-
+        */
         // ---------- Bulatkan SEMUA angka tampilan ke 1 desimal ----------
         $r1 = fn($x) => $x === null ? null : round((float) $x, 1);
 
