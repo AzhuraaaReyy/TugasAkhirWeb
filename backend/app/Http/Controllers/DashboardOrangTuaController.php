@@ -149,7 +149,20 @@ class DashboardOrangTuaController extends Controller
                 $status_tinggi = "Tetap";
             }
         }
+        // ===== Analisis tren riwayat (Aturan E: pemicu deteksi dini) =====
+        $tren = $this->analisisTren($penimbangan);
 
+        // ===== Tentukan tingkat rekomendasi / Tier (Aturan C) =====
+        $tier     = $this->tentukanTier($z_tbu, $z_bbtb, $z_bbu, $tren);
+        $metaTier = $this->metaTier($tier);
+
+        // Fokus nutrisi yang ditonjolkan saat tier >= 1 (Aturan D, Lapis 2)
+        $fokus_nutrisi = $tier >= 1
+            ? ['Protein', 'Zat Besi', 'Seng', 'Energi', 'Kalsium & Vitamin D', 'Vitamin A']
+            : [];
+
+        // Penanda gizi lebih (di luar fokus stunting, tetap diinformasikan)
+        $catatan_gizi_lebih = ($z_bbtb !== null && $z_bbtb > 1);
         $rekomendasidata = include storage_path('data/rekomendasi.php');
 
         return response()->json([
@@ -194,11 +207,24 @@ class DashboardOrangTuaController extends Controller
                     'underweight' => $this->keteranganBBU($status_bbu),
                 ],
 
+                'tingkat_rekomendasi' => [
+                    'tier'               => $tier,
+                    'label'              => $metaTier['label'],
+                    'tindakan_utama'     => $metaTier['tindakan_utama'],
+                    'fokus_nutrisi'      => $fokus_nutrisi,
+                    'pemicu_tren'        => $tren['pemicu'],   // alasan eskalasi (boleh kosong)
+                    'catatan_gizi_lebih' => $catatan_gizi_lebih,
+                    'dasar'              => 'Permenkes No. 2 Tahun 2020 (status gizi) & Permenkes No. 28 Tahun 2019 (AKG)',
+                ],
+
                 'rekomendasigizi' => [
                     'stunting' => $rekomendasidata['tbu'][$status_tbu] ?? [],
                     'wasting' => $rekomendasidata['bbtb'][$status_bbtb] ?? [],
                     'underweight' => $rekomendasidata['bbu'][$status_bbu] ?? [],
                 ],
+                'kebutuhan_gizi' => $deteksi->umur <= 60
+                    ? $this->akgUntukUmur((int) $deteksi->umur)
+                    : null,
 
                 'total_deteksi' => $penimbangan->count(),
 
@@ -1351,6 +1377,127 @@ class DashboardOrangTuaController extends Controller
             "z-score berat badan anak sangat berlebih dibandingkan tinggi badannya (z-score > +3 SD), termasuk dalam kategori obesitas dan perlu perhatian khusus.",
 
             default => "-",
+        };
+    }
+
+    private function analisisTren($penimbangan)
+    {
+        $hasil = [
+            'tbu_menurun'     => false,
+            'berat_faltering' => false,
+            'status_memburuk' => false,
+            'pemicu'          => [],
+        ];
+
+        $records = $penimbangan->values(); // desc: index 0 = terbaru
+        if ($records->count() < 2) {
+            return $hasil;
+        }
+
+        $skrg = $records[0];
+        $lalu = $records[1];
+
+        // T1: Z-score TB/U menurun dibanding pengukuran sebelumnya
+        if (
+            $skrg->zscore_tb_u !== null && $lalu->zscore_tb_u !== null
+            && $skrg->zscore_tb_u < $lalu->zscore_tb_u
+        ) {
+            $hasil['tbu_menurun'] = true;
+            $hasil['pemicu'][]    = 'Z-score TB/U menurun dibanding pengukuran sebelumnya';
+        }
+
+        // T2: berat stagnan/turun (weight faltering); diperkuat bila 2 interval berturut-turut
+        if ($skrg->berat !== null && $lalu->berat !== null && $skrg->berat <= $lalu->berat) {
+            $duaIntervalTidakNaik = true;
+            if ($records->count() >= 3) {
+                $lalu2 = $records[2];
+                $duaIntervalTidakNaik = ($lalu->berat !== null && $lalu2->berat !== null)
+                    && ($lalu->berat <= $lalu2->berat);
+            }
+            if ($duaIntervalTidakNaik) {
+                $hasil['berat_faltering'] = true;
+                $hasil['pemicu'][]        = 'Berat badan tidak naik pada pemantauan berturut-turut';
+            }
+        }
+
+        // T3: status TB/U memburuk antar periode (mis. Normal -> Pendek)
+        $statusSkrg = $this->deteksiTBU($skrg->zscore_tb_u);
+        $statusLalu = $this->deteksiTBU($lalu->zscore_tb_u);
+        if ($this->peringkatTBU($statusSkrg) > $this->peringkatTBU($statusLalu)) {
+            $hasil['status_memburuk'] = true;
+            $hasil['pemicu'][]        = "Status TB/U memburuk: {$statusLalu} -> {$statusSkrg}";
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Peringkat keparahan TB/U (semakin besar = semakin buruk),
+     * dipakai untuk mendeteksi pemburukan status antar periode.
+     */
+    private function peringkatTBU($status)
+    {
+        return match ($status) {
+            'Sangat pendek (severely stunted)' => 3,
+            'Pendek (stunted)'                 => 2,
+            default                            => 1, // Normal / Tinggi
+        };
+    }
+
+    /**
+     * Tentukan tingkat rekomendasi (Tier 0-3) dari status + tren.
+     * Cutoff mengacu Permenkes No. 2 Tahun 2020.
+     */
+    private function tentukanTier($zTBU, $zBBTB, $zBBU, array $tren)
+    {
+        // Tier 3 — prioritas rujukan: sangat pendek ATAU gizi buruk (akut/berat)
+        if (($zTBU !== null && $zTBU < -3) || ($zBBTB !== null && $zBBTB < -3)) {
+            return 3;
+        }
+
+        // Tier 2 — perlu penanganan: pendek (stunting) ATAU gizi kurang (wasted)
+        if (($zTBU !== null && $zTBU >= -3 && $zTBU < -2)
+            || ($zBBTB !== null && $zBBTB >= -3 && $zBBTB < -2)
+        ) {
+            return 2;
+        }
+
+        // Tier 1 — perlu perhatian (berisiko): mendekati ambang TB/U,
+        // BB/U kurang, atau ada tren menurun pada riwayat
+        $mendekatiAmbang = ($zTBU !== null && $zTBU >= -2 && $zTBU < -1);
+        $bbuKurang       = ($zBBU !== null && $zBBU < -2);
+        $trenMenurun     = $tren['tbu_menurun'] || $tren['berat_faltering'] || $tren['status_memburuk'];
+
+        if ($mendekatiAmbang || $bbuKurang || $trenMenurun) {
+            return 1;
+        }
+
+        // Tier 0 — normal
+        return 0;
+    }
+
+    /**
+     * Label + tindakan utama per tier (Aturan D, Lapis 1).
+     */
+    private function metaTier($tier)
+    {
+        return match ($tier) {
+            3 => [
+                'label'          => 'Prioritas Rujukan',
+                'tindakan_utama' => 'Rujuk segera ke tenaga kesehatan/puskesmas untuk evaluasi dan penanganan. Jangan ditangani mandiri; kader memastikan rujukan ditindaklanjuti.',
+            ],
+            2 => [
+                'label'          => 'Perlu Penanganan',
+                'tindakan_utama' => 'Konsultasikan ke tenaga kesehatan untuk evaluasi, perketat pemantauan, dan dampingi perbaikan asupan dengan penekanan protein hewani.',
+            ],
+            1 => [
+                'label'          => 'Perlu Perhatian',
+                'tindakan_utama' => 'Perketat pemantauan (mis. tiap 2-4 minggu) dan perbaiki asupan gizi. Anjurkan konsultasi ke tenaga kesehatan bila tidak membaik.',
+            ],
+            default => [
+                'label'          => 'Normal',
+                'tindakan_utama' => 'Pertahankan pola asuh dan gizi seimbang, serta lanjutkan pemantauan rutin setiap bulan di posyandu.',
+            ],
         };
     }
 }
