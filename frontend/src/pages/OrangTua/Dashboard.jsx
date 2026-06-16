@@ -178,6 +178,8 @@ export default function DashboardOrtu() {
           rekomendasiWasting: item.rekomendasigizi.wasting,
           rekomendasiUnderweight: item.rekomendasigizi.underweight,
           riwayat: item.riwayat,
+          kebutuhanGizi: item.kebutuhan_gizi, // ← tambahkan ini
+          tingkatRekomendasi: item.tingkat_rekomendasi,
         };
         setDetail(formattedData);
         console.log("DEBUG DETAIL:", formattedData);
