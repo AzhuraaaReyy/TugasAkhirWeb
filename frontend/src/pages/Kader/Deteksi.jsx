@@ -307,7 +307,10 @@ export default function DeteksiDini() {
   const kaderPosyandu = posyandus.find(
     (item) => Number(item.id) === Number(user?.posyandu_id),
   );
-
+  console.log(user);
+  console.log(posyandus);
+  console.log(kaderPosyandu);
+  console.log(user.posyandu_id);
   // Data aktif sesuai tab + slicing pagination
   const dataAktif = tabAktif === "balita" ? balitas : penimbangans;
   const totalHalaman = Math.max(1, Math.ceil(dataAktif.length / perHalaman));
