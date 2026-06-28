@@ -45,6 +45,7 @@ class LoginController extends Controller
                 'no_telp'    => $user->no_telp,
                 'role'       => $user->role,
                 'akun_aktif' => $user->akun_aktif,
+                'posyandu_id'  => $user->posyandu_id,
             ]
         ]);
     }
