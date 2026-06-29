@@ -31,21 +31,23 @@ export default function Notifikasi() {
 
   const fetchNotifikasi = async () => {
     try {
+      setLoading(true);
+
       const res = await api.get("/notifikasi");
-      const data = (res.data || []).map((item) => ({
+
+      const data = res.data.map((item) => ({
         id: item.id,
-        judul: item.judul ?? item.notifikasi?.judul ?? "-",
-        tipe: item.tipe ?? item.notifikasi?.tipe ?? "-",
-        metode: item.metode ?? "-",
-        tanggal: String(item.tanggal ?? item.notifikasi?.tanggal ?? "-").slice(
-          0,
-          10,
-        ),
-        pesan: item.pesan ?? item.notifikasi?.pesan ?? "",
-        lokasi: item.lokasi ?? item.notifikasi?.lokasi ?? "",
-        status_kirim: item.status_kirim ?? "-",
-        status_baca: item.status_baca ?? "-",
+        judul: item.judul,
+        tipe: item.tipe,
+        metode: item.metode,
+        tanggal: item.tanggal === "-" ? "" : item.tanggal,
+        lokasi: item.lokasi,
+        pesan: item.pesan,
+        status_kirim: item.status_kirim,
+        total_penerima: item.total_penerima,
+        dibaca: item.dibaca,
       }));
+
       setNotifikasiList(data);
     } catch (err) {
       console.error(err.response?.data || err.message);
@@ -80,49 +82,81 @@ export default function Notifikasi() {
     }
     try {
       setLoading(true);
+
       if (editingId) {
-        await api.put(`/notifikasi/${editingId}`, form);
+        const data = {
+          judul: form.judul,
+          tipe: form.tipe,
+          pesan: form.pesan,
+          tanggal: form.tanggal || null,
+          lokasi: form.lokasi || null,
+        };
+
+        await api.put(`/notifikasi/${editingId}`, data);
+
         alert("Notifikasi berhasil diperbarui");
       } else {
         await api.post("/notifikasi", form);
+
         alert("Notifikasi berhasil dikirim");
       }
+
       setForm(FORM_KOSONG);
       setEditingId(null);
-      fetchNotifikasi();
+
+      await fetchNotifikasi();
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert(
-        err.response?.data?.message ||
-          "Gagal menyimpan notifikasi. Periksa kembali isian formulir.",
-      );
+
+      alert(err.response?.data?.message || "Terjadi kesalahan.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (item) => {
+    setEditingId(item.id);
+
     setForm({
       ...FORM_KOSONG,
-      judul: item.judul !== "-" ? item.judul : "",
-      tipe: item.tipe !== "-" ? item.tipe : "",
-      metode: item.metode !== "-" ? item.metode : "",
-      tanggal: item.tanggal !== "-" ? item.tanggal : "",
+
+      judul: item.judul,
+      tipe: item.tipe,
+      tanggal: item.tanggal || "",
       lokasi: item.lokasi || "",
-      pesan: item.pesan || "",
+      pesan: item.pesan,
+
+      // edit tidak mengubah target
+      metode: "",
+      target: "",
+      user_id: "",
     });
-    setEditingId(item.id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Hapus notifikasi ini?")) return;
+    if (!window.confirm("Yakin ingin menghapus notifikasi ini?")) {
+      return;
+    }
+
     try {
+      setLoading(true);
+
       await api.delete(`/notifikasi/${id}`);
-      setNotifikasiList((prev) => prev.filter((n) => n.id !== id));
+
+      alert("Notifikasi berhasil dihapus");
+
+      await fetchNotifikasi();
     } catch (err) {
       console.error(err.response?.data || err.message);
-      alert("Gagal menghapus notifikasi.");
+
+      alert(err.response?.data?.message || "Gagal menghapus notifikasi.");
+    } finally {
+      setLoading(false);
     }
   };
 
