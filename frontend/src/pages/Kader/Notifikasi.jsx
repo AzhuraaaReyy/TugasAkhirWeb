@@ -171,7 +171,7 @@ export default function Notifikasi() {
   return (
     <MainLayouts type="notifikasi">
       <div className="p-4 sm:p-6 min-h-screen">
-        <div className="relative bg-white rounded-2xl shadow-md p-4 sm:p-6">
+        <div className=" bg-white rounded-2xl shadow-md p-4 sm:p-6">
           {loading && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
               <Atom color="#10b981" size="medium" text="Memuat..." />

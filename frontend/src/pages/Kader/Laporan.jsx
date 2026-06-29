@@ -131,7 +131,7 @@ export default function Laporan() {
 
   return (
     <MainLayouts type="laporan">
-      <div className="relative p-4 sm:p-6 min-h-screen">
+      <div className=" p-4 sm:p-6 min-h-screen">
         {loading && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl">
             <Atom color="#10b981" size="medium" text="Memuat..." />
