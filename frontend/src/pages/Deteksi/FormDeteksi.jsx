@@ -168,6 +168,7 @@ export default function FormDeteksi({
                   value={Math.floor(form.umur || 0)}
                   onChange={handleChange}
                   required
+                  disabled
                 />
 
                 <FormInput

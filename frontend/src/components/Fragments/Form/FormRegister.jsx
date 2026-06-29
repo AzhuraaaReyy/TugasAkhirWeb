@@ -100,7 +100,7 @@ const FormRegister = () => {
           register={{
             ...register("password", {
               required: "Password tidak boleh kosong",
-              minLength: { value: 8, message: "Password minimal 6 karakter" },
+              minLength: { value: 8, message: "Password minimal 8 karakter" },
             }),
           }}
         />
