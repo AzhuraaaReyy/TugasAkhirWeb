@@ -295,7 +295,7 @@ class NotifikasiController extends Controller
 
                     'total_penerima' => $total,
 
-                
+                    'berhasil' => $terkirim,
 
                     'gagal' => $gagal,
 
@@ -308,6 +308,7 @@ class NotifikasiController extends Controller
 
         return response()->json($data);
     }
+    
     public function getOrangTua()
     {
         $users = User::where('role', 'orangtua')
