@@ -63,10 +63,31 @@ class NotifikasiController extends Controller
 
                 // 3. Kirim berdasarkan metode
                 if ($request->metode === 'whatsapp' && $user->no_telp) {
+
+                    Log::info('Mengirim WA', [
+                        'nomor' => $no_telp,
+                        'nama' => $user->name,
+                    ]);
+
                     $waResponse = $wa->send($no_telp, $message);
-                    if (isset($waResponse['status']) && $waResponse['status'] == true) {
+
+                    Log::info('Response WhatsApp API', [
+                        'response' => $waResponse,
+                    ]);
+
+                    if (
+                        isset($waResponse['status']) &&
+                        $waResponse['status'] == true
+                    ) {
+
                         $status = 'terkirim';
                     } else {
+
+                        Log::error('WhatsApp gagal dikirim', [
+                            'nomor' => $no_telp,
+                            'response' => $waResponse,
+                        ]);
+
                         $status = 'gagal';
                     }
                 }
@@ -86,6 +107,15 @@ class NotifikasiController extends Controller
                 // dashboard = tidak kirim apa-apa (hanya simpan)
 
             } catch (\Exception $e) {
+
+                Log::error('ERROR SAAT MENGIRIM NOTIFIKASI', [
+                    'user' => $user->id,
+                    'metode' => $request->metode,
+                    'message' => $e->getMessage(),
+                    'line' => $e->getLine(),
+                    'file' => $e->getFile(),
+                ]);
+
                 $status = 'gagal';
             }
 

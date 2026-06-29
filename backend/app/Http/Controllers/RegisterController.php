@@ -10,8 +10,7 @@ class RegisterController extends Controller
 {
     public function register(Request $request)
     {
-        // Normalisasi DULU sebelum validasi & pencarian,
-        // supaya 0812xxx dan 62812xxx dikenali sebagai nomor yang sama
+      
         $request->merge([
             'no_telp' => $this->normalisasiNoTelp($request->no_telp),
         ]);
@@ -20,8 +19,7 @@ class RegisterController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:8',
-            // unique TIDAK dipakai di sini — dicek manual di bawah,
-            // karena akun pasif buatan kader justru harus bisa diklaim
+          
             'no_telp'  => 'required|regex:/^62[0-9]{8,13}$/',
             'alamat'   => 'required',
         ], [
@@ -37,8 +35,7 @@ class RegisterController extends Controller
             ], 422);
         }
 
-        // b) Akun pasif buatan kader -> klaim (anak-anaknya otomatis ikut,
-        //    karena balitas.user_id sudah menunjuk ke akun ini)
+      
         if ($ada && !$ada->akun_aktif) {
             $ada->update([
                 'name'       => $request->name,
@@ -57,9 +54,7 @@ class RegisterController extends Controller
             ]);
         }
 
-        // c) Benar-benar baru -> akun normal.
-        //    Saat kader nanti mencatat anaknya dengan no HP ini,
-        //    balita otomatis tertaut ke akun ini.
+
         $user = User::create([
             'name'       => $request->name,
             'email'      => $request->email,
