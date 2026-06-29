@@ -1,13 +1,22 @@
 import { useEffect } from "react";
 import { X, AlertTriangle } from "lucide-react";
-
-const AuthModal = ({ isOpen, onClose, onRegister }) => {
+import { useNavigate } from "react-router-dom";
+const AuthModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "auto";
   }, [isOpen]);
 
   if (!isOpen) return null;
+  const handleRegister = () => {
+    onClose();
+    navigate("/register");
+  };
 
+  const handleLogin = () => {
+    onClose();
+    navigate("/login");
+  };
   return (
     <>
       {/* Overlay Blur */}
@@ -44,7 +53,7 @@ const AuthModal = ({ isOpen, onClose, onRegister }) => {
 
           {/* Register Button */}
           <button
-            onClick={onRegister}
+            onClick={handleRegister}
             className="w-full py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition"
           >
             Daftar Sekarang
@@ -55,7 +64,7 @@ const AuthModal = ({ isOpen, onClose, onRegister }) => {
             Sudah punya akun?{" "}
             <span
               className="text-emerald-600 font-semibold cursor-pointer hover:underline"
-              onClick={onClose}
+              onClick={handleLogin}
             >
               Login di sini
             </span>
