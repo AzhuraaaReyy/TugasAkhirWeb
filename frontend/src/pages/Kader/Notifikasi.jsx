@@ -5,6 +5,7 @@ import TotalNotifikasiCard from "../../components/Fragments/Notifikasi/TotalNoti
 import PendingCard from "../../components/Fragments/Notifikasi/PendingCard";
 import api from "@/services/api";
 import { Atom } from "react-loading-indicators";
+
 const FORM_KOSONG = {
   judul: "",
   tipe: "",
@@ -16,12 +17,86 @@ const FORM_KOSONG = {
   pesan: "",
 };
 
+// ====== Helper: format tanggal & generator pesan otomatis ======
+const BULAN_INDO = [
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
+];
+
+const formatTanggalIndo = (tanggal) => {
+  if (!tanggal) return "";
+  const parts = tanggal.split("-"); // input date: YYYY-MM-DD
+  if (parts.length !== 3) return tanggal;
+  const [tahun, bulan, hari] = parts;
+  const namaBulan = BULAN_INDO[parseInt(bulan, 10) - 1];
+  if (!namaBulan) return tanggal;
+  return `${parseInt(hari, 10)} ${namaBulan} ${tahun}`;
+};
+
+// Kalimat pembuka menyesuaikan jenis notifikasi
+const PEMBUKA_PESAN = {
+  "Jadwal Posyandu":
+    "Kami informasikan bahwa kegiatan Posyandu akan dilaksanakan pada:",
+  "Pengingat Penimbangan":
+    "Kami mengingatkan jadwal penimbangan balita yang akan dilaksanakan pada:",
+  "Hasil Penimbangan":
+    "Berikut kami sampaikan informasi terkait hasil penimbangan balita Bapak/Ibu.",
+  "Peringatan Stunting":
+    "Kami sampaikan informasi penting terkait pemantauan pertumbuhan balita Bapak/Ibu.",
+  "Edukasi Gizi":
+    "Berikut kami sampaikan informasi edukasi gizi untuk Bapak/Ibu.",
+  "Pengumuman Posyandu": "Kami sampaikan pengumuman penting dari Posyandu.",
+};
+
+// Menyusun isi pesan dari Judul, Jenis, Tanggal, dan Lokasi
+const generatePesan = ({ judul, tipe, tanggal, lokasi }) => {
+  // Belum ada data apa pun -> biarkan kosong
+  if (!judul && !tipe && !tanggal && !lokasi) return "";
+
+  const tgl = formatTanggalIndo(tanggal);
+
+  const intro =
+    PEMBUKA_PESAN[tipe] ||
+    (judul
+      ? `Kami informasikan mengenai "${judul}".`
+      : "Kami sampaikan informasi berikut.");
+
+  const lines = ["Yth. Bapak/Ibu Orang Tua Balita,", "", intro];
+
+  const detail = [];
+  if (judul) detail.push(`Perihal : ${judul}`);
+  if (tgl) detail.push(`Tanggal : ${tgl}`);
+  if (lokasi) detail.push(`Lokasi  : ${lokasi}`);
+
+  if (detail.length > 0) {
+    lines.push("", ...detail);
+  }
+
+  lines.push("", "Mohon kehadiran dan perhatian Bapak/Ibu. Terima kasih.");
+
+  return lines.join("\n");
+};
+// ===============================================================
+
 export default function Notifikasi() {
   const [notifikasiList, setNotifikasiList] = useState([]);
   const [listOrangTua, setListOrangTua] = useState([]);
   const [form, setForm] = useState(FORM_KOSONG);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
+  // true  = isi pesan mengikuti data form (otomatis)
+  // false = sudah diedit manual, jangan ditimpa
+  const [pesanAuto, setPesanAuto] = useState(true);
 
   useEffect(() => {
     api.get("/orangtua").then((res) => {
@@ -65,8 +140,18 @@ export default function Notifikasi() {
     fetchNotifikasi();
   }, []);
 
+  // Susun ulang isi pesan otomatis setiap kali data sumber berubah,
+  // SELAMA mode otomatis masih aktif (belum diedit manual).
+  useEffect(() => {
+    if (!pesanAuto) return;
+    setForm((prev) => ({ ...prev, pesan: generatePesan(prev) }));
+  }, [form.judul, form.tipe, form.tanggal, form.lokasi, pesanAuto]);
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    // User mengetik manual di kolom pesan -> matikan mode otomatis
+    if (name === "pesan") setPesanAuto(false);
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -103,7 +188,6 @@ export default function Notifikasi() {
       } else {
         const res = await api.post("/notifikasi", form);
 
-     
         const d = res.data || {};
         const berhasil = d.berhasil ?? 0;
         const total = d.total_penerima ?? 0;
@@ -127,6 +211,7 @@ export default function Notifikasi() {
 
       setForm(FORM_KOSONG);
       setEditingId(null);
+      setPesanAuto(true); // kembali ke mode otomatis untuk notifikasi baru
 
       await fetchNotifikasi();
     } catch (err) {
@@ -140,6 +225,8 @@ export default function Notifikasi() {
 
   const handleEdit = (item) => {
     setEditingId(item.id);
+    // Saat edit, pakai pesan yang tersimpan -> jangan ditimpa generator
+    setPesanAuto(false);
 
     setForm({
       ...FORM_KOSONG,
@@ -351,17 +438,36 @@ export default function Notifikasi() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Isi Pesan
-                </label>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Isi Pesan
+                  </label>
+
+                  <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={pesanAuto}
+                      onChange={(e) => setPesanAuto(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    Isi otomatis dari data di atas
+                  </label>
+                </div>
+
                 <textarea
                   name="pesan"
                   value={form.pesan}
                   onChange={handleChange}
-                  rows="4"
-                  className="border border-gray-300 w-full rounded-lg px-3 py-2 mt-1 focus:ring-indigo-500 outline-none"
+                  rows="7"
+                  className="border border-gray-300 w-full rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
                   placeholder="Tuliskan pesan untuk orang tua..."
                 />
+
+                <p className="text-xs text-gray-400 mt-1">
+                  {pesanAuto
+                    ? "Pesan tersusun otomatis dari Judul, Jenis, Tanggal, dan Lokasi. Tetap bisa diketik manual. Mode otomatis akan mati saat Anda mengedit."
+                    : "Mode manual aktif. Centang “Isi otomatis dari data di atas” untuk menyusun ulang pesan dari data terbaru."}
+                </p>
               </div>
 
               <div className="md:col-span-2 flex flex-wrap gap-3">
@@ -389,6 +495,7 @@ export default function Notifikasi() {
                     onClick={() => {
                       setForm(FORM_KOSONG);
                       setEditingId(null);
+                      setPesanAuto(true);
                     }}
                     className="px-6 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
                   >
