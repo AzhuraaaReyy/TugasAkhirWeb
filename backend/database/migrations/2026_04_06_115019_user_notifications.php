@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('metode', ['dashboard', 'email', 'whatsapp']);
             $table->enum('status_kirim', ['pending', 'terkirim', 'gagal'])->default('pending');
             $table->boolean('status_baca')->default(false);
+            $table->string('keterangan')->nullable();
             $table->timestamps();
         });
     }

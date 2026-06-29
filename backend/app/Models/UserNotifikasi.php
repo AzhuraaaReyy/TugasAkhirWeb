@@ -12,7 +12,8 @@ class UserNotifikasi extends Model
         'user_id',
         'metode',
         'status_kirim',
-        'status_baca'
+        'status_baca',
+        'keterangan'
     ];
 
     public function notifikasi()

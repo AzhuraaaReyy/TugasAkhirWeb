@@ -21,37 +21,49 @@ class NotifikasiController extends Controller
             'metode'  => 'required|in:whatsapp,email,dashboard',
             'pesan'   => 'required',
             'tanggal' => 'nullable|date',
-            'lokasi'  => 'nullable|string', // NEW
+            'lokasi'  => 'nullable|string',
             'target'  => 'required|in:semua,tertentu',
             'user_id' => 'nullable|exists:users,id',
         ]);
 
-        // 1. Simpan Notifikasi
+        // Simpan notifikasi
         $notif = Notifikasi::create([
             'pengirim_id' => Auth::id(),
             'judul'       => $request->judul,
             'tipe'        => $request->tipe,
             'pesan'       => $request->pesan,
-            'lokasi'      => $request->lokasi,   // NEW
-            // Biarkan null bila kosong: hanya notifikasi bertanggal yang tampil di kalender
+            'lokasi'      => $request->lokasi,
             'tanggal'     => $request->tanggal,
         ]);
 
-        // 2. Tentukan target user
-        if ($request->target === 'semua') {
+        // Ambil target user
+        if ($request->target == 'semua') {
             $users = User::where('role', 'orangtua')->get();
         } else {
             $users = User::where('id', $request->user_id)->get();
         }
 
+        // Ringkasan hasil
+        $berhasil = 0;
+        $gagal = 0;
+        $detailGagal = [];
+
         foreach ($users as $user) {
 
-            $status = 'terkirim';
+            $status = 'pending';
+            $keterangan = '';
 
             try {
-                // FORMAT NOMOR WA
+
+                $message = $notif->pesan;
+
+                // ==========================
+                // FORMAT NOMOR WHATSAPP
+                // ==========================
                 $no_telp = null;
-                if ($user->no_telp) {
+
+                if (!empty($user->no_telp)) {
+
                     if (substr($user->no_telp, 0, 2) == '62') {
                         $no_telp = $user->no_telp;
                     } else {
@@ -59,57 +71,75 @@ class NotifikasiController extends Controller
                     }
                 }
 
-                $message = $notif->pesan;
+                // ==========================
+                // DASHBOARD
+                // ==========================
+                if ($request->metode == 'dashboard') {
 
-                // 3. Kirim berdasarkan metode
-                if ($request->metode === 'whatsapp' && $user->no_telp) {
+                    $status = 'terkirim';
+                    $keterangan = 'Notifikasi dashboard berhasil dibuat';
+                }
 
-                    Log::info('Mengirim WA', [
-                        'nomor' => $no_telp,
-                        'nama' => $user->name,
-                    ]);
+                // ==========================
+                // WHATSAPP
+                // ==========================
+                elseif ($request->metode == 'whatsapp') {
 
-                    $waResponse = $wa->send($no_telp, $message);
+                    if (empty($user->no_telp)) {
 
-                    Log::info('Response WhatsApp API', [
-                        'response' => $waResponse,
-                    ]);
-
-                    if (
-                        isset($waResponse['status']) &&
-                        $waResponse['status'] == true
-                    ) {
-
-                        $status = 'terkirim';
+                        $status = 'gagal';
+                        $keterangan = 'Nomor WhatsApp belum diisi';
                     } else {
 
-                        Log::error('WhatsApp gagal dikirim', [
-                            'nomor' => $no_telp,
-                            'response' => $waResponse,
+                        Log::info('Mengirim WhatsApp', [
+                            'nama' => $user->name,
+                            'nomor' => $no_telp
                         ]);
 
-                        $status = 'gagal';
+                        $waResponse = $wa->send($no_telp, $message);
+
+                        Log::info('Response WhatsApp', $waResponse);
+
+                        if (
+                            isset($waResponse['status']) &&
+                            $waResponse['status'] == true
+                        ) {
+
+                            $status = 'terkirim';
+                            $keterangan = 'WhatsApp berhasil dikirim';
+                        } else {
+
+                            $status = 'gagal';
+                            $keterangan = $waResponse['reason'] ?? 'Gagal mengirim WhatsApp';
+                        }
                     }
                 }
 
-                if ($request->metode === 'email' && $user->email) {
-                    try {
+                // ==========================
+                // EMAIL
+                // ==========================
+                elseif ($request->metode == 'email') {
+
+                    if (empty($user->email)) {
+
+                        $status = 'gagal';
+                        $keterangan = 'Email belum diisi';
+                    } else {
+
                         Mail::raw($message, function ($mail) use ($user, $notif) {
-                            $mail->to($user->email)->subject($notif->judul);
+                            $mail->to($user->email)
+                                ->subject($notif->judul);
                         });
+
                         $status = 'terkirim';
-                    } catch (\Exception $e) {
-                        $status = 'gagal';
-                        Log::error('Email gagal: ' . $e->getMessage());
+                        $keterangan = 'Email berhasil dikirim';
                     }
                 }
-
-                // dashboard = tidak kirim apa-apa (hanya simpan)
-
             } catch (\Exception $e) {
 
                 Log::error('ERROR SAAT MENGIRIM NOTIFIKASI', [
                     'user' => $user->id,
+                    'nama' => $user->name,
                     'metode' => $request->metode,
                     'message' => $e->getMessage(),
                     'line' => $e->getLine(),
@@ -117,20 +147,47 @@ class NotifikasiController extends Controller
                 ]);
 
                 $status = 'gagal';
+                $keterangan = $e->getMessage();
             }
 
-            // 4. Simpan ke user_notifikasi (pivot)
+            // ==========================
+            // SIMPAN KE USER_NOTIFICATIONS
+            // ==========================
             UserNotifikasi::create([
                 'notification_id' => $notif->id,
                 'user_id'         => $user->id,
                 'metode'          => $request->metode,
                 'status_kirim'    => $status,
+                'keterangan'      => $keterangan,
                 'status_baca'     => false,
             ]);
+
+            // ==========================
+            // HITUNG HASIL
+            // ==========================
+            if ($status == 'terkirim') {
+
+                $berhasil++;
+            } else {
+
+                $gagal++;
+
+                $detailGagal[] = [
+                    'id' => $user->id,
+                    'nama' => $user->name,
+                    'metode' => $request->metode,
+                    'alasan' => $keterangan
+                ];
+            }
         }
 
         return response()->json([
-            'message' => 'Notifikasi berhasil dikirim',
+            'success' => true,
+            'message' => 'Proses pengiriman notifikasi selesai.',
+            'total_penerima' => $users->count(),
+            'berhasil' => $berhasil,
+            'gagal' => $gagal,
+            'detail_gagal' => $detailGagal
         ]);
     }
 
@@ -187,45 +244,70 @@ class NotifikasiController extends Controller
     // Riwayat untuk halaman KADER: SATU BARIS PER NOTIFIKASI (id = id Notifikasi)
     public function tampildata()
     {
-        $data = Notifikasi::with('userNotifikasi')
+        $data = Notifikasi::with('userNotifikasi.user')
             ->latest()
             ->get()
             ->map(function ($n) {
-                $rows     = $n->userNotifikasi;
-                $total    = $rows->count();
-                $terkirim = $rows->where('status_kirim', 'terkirim')->count();
-                $gagal    = $rows->where('status_kirim', 'gagal')->count();
-                $dibaca   = $rows->where('status_baca', true)->count();
 
-                // Status ringkas untuk badge di tabel
+                $rows = $n->userNotifikasi;
+
+                $total = $rows->count();
+                $terkirim = $rows->where('status_kirim', 'terkirim')->count();
+                $gagal = $rows->where('status_kirim', 'gagal')->count();
+                $dibaca = $rows->where('status_baca', true)->count();
+
                 $status = 'pending';
+
                 if ($total > 0) {
-                    if ($gagal === $total) {
+                    if ($gagal == $total) {
                         $status = 'gagal';
                     } elseif ($terkirim > 0) {
                         $status = 'terkirim';
                     }
                 }
 
+                // daftar user yang gagal
+                $detailGagal = $rows
+                    ->where('status_kirim', 'gagal')
+                    ->map(function ($item) {
+                        return [
+                            'user' => $item->user->name ?? '-',
+                            'keterangan' => $item->keterangan,
+                        ];
+                    })
+                    ->values();
+
                 return [
-                    'id'             => $n->id, // ID Notifikasi -> dipakai Edit & Hapus
-                    'judul'          => $n->judul,
-                    'tipe'           => $n->tipe,
-                    'pesan'          => $n->pesan,
-                    'lokasi'         => $n->lokasi,
-                    'metode'         => optional($rows->first())->metode ?? '-',
-                    'tanggal'        => $n->tanggal
+
+                    'id' => $n->id,
+                    'judul' => $n->judul,
+                    'tipe' => $n->tipe,
+                    'pesan' => $n->pesan,
+                    'lokasi' => $n->lokasi,
+
+                    'metode' => optional($rows->first())->metode ?? '-',
+
+                    'tanggal' => $n->tanggal
                         ? \Carbon\Carbon::parse($n->tanggal)->format('Y-m-d')
                         : '-',
-                    'status_kirim'   => $status,
+
+                    'status_kirim' => $status,
+
                     'total_penerima' => $total,
-                    'dibaca'         => $dibaca, // untuk fitur "dibaca X dari Y"
+
+                    'berhasil' => $terkirim,
+
+                    'gagal' => $gagal,
+
+                    'dibaca' => $dibaca,
+
+                    'detail_gagal' => $detailGagal,
+
                 ];
             });
 
         return response()->json($data);
     }
-
     public function getOrangTua()
     {
         $users = User::where('role', 'orangtua')
