@@ -82,6 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/notifikasi', [NotifikasiController::class, 'store']);
         Route::get('/notifikasi', [NotifikasiController::class, 'tampildata']);
+        Route::put('/notifikasi/{id}', [NotifikasiController::class, 'update']);
+        Route::delete('/notifikasi/{id}', [NotifikasiController::class, 'destroy']);
         Route::get('/kalender-notifikasi', [NotifikasiController::class, 'kalender']);
 
         Route::get('/orangtua', [NotifikasiController::class, 'getOrangTua']);
