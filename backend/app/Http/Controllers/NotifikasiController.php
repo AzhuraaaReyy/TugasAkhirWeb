@@ -295,7 +295,7 @@ class NotifikasiController extends Controller
 
                     'total_penerima' => $total,
 
-                    'berhasil' => $terkirim,
+                
 
                     'gagal' => $gagal,
 
