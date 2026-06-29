@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-const EPS = 0.05;
+
+const EPS = 0.05; // ambang perubahan berat/tinggi mentah (kg / cm) — lapis praktis KMS
+const EPS_Z = 0.1; // ambang perubahan Z-score (SD) yang dianggap bermakna — lapis utama WHO
+
 const angka = (x) => {
   if (x === null || x === undefined || x === "") return null;
   const n = Number(x);
@@ -22,6 +25,76 @@ const hitungStreak = (riw = [], field = "berat", eps = EPS) => {
   const vals = riw
     .map((r) => Number(r?.[field]))
     .filter((v) => Number.isFinite(v));
+  if (vals.length < 2) return { arah: null, panjang: 0 };
+  let arahTerakhir = null;
+  let jumlah = 0;
+  for (let i = vals.length - 1; i > 0; i--) {
+    const d = vals[i] - vals[i - 1];
+    const a = d <= -eps ? "turun" : d >= eps ? "naik" : "tetap";
+    if (!arahTerakhir) {
+      arahTerakhir = a;
+      jumlah = 1;
+      continue;
+    }
+    if (a === arahTerakhir) jumlah++;
+    else break;
+  }
+  return { arah: arahTerakhir, panjang: jumlah + 1 };
+};
+
+/* ---------- TREN BERBASIS Z-SCORE (lapis utama, acuan WHO) ----------
+   Tren pertumbuhan diutamakan dari pergerakan nilai Z-score antar periode
+   (sesuai Permenkes No. 2/2020 & standar WHO). Berat/tinggi mentah di atas
+   tetap dipakai sebagai indikator praktis kenaikan ala KMS posyandu.        */
+const ambilZ = (row, jenis) => {
+  const peta = {
+    tbu: [
+      "zscore_tb_u",
+      "zs_tb_u",
+      "zscore_tbu",
+      "z_tb_u",
+      "zsTBU",
+      "zscoreTBU",
+      "zscore_tinggi",
+      "zs_tinggi",
+    ],
+    bbu: [
+      "zscore_bb_u",
+      "zs_bb_u",
+      "zscore_bbu",
+      "z_bb_u",
+      "zsBBU",
+      "zscoreBBU",
+      "zscore_berat",
+      "zs_berat",
+    ],
+    bbtb: [
+      "zscore_tb_bb",
+      "zscore_bb_tb",
+      "zs_bb_tb",
+      "z_bb_tb",
+      "zsBBTB",
+      "zscoreBBTB",
+    ],
+  };
+  for (const k of peta[jenis] || []) {
+    const v = Number(row?.[k]);
+    if (Number.isFinite(v)) return v;
+  }
+  return null;
+};
+
+/* Selisih Z-score dua periode terbaru untuk satu indeks. */
+const deltaZterbaru = (riw = [], jenis, eps = EPS_Z) => {
+  const vals = riw.map((r) => ambilZ(r, jenis)).filter((v) => v != null);
+  if (vals.length < 2) return { delta: null, arah: null };
+  const d = vals[vals.length - 1] - vals[vals.length - 2];
+  return { delta: Math.round(d * 100) / 100, arah: arahDari(d, eps) };
+};
+
+/* Streak arah Z-score (≥3 periode searah) untuk satu indeks. */
+const hitungStreakZ = (riw = [], jenis, eps = EPS_Z) => {
+  const vals = riw.map((r) => ambilZ(r, jenis)).filter((v) => v != null);
   if (vals.length < 2) return { arah: null, panjang: 0 };
   let arahTerakhir = null;
   let jumlah = 0;
@@ -229,7 +302,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   gizi = gizi || data?.kebutuhanGizi || data?.kebutuhan_gizi || null;
 
   const [mounted, setMounted] = useState(false);
-  const [tabKanan, setTabKanan] = useState(0); // 0 = Yang dilakukan, 1 = Kebutuhan gizi
+  const [tabKanan, setTabKanan] = useState(0); // 0 = Tindakan, 1 = Kebutuhan gizi
   const [tabGizi, setTabGizi] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 40);
@@ -295,7 +368,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
     ringkasan = `Saat ini ${nama} menunjukkan ${frasaList.length} hal yang perlu diperhatikan: ${gabung}. Kondisi ini sebaiknya ditangani bersama agar tumbuh kembang anak kembali ke jalur sehat.`;
   }
 
-  // ===== ARAH PERTUMBUHAN GABUNGAN (tinggi + berat) =====
+  // ===== ARAH PERTUMBUHAN: berat/tinggi mentah (lapis praktis KMS) =====
   const pTinggi = angka(tinggi.perubahan);
   const pBerat = angka(berat.perubahan);
   const errTinggi = !!tinggi.peringatan;
@@ -318,15 +391,48 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   const gagal2T =
     tinggi.gagal_berturut === true || berat.gagal_berturut === true;
 
-  // tone & judul blok arah
+  // ===== TREN BERBASIS Z-SCORE (lapis utama WHO) =====
+  // Diutamakan dari delta Z-score yang dikirim backend; bila tidak ada,
+  // dihitung dari riwayat (dua periode terbaru). Indeks: TB/U & BB/U.
+  const trenZTBU = (() => {
+    const d = angka(
+      tinggi.perubahan_zscore ?? tinggi.delta_zscore ?? tinggi.zscore_perubahan,
+    );
+    if (d != null)
+      return { delta: Math.round(d * 100) / 100, arah: arahDari(d, EPS_Z) };
+    return deltaZterbaru(riwayatTerurut, "tbu");
+  })();
+  const trenZBBU = (() => {
+    const d = angka(
+      berat.perubahan_zscore ?? berat.delta_zscore ?? berat.zscore_perubahan,
+    );
+    if (d != null)
+      return { delta: Math.round(d * 100) / 100, arah: arahDari(d, EPS_Z) };
+    return deltaZterbaru(riwayatTerurut, "bbu");
+  })();
+  const streakZTBU = hitungStreakZ(riwayatTerurut, "tbu");
+  const streakZBBU = hitungStreakZ(riwayatTerurut, "bbu");
+  const adaTrenZ = trenZTBU.arah != null || trenZBBU.arah != null;
+  // Z-score menurun = sinyal weight faltering terhadap standar WHO
+  const zMenurun = trenZBBU.arah === "turun" || trenZTBU.arah === "turun";
+  // Apakah arah pertumbuhan bisa dinilai? (butuh data pembanding/periode sebelumnya)
+  const bisaNilaiTren = arTinggi != null || arBerat != null || adaTrenZ;
+
+  // tone & judul blok arah (Z-score diprioritaskan sebagai sinyal dini)
   let arahTone = "emerald";
   let arahJudul = "Arah pertumbuhan bulan ini";
   const keduaNaik = arTinggi === "naik" && arBerat === "naik";
   const adaTurun = arTinggi === "turun" || arBerat === "turun";
   const adaStagnan = arTinggi === "tetap" || arBerat === "tetap";
-  if (gagal2T || adaTurun) {
+  if (!bisaNilaiTren) {
+    arahTone = "info";
+    arahJudul = "Belum ada data pembanding";
+  } else if (gagal2T || adaTurun) {
     arahTone = "red";
     arahJudul = "Arah pertumbuhan perlu perhatian";
+  } else if (zMenurun) {
+    arahTone = "amber";
+    arahJudul = "Posisi terhadap standar (Z-score) menurun";
   } else if (adaStagnan) {
     arahTone = "amber";
     arahJudul = "Sebagian pertumbuhan stagnan";
@@ -334,30 +440,68 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
     arahJudul = "Pertumbuhan positif";
   }
 
-  let arahKalimat = `Pada penimbangan bulan ini, ${kalimatUkuran("tinggi badan", arTinggi, pTinggi, "cm", errTinggi)} dan ${kalimatUkuran("berat badan", arBerat, pBerat, "kg", errBerat)}.`;
-  if (keduaNaik)
-    arahKalimat +=
-      " Keduanya bergerak naik — pertumbuhan menunjukkan arah yang baik.";
-  else if (arTinggi === "turun" && arBerat === "turun")
-    arahKalimat += " Keduanya menurun — perlu segera diperhatikan.";
-  else if (adaTurun)
-    arahKalimat += " Ada ukuran yang menurun sehingga perlu perhatian.";
-  else if (adaStagnan)
-    arahKalimat += " Ada ukuran yang tidak bertambah pada periode ini.";
+  // Kalimat arah pertumbuhan
+  let arahKalimat;
+  if (!bisaNilaiTren) {
+    arahKalimat = `Ini pengukuran pertama yang tercatat atau data bulan sebelumnya belum tersedia, sehingga arah pertumbuhan (naik, stagnan, atau menurun) belum dapat dinilai. Lakukan penimbangan rutin bulan depan agar tren pertumbuhan ${nama} mulai terlihat.`;
+  } else {
+    arahKalimat = `Pada penimbangan bulan ini, ${kalimatUkuran("tinggi badan", arTinggi, pTinggi, "cm", errTinggi)} dan ${kalimatUkuran("berat badan", arBerat, pBerat, "kg", errBerat)}.`;
+    if (keduaNaik)
+      arahKalimat +=
+        " Keduanya bergerak naik, pertumbuhan menunjukkan arah yang baik.";
+    else if (arTinggi === "turun" && arBerat === "turun")
+      arahKalimat += " Keduanya menurun, perlu segera diperhatikan.";
+    else if (adaTurun)
+      arahKalimat += " Ada ukuran yang menurun sehingga perlu perhatian.";
+    else if (adaStagnan)
+      arahKalimat += " Ada ukuran yang tidak bertambah pada periode ini.";
+    if (zMenurun && !adaTurun)
+      arahKalimat +=
+        " Meskipun ukuran fisik bertambah, posisinya terhadap standar WHO (Z-score) menurun, sehingga pertumbuhannya tetap perlu diwaspadai.";
+  }
+
+  // Kalimat lapis utama (tren Z-score / standar WHO)
+  const labelTrenZ = (a) =>
+    a === "naik"
+      ? "naik"
+      : a === "turun"
+        ? "menurun"
+        : a === "tetap"
+          ? "stagnan"
+          : null;
+  let arahKalimatZ = null;
+  if (adaTrenZ) {
+    const bagian = [];
+    if (trenZTBU.arah)
+      bagian.push(`tinggi badan (TB/U) ${labelTrenZ(trenZTBU.arah)}`);
+    if (trenZBBU.arah)
+      bagian.push(`berat badan (BB/U) ${labelTrenZ(trenZBBU.arah)}`);
+    arahKalimatZ = `Berdasarkan nilai Z-score standar WHO, posisi ${bagian.join(" dan ")} dibandingkan periode sebelumnya.`;
+  }
 
   // berturut (streak) — tampil bila ≥ 3 pengukuran searah
+  const labelStreak = (a) =>
+    a === "naik" ? "naik" : a === "turun" ? "menurun" : "tidak berubah";
   const berturut = [];
+  if (streakZTBU.arah && streakZTBU.panjang >= 3)
+    berturut.push(
+      `Z-score TB/U ${labelStreak(streakZTBU.arah)} ${streakZTBU.panjang} kali pengukuran berturut-turut (acuan WHO).`,
+    );
+  if (streakZBBU.arah && streakZBBU.panjang >= 3)
+    berturut.push(
+      `Z-score BB/U ${labelStreak(streakZBBU.arah)} ${streakZBBU.panjang} kali pengukuran berturut-turut (acuan WHO).`,
+    );
   if (streakTinggi.arah && streakTinggi.panjang >= 3)
     berturut.push(
-      `Tinggi badan ${streakTinggi.arah === "naik" ? "naik" : streakTinggi.arah === "turun" ? "menurun" : "tidak berubah"} ${streakTinggi.panjang} kali pengukuran berturut-turut.`,
+      `Tinggi badan ${labelStreak(streakTinggi.arah)} ${streakTinggi.panjang} kali pengukuran berturut-turut.`,
     );
   if (streakBerat.arah && streakBerat.panjang >= 3)
     berturut.push(
-      `Berat badan ${streakBerat.arah === "naik" ? "naik" : streakBerat.arah === "turun" ? "menurun" : "tidak berubah"} ${streakBerat.panjang} kali penimbangan berturut-turut.`,
+      `Berat badan ${labelStreak(streakBerat.arah)} ${streakBerat.panjang} kali penimbangan berturut-turut.`,
     );
   if (gagal2T)
     berturut.push(
-      "Pertumbuhan belum mencapai target 2 bulan berturut-turut (tanda 2T) — perlu pemeriksaan lanjutan.",
+      "Pertumbuhan belum mencapai target 2 bulan berturut-turut (tanda 2T), perlu pemeriksaan lanjutan.",
     );
 
   // ===== KONDISI per ukuran: STATUS GIZI + TREN (naik/stagnan/turun) =====
@@ -386,7 +530,8 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
     !beratStagnan &&
     !beratKurangNaik &&
     !tinggiStagnan &&
-    !tinggiKurangNaik;
+    !tinggiKurangNaik &&
+    !zMenurun;
 
   // ===== ALASAN — status gizi diutamakan; bila normal, TREN yang dipakai =====
   const alasan = [];
@@ -396,7 +541,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         cTBU.level === "berat"
           ? "tinggi badan anak masih sangat pendek untuk usianya (stunting berat)"
           : "tinggi badan anak mulai pendek untuk usianya",
-      sev: cTBU.level === "berat" ? 3 : 2,
+      sev: 2,
     });
   else if (tinggiStagnan)
     alasan.push({
@@ -406,6 +551,11 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   else if (tinggiKurangNaik)
     alasan.push({
       teks: "pertambahan tinggi badan belum mencapai target bulan ini",
+      sev: 1,
+    });
+  else if (trenZTBU.arah === "turun")
+    alasan.push({
+      teks: "posisi tinggi badan terhadap standar WHO (Z-score TB/U) menurun dibanding periode sebelumnya",
       sev: 1,
     });
 
@@ -419,8 +569,8 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
     });
   else if (cBBTB.key === "obesitas")
     alasan.push({
-      teks: "berat anak jauh berlebih dibanding tingginya (obesitas)",
-      sev: 3,
+      teks: "berat anak berlebih dibanding tingginya (obesitas)",
+      sev: 2,
     });
   else if (cBBTB.key === "lebih")
     alasan.push({
@@ -428,7 +578,7 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         cBBTB.level === "sedang"
           ? "berat anak berlebih dibanding tingginya"
           : "berat anak mulai berisiko berlebih dibanding tingginya",
-      sev: cBBTB.level === "sedang" ? 2 : 1,
+      sev: 1,
     });
   else if (beratTurun)
     alasan.push({
@@ -445,6 +595,11 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
       teks: "kenaikan berat badan belum mencapai target bulan ini",
       sev: 1,
     });
+  else if (trenZBBU.arah === "turun")
+    alasan.push({
+      teks: "posisi berat badan terhadap standar WHO (Z-score BB/U) menurun dibanding periode sebelumnya",
+      sev: 1,
+    });
 
   if (gagal2T)
     alasan.push({
@@ -455,9 +610,9 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   const tingkatNum = alasan.reduce((m, a) => Math.max(m, a.sev), 0);
   const adaErrorData = errTinggi || errBerat;
   const FASE = {
-    1: "kondisinya perlu diperhatikan",
-    2: "anak perlu tindakan perbaikan",
-    3: "anak perlu perhatian dan penanganan khusus",
+    1: "kondisinya perlu dipantau lebih lanjut",
+    2: "anak perlu perbaikan pola makan dan pemeriksaan lanjutan",
+    3: "anak perlu penanganan segera oleh tenaga kesehatan",
   };
   const tierStyle = TIER_STYLE[tingkatNum] ?? TIER_STYLE[0];
   const tierLabel = TIER_LABEL[tingkatNum] ?? "Aman";
@@ -468,73 +623,100 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
         ? `Karena ${alasan[0].teks}, ${FASE[tingkatNum]}.`
         : null;
 
-  // ===== REKOMENDASI berbentuk POIN (minimal 4) — mengacu pada PNPK Tata
-  //       Laksana Stunting (Kepmenkes HK.01.07/MENKES/1928/2022). Fokus pada
-  //       peran posyandu: pemantauan, edukasi gizi (utamakan protein hewani),
-  //       dan rujukan ke FKTP bila terindikasi. =====
-  const poin = [];
 
-  // 1) Pemeriksaan / rujukan — prioritas sesuai tingkat perhatian
-  if (tingkatNum === 3)
-    poin.push(
-      `Segera periksakan ${nama} ke Posyandu atau Puskesmas (FKTP) untuk konfirmasi pengukuran dan penanganan oleh tenaga kesehatan; bila perlu, anak akan dirujuk ke dokter spesialis anak.`,
+  const tindakanSegera = [];
+  const pemeliharaanHarian = [];
+
+
+  if (cBBTB.key === "wasting" && cBBTB.level === "berat")
+    tindakanSegera.push(
+      `Segera periksakan ${nama} ke Puskesmas/FKTP. Gizi buruk perlu pemeriksaan dan penanganan langsung oleh tenaga kesehatan, dan bila diperlukan akan dirujuk lebih lanjut.`,
     );
-  else if (tingkatNum === 2)
-    poin.push(
-      `Periksakan ${nama} ke Posyandu/Puskesmas (FKTP) untuk pemeriksaan lanjutan dan penelusuran penyebabnya.`,
+  else if (gagal2T)
+    tindakanSegera.push(
+      `Periksakan ${nama} ke Puskesmas/FKTP untuk menelusuri penyebab berat badan tidak naik dua bulan berturut-turut (tanda 2T) dan mendapat penanganan yang tepat.`,
+    );
+  else if (cTBU.key === "stunting")
+    tindakanSegera.push(
+      `Periksakan ${nama} ke Puskesmas/FKTP untuk evaluasi pertumbuhan dan menyusun rencana perbaikan gizi bersama tenaga kesehatan. Penanganan stunting bersifat bertahap, bukan tindakan sesaat.`,
+    );
+  else if (cBBTB.key === "wasting")
+    tindakanSegera.push(
+      `Periksakan ${nama} ke Puskesmas/FKTP untuk pemeriksaan lanjutan dan menelusuri penyebab kurang gizinya.`,
+    );
+  else if (cBBTB.key === "obesitas")
+    tindakanSegera.push(
+      `Konsultasikan kondisi ${nama} ke Posyandu/Puskesmas untuk memastikan hasil pengukuran dan memperoleh arahan. Untuk anak seusianya, tujuannya menjaga berat badan tetap stabil sambil tinggi badan menyusul, bukan menurunkan berat secara drastis.`,
+    );
+  else if (cBBTB.key === "lebih")
+    tindakanSegera.push(
+      `Terapkan pola makan seimbang dan perbanyak aktivitas fisik ${nama}, lalu pantau di Posyandu. Bila berat terus bertambah cepat, konsultasikan ke Puskesmas.`,
     );
   else if (tingkatNum === 1)
-    poin.push(
+    tindakanSegera.push(
       `Pantau kembali pada penimbangan bulan depan di Posyandu; bila belum membaik, periksakan ${nama} ke Puskesmas.`,
     );
-  else
-    poin.push(
-      optimal
-        ? `Pertumbuhan ${nama} sehat dan optimal lanjutkan pemberian makanan beragam dan seimbang setiap hari dengan protein hewani sebagai sumber utama.`
-        : `Pertahankan pola makan bergizi ${nama} dan pantau kembali perkembangannya pada penimbangan berikutnya di Posyandu.`,
-    );
 
-  // 2) Tindakan gizi sesuai kondisi anak
-  if (cTBU.key === "stunting" || tinggiStagnan || tinggiKurangNaik)
-    poin.push(
-      "Berikan makanan tinggi protein hewani setiap hari — telur, ikan, ayam, daging, atau susu dan olahannya — karena protein hewani terbukti membantu pertambahan tinggi badan.",
+  // (1b) Tindakan gizi sesuai kondisi & tren anak
+  if (
+    cTBU.key === "stunting" ||
+    tinggiStagnan ||
+    tinggiKurangNaik ||
+    trenZTBU.arah === "turun"
+  )
+    tindakanSegera.push(
+      "Berikan makanan tinggi protein hewani setiap hari, seperti telur, ikan, ayam, daging, atau susu dan olahannya. Karena protein hewani terbukti membantu pertambahan tinggi badan.",
     );
   if (cBBTB.key === "wasting")
-    poin.push(
+    tindakanSegera.push(
       "Berikan makanan padat energi dengan lauk berprotein dalam porsi kecil namun lebih sering agar berat badan anak bertambah.",
     );
-  else if (beratTurun || beratStagnan || beratKurangNaik)
-    poin.push(
+  else if (
+    beratTurun ||
+    beratStagnan ||
+    beratKurangNaik ||
+    trenZBBU.arah === "turun"
+  )
+    tindakanSegera.push(
       "Tambah porsi dan frekuensi makan dengan lauk berprotein hewani agar kenaikan berat badan kembali mencapai target.",
     );
-  if (beratPosisiAtas)
-    poin.push(
-      "Batasi gula, gorengan, dan makanan/minuman kemasan, perbanyak sayur dan buah, serta ajak anak aktif bergerak setiap hari.",
+  if (beratPosisiAtas) {
+    tindakanSegera.push(
+      "Kurangi minuman manis, gorengan, dan camilan/makanan kemasan; perbanyak sayur, buah, dan air putih. Tetap berikan makanan bergizi seperti biasa, yang dikurangi hanya gula dan makanan tinggi kalori, bukan kebutuhan gizi untuk tumbuh.",
+    );
+    tindakanSegera.push(
+      "Ajak anak aktif bergerak dan bermain setiap hari serta batasi waktu menonton layar, agar berat badan terkendali secara alami seiring pertambahan tinggi.",
+    );
+  }
+
+  // Bila tidak ada tindakan mendesak, beri pernyataan positif yang jelas
+  if (tindakanSegera.length === 0)
+    tindakanSegera.push(
+      optimal
+        ? `Tidak ada tindakan mendesak, pertumbuhan ${nama} sehat dan optimal. Lanjutkan pemberian makanan beragam dan seimbang dengan protein hewani sebagai sumber utama.`
+        : `Belum ada tindakan mendesak. Pertahankan pola makan bergizi ${nama} dan amati perkembangannya pada penimbangan berikutnya di Posyandu.`,
     );
 
-  // 3) Pencegahan & edukasi umum (selalu, sesuai pencegahan primer PNPK)
-  poin.push(
-    "Lanjutkan ASI sesuai usia; untuk usia 6 bulan ke atas lengkapi dengan MPASI bergizi yang mengutamakan protein hewani.",
+  // (2) Panduan pemeliharaan kesehatan harian (selalu — pencegahan primer)
+  pemeliharaanHarian.push(
+    "Lanjutkan ASI sesuai usia, untuk usia 6 bulan ke atas lengkapi dengan MPASI bergizi yang mengutamakan protein hewani.",
   );
-  poin.push(
+  pemeliharaanHarian.push(
     "Lengkapi imunisasi sesuai usia serta jaga kebersihan diri dan lingkungan untuk mencegah infeksi berulang seperti diare.",
   );
-
-  // 4) Stimulasi & istirahat (penting pada stunting)
   if (cTBU.key === "stunting")
-    poin.push(
+    pemeliharaanHarian.push(
       "Berikan stimulasi tumbuh kembang sesuai usia dan pastikan anak cukup tidur untuk mendukung pertumbuhannya.",
     );
-
-  // 5) Pemantauan rutin (selalu) — deteksi dini weight faltering
-  poin.push(
-    `Timbang dan ukur ${nama} setiap bulan di Posyandu untuk memantau pertumbuhan dan mendeteksi dini bila berat badan tidak naik.`,
+  pemeliharaanHarian.push(
+    `Timbang dan ukur ${nama} setiap bulan di Posyandu untuk memantau pertumbuhan dan mendeteksi dini bila berat badan tidak naik atau Z-score menurun.`,
   );
 
-  // Hilangkan duplikat & pastikan minimal 4 poin
-  const poinFinal = [...new Set(poin)];
-  const poinTone =
-    tingkatNum >= 2 ? "red" : tingkatNum === 1 ? "amber" : "emerald";
+  // Hilangkan duplikat
+  const tindakanFinal = [...new Set(tindakanSegera)];
+  const pemeliharaanFinal = [...new Set(pemeliharaanHarian)];
+  const tindakanTone =
+    tingkatNum >= 3 ? "red" : tingkatNum >= 1 ? "amber" : "emerald";
 
   // ===== KEBUTUHAN GIZI HARIAN (AKG) =====
   const padananKelompok =
@@ -641,17 +823,21 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
   );
 
   const arahWrap =
-    arahTone === "red"
-      ? "bg-red-50 border-red-100"
-      : arahTone === "amber"
-        ? "bg-amber-50 border-amber-100"
-        : "bg-emerald-50 border-emerald-100";
+    arahTone === "info"
+      ? "bg-slate-50 border-slate-200"
+      : arahTone === "red"
+        ? "bg-red-50 border-red-100"
+        : arahTone === "amber"
+          ? "bg-amber-50 border-amber-100"
+          : "bg-emerald-50 border-emerald-100";
   const arahTitle =
-    arahTone === "red"
-      ? "text-red-800"
-      : arahTone === "amber"
-        ? "text-amber-800"
-        : "text-emerald-800";
+    arahTone === "info"
+      ? "text-slate-700"
+      : arahTone === "red"
+        ? "text-red-800"
+        : arahTone === "amber"
+          ? "text-amber-800"
+          : "text-emerald-800";
 
   return (
     <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
@@ -664,9 +850,14 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
               Keterangan kondisi
             </h3>
           </div>
-          {/* ARAH PERTUMBUHAN GABUNGAN */}
+          {/* ARAH PERTUMBUHAN (Z-score sebagai lapis utama, berat/tinggi praktis) */}
           <div className={`rounded-2xl border mt-5 px-4 py-3 ${arahWrap}`}>
             <h4 className={`text-sm font-bold ${arahTitle}`}>{arahJudul}</h4>
+            {arahKalimatZ && (
+              <p className="mt-1 text-[12.5px] leading-relaxed text-gray-700">
+                {arahKalimatZ}
+              </p>
+            )}
             <p className="mt-1 text-[12.5px] leading-relaxed text-gray-600">
               {arahKalimat}
             </p>
@@ -797,9 +988,9 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
               )}
             </div>
 
-            {/* SLIDE: Yang dilakukan  vs  Kebutuhan gizi */}
+            {/* SLIDE: Tindakan  vs  Kebutuhan gizi */}
             <div className="flex rounded-xl bg-gray-100 p-1">
-              {["Yang dilakukan", "Kebutuhan gizi"].map((t, i) => (
+              {["Tindakan", "Kebutuhan gizi"].map((t, i) => (
                 <button
                   key={t}
                   type="button"
@@ -811,24 +1002,60 @@ export default function CardKeteranganRekomendasi({ data, riwayat, gizi }) {
               ))}
             </div>
 
-            {/* TAB 0 — YANG DILAKUKAN (poin tindakan sesuai kondisi anak) */}
+            {/* TAB 0 — REKOMENDASI TINDAKAN (dua kelompok sesuai laporan) */}
             {tabKanan === 0 && (
-              <div className="px-1">
-                <p className="text-[11.5px] leading-relaxed text-gray-500">
-                  Langkah yang sebaiknya dilakukan untuk kondisi {nama} saat
-                  ini, berdasarkan hasil penimbangan dan trennya.
-                </p>
-                <div className="mt-2.5">
-                  <DaftarRekomendasi items={poinFinal} tone={poinTone} />
+              <div className="space-y-4 px-1">
+                {/* (1) Tindakan yang perlu segera dilakukan */}
+                <div>
+                  <h4 className="text-[13px] font-bold text-gray-800">
+                    Tindakan yang perlu segera dilakukan
+                  </h4>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-gray-500">
+                    Langkah prioritas sesuai status gizi dan tren {nama} saat
+                    ini.
+                  </p>
+                  <div className="mt-2.5">
+                    <DaftarRekomendasi
+                      items={tindakanFinal}
+                      tone={tindakanTone}
+                    />
+                  </div>
                 </div>
+
+                {/* (2) Panduan pemeliharaan kesehatan harian */}
+                <div>
+                  <h4 className="text-[13px] font-bold text-gray-800">
+                    Panduan pemeliharaan kesehatan harian
+                  </h4>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-gray-500">
+                    Kebiasaan harian yang perlu terus dijaga untuk mendukung
+                    pertumbuhan.
+                  </p>
+                  <div className="mt-2.5">
+                    <DaftarRekomendasi
+                      items={pemeliharaanFinal}
+                      tone="emerald"
+                    />
+                  </div>
+                </div>
+
+                {!bisaNilaiTren && !optimal && (
+                  <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11.5px] leading-relaxed text-slate-600 ring-1 ring-slate-200">
+                    Penilaian ini berdasarkan satu kali pengukuran sehingga arah
+                    pertumbuhan belum terlihat. Lakukan penimbangan ulang bulan
+                    depan untuk memastikan sebelum menyimpulkan kondisi anak
+                    secara akhir.
+                  </p>
+                )}
+
                 {adaErrorData && (
-                  <p className="mt-2.5 text-[11.5px] leading-relaxed text-amber-700">
+                  <p className="text-[11.5px] leading-relaxed text-amber-700">
                     Karena hasil pengukuran bulan ini tampak tidak wajar,
                     sebaiknya angka tersebut diperiksa atau diukur ulang lebih
                     dulu sebelum mengambil tindakan.
                   </p>
                 )}
-                <p className="mt-3 text-[10.5px] leading-relaxed text-gray-400">
+                <p className="text-[10.5px] leading-relaxed text-gray-400">
                   Rekomendasi mengacu pada Pedoman Nasional Pelayanan Kedokteran
                   Tata Laksana Stunting (Kepmenkes RI No.
                   HK.01.07/MENKES/1928/2022) dan bersifat anjuran, bukan
