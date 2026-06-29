@@ -35,6 +35,7 @@ export default function Notifikasi() {
 
       const res = await api.get("/notifikasi");
 
+      // Disesuaikan dengan tampildata(): ikut ambil berhasil / gagal / dibaca / detail_gagal
       const data = res.data.map((item) => ({
         id: item.id,
         judul: item.judul,
@@ -44,8 +45,12 @@ export default function Notifikasi() {
         lokasi: item.lokasi,
         pesan: item.pesan,
         status_kirim: item.status_kirim,
-        total_penerima: item.total_penerima,
-        dibaca: item.dibaca,
+        total_penerima: item.total_penerima ?? 0,
+        berhasil: item.berhasil ?? 0,
+        gagal: item.gagal ?? 0,
+        dibaca: item.dibaca ?? 0,
+        // tampildata: detail_gagal = [{ user, keterangan }]
+        detail_gagal: Array.isArray(item.detail_gagal) ? item.detail_gagal : [],
       }));
 
       setNotifikasiList(data);
@@ -96,9 +101,28 @@ export default function Notifikasi() {
 
         alert("Notifikasi berhasil diperbarui");
       } else {
-        await api.post("/notifikasi", form);
+        const res = await api.post("/notifikasi", form);
 
-        alert("Notifikasi berhasil dikirim");
+     
+        const d = res.data || {};
+        const berhasil = d.berhasil ?? 0;
+        const total = d.total_penerima ?? 0;
+        const gagal = d.gagal ?? 0;
+
+        let msg = `Proses pengiriman selesai.\nTerkirim: ${berhasil} dari ${total}`;
+
+        if (gagal > 0) {
+          msg += `\nGagal: ${gagal}`;
+
+          if (Array.isArray(d.detail_gagal) && d.detail_gagal.length > 0) {
+            msg += "\n\nDetail gagal:";
+            d.detail_gagal.forEach((x) => {
+              msg += `\n• ${x.nama} (${x.metode}): ${x.alasan}`;
+            });
+          }
+        }
+
+        alert(msg);
       }
 
       setForm(FORM_KOSONG);
@@ -402,12 +426,12 @@ export default function Notifikasi() {
                         <td className="px-4 whitespace-nowrap">{item.tipe}</td>
                         <td className="px-4">{item.metode}</td>
                         <td className="px-4 whitespace-nowrap">
-                          {item.tanggal}
+                          {item.tanggal || "-"}
                         </td>
                         <td className="px-4">{item.lokasi || "-"}</td>
-                        <td className="px-4">
+                        <td className="px-4 py-2">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs ${
+                            className={`inline-block px-3 py-1 rounded-full text-xs ${
                               item.status_kirim === "terkirim"
                                 ? "bg-green-100 text-green-700"
                                 : item.status_kirim === "pending"
@@ -417,6 +441,27 @@ export default function Notifikasi() {
                           >
                             {item.status_kirim}
                           </span>
+
+                          {item.total_penerima > 0 && (
+                            <div className="text-[11px] text-gray-500 mt-1">
+                              {item.berhasil}/{item.total_penerima} terkirim
+                              {item.dibaca > 0 && ` · ${item.dibaca} dibaca`}
+                            </div>
+                          )}
+
+                          {item.gagal > 0 && (
+                            <div
+                              className="text-[11px] text-red-500 mt-0.5 cursor-help"
+                              title={item.detail_gagal
+                                .map(
+                                  (g) =>
+                                    `${g.user || "-"}: ${g.keterangan || "-"}`,
+                                )
+                                .join("\n")}
+                            >
+                              {item.gagal} gagal (arahkan kursor)
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-2">
                           <div className="flex gap-2 justify-center">
